@@ -614,7 +614,7 @@ export class ASTTransformer {
     for (const slide of document.slides) {
       if (!IDENTIFIER.test(slide.id) || slides.has(slide.id)) throw new MarkupError(`Invalid or duplicate slide ID ${JSON.stringify(slide.id)}`, slide.line);
       slides.set(slide.id, slide);
-      this._checkAttrs(slide.attributes, new Set(['id', 'title', 'width', 'height', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', ...(slide.placeholder ? ['src'] : [])]), slide.line);
+      this._checkAttrs(slide.attributes, new Set(['id', 'title', 'width', 'height', 'flow_top', 'flow_left', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', ...(slide.placeholder ? ['src'] : [])]), slide.line);
       ASTTransformer._checkFlags(slide.attributes, slide.line);
       ASTTransformer._checkTransition(slide.attributes, slide.line);
     }
@@ -1085,10 +1085,10 @@ export class ASTTransformer {
     for (const key of [...GEOMETRY, 'font_size', 'size', 'buff', 'radius', 'corner_radius', 'stroke_width', 'fill_opacity', 'opacity', 'dx', 'dy', 'run_time', 'lag',
       'start_angle', 'scale', 'roughness', 'bowing', 'hachure_angle', 'hachure_gap', 'fill_weight', 'seed', 'smoothness', 'tremble_amplitude', 'tremble_rate',
       'padding_x', 'padding_y', 'header_opacity', 'stripe_opacity', 'min', 'max', 'row_rule_width', 'col_rule_width', 'label_buff', 'halo_width',
-      'tip_length', 'tip_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end']) {
+      'tip_length', 'tip_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end', 'flow_top', 'flow_left']) {
       if (!(key in attrs)) continue;
       const number = numberValue(attrs, key, line) as number;
-      if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'label_buff', 'halo_width'].includes(key) && number < 0) {
+      if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'label_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
         throw new MarkupError(`${key} must be nonnegative`, line);
       }
       if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);

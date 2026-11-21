@@ -15,7 +15,7 @@ This page is the short reference, one line per construct. [The markup language, 
 
 | Syntax | Purpose |
 | --- | --- |
-| `::: slide {#id attrs} … :::` | a slide; attrs: `title`, `width`, `height`, `start_here`, `only_this`, `return_to_parent`, `skip_return`, `transition`, `preview` |
+| `::: slide {#id attrs} … :::` | a slide; attrs: `title`, `width`, `height`, `flow_top`, `flow_left`, `start_here`, `only_this`, `return_to_parent`, `skip_return`, `transition`, `preview` |
 | `[[include: #slide, placement, step, start_here, only_this, return_to_parent, skip_return, transition, preview]]` | a child slide placed in this one; `subslide: #id` is the same |
 | `[[subslide: ClassName, placement, step, …]]` | a code-authored child ([Code-authored slides](code-slides.html)) |
 | `[[pdf: file.pdf #id, placement, step, preview, …]]` | a PDF placed in the slide: its pages as children, cut through one after the other ([PDFs, flat decks and forests](documents.html#a-pdf-inside-a-slide)) |
@@ -98,6 +98,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` | elements, children | align an edge or baseline with `#id` |
 | `dx`, `dy` | positioned elements | offset after placement |
 | `width`, `height` | elements, children | wrapping width or size; viewport size for children |
+| `flow_top`, `flow_left` | slides | where the flow starts, from the top and left edges (`layout.margin` by default) |
 | `angle` | children, `animate` | rotation in radians |
 | `class` or `.name` | elements, children | styles |
 

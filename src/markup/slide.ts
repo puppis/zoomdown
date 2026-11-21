@@ -87,6 +87,10 @@ export class MarkupSlide extends Slide {
   readonly components = new Map<string, Slide>();
   /** Where a line of the parsed document was written (the document itself, or an imported file). */
   readonly locate: (line: number) => SourceLocation;
+  /** The distance from the slide's top edge to the top of its first flowing block (`flow_top`, the layout margin by default). */
+  readonly flowTop: number;
+  /** The distance from the slide's left edge to the left edge of its flow (`flow_left`, the layout margin by default). */
+  readonly flowLeft: number;
 
   constructor(spec: SlideSpec, options: { renderer: MarkupRenderer; locate?: (line: number) => SourceLocation }) {
     const heading = spec.items.find((item): item is ElementSpec => item instanceof ElementSpec && item.level > 0);
@@ -108,6 +112,11 @@ export class MarkupSlide extends Slide {
     this.locate = options.locate ?? ((line) => ({ file: '', line }));
     this.source = this.locate(spec.line);
     this.animationSteps = new ASTTransformer().plan(spec);
+    const margin = this.renderer.layout.margin;
+    this.flowTop = numberValue(spec.attributes, 'flow_top', spec.line, margin) as number;
+    this.flowLeft = numberValue(spec.attributes, 'flow_left', spec.line, margin) as number;
+    if (this.flowTop < 0 || this.flowTop >= this.height) throw new MarkupError(`flow_top must be nonnegative and less than the slide's height, ${this.height}`, spec.line);
+    if (this.flowLeft < 0 || this.flowLeft >= this.width) throw new MarkupError(`flow_left must be nonnegative and less than the slide's width, ${this.width}`, spec.line);
   }
 
   override get fadeTime(): number {
@@ -142,11 +151,16 @@ export class MarkupSlide extends Slide {
         }
       }
     }
-    const available = this.width - 2 * layout.margin;
-    if (available <= 0) throw new MarkupError('Canvas width must exceed twice the layout margin', this.spec.line);
+    // The flow starts `flowTop` below the top edge and `flowLeft` right of the left edge, and its
+    // paragraphs wrap at the right margin.
+    const available = this.width - this.flowLeft - layout.margin;
+    if (available <= 0) {
+      const message = 'flow_left' in this.spec.attributes ? 'flow_left must leave room before the right margin' : 'Canvas width must exceed twice the layout margin';
+      throw new MarkupError(message, this.spec.line);
+    }
     await this._layout(
       this.spec.items,
-      { left: -this.width / 2 + layout.margin, top: this.height / 2 - layout.margin, width: available, local: new Map() },
+      { left: -this.width / 2 + this.flowLeft, top: this.height / 2 - this.flowTop, width: available, local: new Map() },
       (index, item) => (this.components.get(childKey(index, item)) as Slide).viewport as Mobject,
     );
     // Elements draw in source order, whichever click reveals each one.

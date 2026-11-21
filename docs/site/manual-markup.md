@@ -99,6 +99,7 @@ may hold `::: {.group}`, `::: {.element}` and `::: notes` blocks.
 | `id` | identifier | required | the slide's name, used by `[[include: #id]]`, by the outline links and by `#slide=id` in the address bar |
 | `title` | text | the first heading, else the id | the name shown in the outline and the breadcrumb |
 | `width`, `height` | units | `layout.defaultSlideSize`, 16 × 9 | the canvas; one of them keeps the default proportions |
+| `flow_top`, `flow_left` | units | `layout.margin`, 0.65 | where the flow starts: the distance from the top edge to the top of the first flowing block, and from the left edge to the flow's left edge; nonnegative and less than the height and width |
 | `start_here` | flag | false | playback opens at this slide's entry; at most one slide (or include) may say so |
 | `only_this` | flag | false | render only the slides that say so (a partial render while editing); the starting slide must be among them |
 | `return_to_parent` | `true`, `false` | unset | after this slide's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset) |
@@ -668,7 +669,9 @@ or `play` of their own. Relative references stay within a group.
 ### Flow
 
 Elements without a position flow from the top-left corner of the canvas inside
-`layout.margin` (0.65), downward, as wide as the canvas minus the margins. Text is spaced as in
+`layout.margin` (0.65), downward, as wide as the canvas minus the margins. `flow_top` and
+`flow_left` on the slide move the start: the first flowing block's top is `flow_top` below the top
+edge, and the flow runs from `flow_left` right of the left edge to the right margin. Text is spaced as in
 LaTeX: the baselines of two paragraphs (blocks separated by a blank line) are
 `layout.paragraphSpacing` interlines apart (1.5; the interline is the distance between the
 baselines of two lines of one paragraph), the items of a list written without blank lines one
@@ -964,7 +967,7 @@ matter in the same way.
 | `font` | Latin Modern Roman | the prose family |
 | `codeFont` | Latin Modern Mono | inline code and listings |
 | `codeTheme` | follows `color` | a code theme of the deck, `code-themes/<name>.json` |
-| `margin` | 0.65 | distance of the flow from the canvas edges |
+| `margin` | 0.65 | distance of the flow from the canvas edges; a slide's `flow_top` and `flow_left` move its start |
 | `gap` | 0.35 | distance between flowing blocks that are not text, and the default `buff` |
 | `lineGap` | 0.12 | extra space between wrapped lines |
 | `paragraphSpacing` | 1.5 | the distance between the baselines of two paragraphs in the flow, in interlines; a text and another block keep the space two paragraphs have between their lines |

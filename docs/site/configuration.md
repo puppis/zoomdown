@@ -118,7 +118,7 @@ and the options' folders come before the front matter's.
 | `font` | Latin Modern Roman (bundled) | prose font family; the LaTeX text face by default, so prose and formulas share one design; a family in the deck's `fonts/` folder is loaded from there |
 | `codeFont` | Latin Modern Mono (bundled) | inline code and listings; the LaTeX typewriter face, sized to pair with the text face |
 | `codeTheme` | the deck's text color decides | token colors of listings, `code-themes/<name>.json`, see [Extending a deck](extending.html#languages-and-code-themes) |
-| `margin` | 0.65 | distance of the flow from the canvas edges |
+| `margin` | 0.65 | distance of the flow from the canvas edges; a slide's `flow_top` and `flow_left` move its start |
 | `gap` | 0.35 | distance between flowing blocks that are not text, and default `buff` |
 | `lineGap` | 0.12 | extra space between wrapped lines |
 | `paragraphSpacing` | 1.5 | the distance between the baselines of two paragraphs, in interlines |

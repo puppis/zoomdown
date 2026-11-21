@@ -37,6 +37,27 @@ lines. Two blocks that are not text are `layout.gap` apart. Text with only `x` k
 vertical constraint leaves the flow. Elements that leave the flow do not reserve space, so later
 blocks move up. A center-anchored element with one missing coordinate defaults that axis to zero.
 
+`flow_top` and `flow_left` on a slide move the start of its flow: `flow_top` is the distance from
+the slide's top edge to the top of the first flowing block, `flow_left` the distance from its left
+edge to the flow's left edge. Both default to `layout.margin` (0.65), must be nonnegative and less
+than the slide's height and width, and are measured from the top-left corner, as Figma measures
+positions in a frame. Paragraphs wrap between `flow_left` and the right margin. Nothing else moves:
+explicit coordinates, anchors, `at=` and includes keep the slide's coordinates, paragraphs and
+lists keep their spacing, text with only `x` flows at its own left edge, and groups keep their
+local flow. A slide that continues another one, a full page laid over the end of its parent, can
+so start its text right after the parent's last item, each block on its own step:
+
+```markdown
+::: slide {#rounds flow_top=6.27 flow_left=0.11}
+
+Round with pivot *r* … {step=1}
+
+- every concerned node sends a request … {step=2}
+
+- upon receiving the pivot's table … {step=3}
+:::
+```
+
 ## Relative constraints
 
 <a class="try" href="tour.html#slide=layout">Open in the tour ↗</a>

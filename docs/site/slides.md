@@ -41,6 +41,15 @@ choose a different aspect ratio.
 ::: slide {#square width=10 height=10}
 ```
 
+`flow_top` and `flow_left` set where the slide's flow starts: the distance from the top edge to the
+top of the first flowing block, and from the left edge to the flow's left edge. Both default to
+`layout.margin` and leave the canvas and its coordinates as they are
+([Positioning](positioning.html#flow)).
+
+```markdown
+::: slide {#rounds flow_top=6.27 flow_left=0.11}   → text starts 6.27 below the top edge
+```
+
 ## Includes
 
 ```markdown

@@ -33,6 +33,10 @@ every construct of this page live, each next to the listing that produced it; op
   repeat a component, define it again under a fresh ID.
 - `width` / `height` on a **slide** set its canvas (default 16 × 9, or `layout.defaultSlideSize`).
   One dimension infers the other from the default proportions; two choose a different aspect.
+- `flow_top` / `flow_left` on a **slide** set where its flow starts: the distance from the top edge
+  to the top of the first flowing block, and from the left edge to the flow's left edge (both
+  `layout.margin` by default, nonnegative and less than the slide's height and width). Paragraphs
+  wrap between `flow_left` and the right margin; the slide's coordinates do not change.
 - On an **include** or **subslide**, `x`, `y` place the viewport's center, `width` / `height` size it
   (one dimension keeps the child's aspect, two letterbox it), `angle` rotates it in radians.
   Without `width` and `height` the viewport is at most six units wide. `[[subslide: #id]]` is the
@@ -369,7 +373,8 @@ IDs are unique within their slide; omitted IDs become `element-N`.
 is `center`, for groups their `origin`. `anchor=` chooses another point: `center`, `top`, `bottom`,
 `left`, `right`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, or `left-baseline` /
 `right-baseline` for text-like elements (`layout.textAnchor` changes the text default). Blocks
-without coordinates flow downward from the top-left margin; text with only `x` keeps flowing at
+without coordinates flow downward from the top-left margin (or from `flow_top` and `flow_left` on
+the slide); text with only `x` keeps flowing at
 that edge, while an explicit `y` or a vertical constraint leaves the flow; any other element, or
 text anchored at its center, defaults an omitted axis to zero. `dx` and `dy` shift the final
 position of any positioned element. `width` controls wrapping, image width and the maximum formula
