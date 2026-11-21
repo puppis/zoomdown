@@ -64,10 +64,11 @@ the placeholder is never a stop, so a deck keeps running while a slide is still 
 Children without `step` are visited in source order after all numbered steps of the parent.
 `step=N` interleaves a visit with the parent's fragments: the parent's changes of step N play
 first, then the child is visited. When a child ends, the camera goes straight to the next sibling
-while one is left to visit, and zooms back to the parent only after the last one; the parent then
-resumes with its previous state, and children keep their final appearance as previews. A fragment
-of the parent that falls between two children plays while the camera is still on the first of
-them; `return_to_parent` on that child brings the camera back before it ([Flags](#flags)).
+when nothing happens in between, and zooms back to the parent when the parent has a step of its
+own before the next child, and after the last one; the parent then resumes with its previous
+state, and children keep their final appearance as previews. `skip_return` on a child keeps the
+camera on it even then, and `return_to_parent` brings it back even before a sibling that follows
+at once ([Flags](#flags)).
 
 ```markdown
 [Shown first]{#a step=1}
@@ -82,7 +83,7 @@ them; `return_to_parent` on that child brings the camera back before it ([Flags]
 | --- | --- | --- |
 | `start_here=true` | slide, include, subslide | open playback at this slide (at most one in a deck) |
 | `only_this=true` | slide, include | prepare only this subtree while editing; everything else becomes a placeholder |
-| `return_to_parent` | slide, include, subslide | zoom back to the parent after this child even when a sibling follows; `return_to_parent=false` is `skip_return` |
+| `return_to_parent` | slide, include, subslide | zoom back to the parent after this child even when a sibling follows at once; `return_to_parent=false` is `skip_return` |
 | `skip_return` | slide, include, subslide | leave this child straight for the next stop even when it is the last one, without zooming back to the parent; `skip_return=false` is `return_to_parent` |
 | `transition=cut` | slide, include, subslide | arrive at this slide without a camera animation; `transition=zoom` restores the zoom under a `cut` deck; any other name is a camera transition of the deck's own ([Extending a deck](extending.html#camera-transitions)) |
 | `preview=true` | slide, include, subslide | show the child's content before its first visit instead of fading it in on entry, as the tiles of the tour's front page do |

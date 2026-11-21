@@ -42,10 +42,11 @@ every construct of this page live, each next to the listing that produced it; op
   placeholder is never a stop, so the deck keeps running while the slide is still unwritten.
 - `start_here=true` on a slide, include or subslide opens playback at that slide (at most one).
   `only_this=true` prepares only that subtree while editing; everything else becomes a placeholder.
-- When a child ends, the camera goes straight to the next sibling while one is left to visit and
-  zooms back to the parent only after the last one. `return_to_parent` on a slide, include or
-  subslide zooms back after that child even when a sibling follows; `skip_return` leaves it straight
-  for the next stop even when it is the last one. The two are one choice seen from both sides
+- When a child ends, the camera goes straight to the next sibling when nothing happens in between,
+  and zooms back to the parent when the parent has a step of its own before the next child, and
+  after the last one. `return_to_parent` on a slide, include or subslide zooms back after that child
+  even when a sibling follows at once; `skip_return` leaves it straight for the next stop even when
+  the parent plays first or it is the last one. The two are one choice seen from both sides
   (`skip_return=false` is `return_to_parent`); a flag written bare means `=true`.
 - `preview=true` on a slide, include or subslide shows its content before its first visit instead of
   fading it in on entry.

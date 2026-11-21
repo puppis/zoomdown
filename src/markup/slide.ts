@@ -499,6 +499,27 @@ export class MarkupSlide extends Slide {
     ctx.completedStop().loop = true;
   }
 
+  /**
+   * After a child's visit, the slide's next step plays something of its own (its changes, or a
+   * pause of an empty step) before any other child, unless the step that visits the child visits
+   * another one too, or the next step only visits children.
+   */
+  override playsAfter(child: Slide): boolean {
+    let found = false;
+    for (const step of this.animationSteps) {
+      if (step.number === 0) continue;
+      if (!found) {
+        const index = step.visits.findIndex((target) => this.components.get(target) === child);
+        if (index < 0) continue;
+        found = true;
+        if (index < step.visits.length - 1) return false;
+        continue;
+      }
+      return step.changes.length > 0 || step.visits.length === 0;
+    }
+    return false;
+  }
+
   /** Execute planned clicks and resume after visits through the slide runtime. */
   override async *construct(ctx: SlideContext): AsyncGenerator<ReturnType<SlideContext['visit']>> {
     const presenter = ctx.presenter;

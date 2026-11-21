@@ -101,7 +101,7 @@ may hold `::: {.group}`, `::: {.element}` and `::: notes` blocks.
 | `width`, `height` | units | `layout.defaultSlideSize`, 16 × 9 | the canvas; one of them keeps the default proportions |
 | `start_here` | flag | false | playback opens at this slide's entry; at most one slide (or include) may say so |
 | `only_this` | flag | false | render only the slides that say so (a partial render while editing); the starting slide must be among them |
-| `return_to_parent` | `true`, `false` | unset | after this slide's own program, zoom back to the parent before the next stop (`true`), go straight to the next sibling (`false`), or do so only when no sibling follows (unset) |
+| `return_to_parent` | `true`, `false` | unset | after this slide's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset) |
 | `skip_return` | flag | unset | `return_to_parent=false`, from the other side; not together with it |
 | `transition` | `zoom`, `cut`, a name | unset | how the camera arrives at this slide; a name is a module of the deck's `transitions/` folder |
 | `preview` | flag | false | show the content before the first visit instead of fading it in on entry |

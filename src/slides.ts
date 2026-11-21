@@ -53,9 +53,10 @@ export interface SlideOptions {
   program?: ProgramCallback;
   /**
    * Whether leaving this slide zooms back to its parent before the next stop: `true` always,
-   * `false` never, and unset (the default) only when no sibling is left to visit, so that the
-   * camera goes straight from one child to the next and comes back after the last. The same
-   * choice as `skipReturn`, from the other side; set one of the two.
+   * `false` never, and unset (the default) unless a sibling follows with nothing of the parent's
+   * in between, so that the camera goes straight from one child to the next only when the parent
+   * plays nothing between them, and comes back after the last. The same choice as `skipReturn`,
+   * from the other side; set one of the two.
    */
   returnToParent?: boolean | null;
   /** Leave this slide without zooming back to its parent first (`returnToParent: false`). */
@@ -205,6 +206,17 @@ export class Slide {
 
   set skipReturn(value: boolean) {
     this.returnToParent = !value;
+  }
+
+  /**
+   * Whether this slide plays steps of its own after leaving `child` and before visiting another
+   * child: then leaving `child` zooms back here first, even with children left to visit. Null when
+   * the slide cannot tell ahead (a construct program decides as it runs); the camera then comes
+   * back as soon as the program plays or stops while it is still in the child.
+   */
+  playsAfter(child: Slide): boolean | null {
+    void child;
+    return null;
   }
 
   /** Duration of automatic content and grid fades, in seconds. */

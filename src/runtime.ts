@@ -695,6 +695,12 @@ export class SlideContext extends LocalScene {
   visited = false;
   /** @internal */
   returnSkipped = false;
+  /**
+   * @internal The child the camera left this slide for and stayed in, its return skipped only
+   * because other children were left to visit: should this slide play or stop before visiting
+   * one, the camera comes back first.
+   */
+  stayedIn: Slide | null = null;
   /** @internal */
   autoChild: Slide | null = null;
   /** @internal */
@@ -852,6 +858,7 @@ export class SlideContext extends LocalScene {
       }
       if (!Number.isFinite(animation.duration) || animation.duration < 0) throw new Error('animation duration must be finite');
     }
+    this.presenter.comeBack(this);
     this.presenter.history.record(new PlayOp(this, animations));
     await Promise.resolve();
     return this;
@@ -860,6 +867,7 @@ export class SlideContext extends LocalScene {
   /** Hold the current local state for `duration` seconds. */
   async wait(duration = 1): Promise<this> {
     this._requireProgram();
+    this.presenter.comeBack(this);
     this.presenter.history.record(new WaitOp(this, positive(duration, 'wait duration')));
     await Promise.resolve();
     return this;
@@ -868,6 +876,7 @@ export class SlideContext extends LocalScene {
   /** Record a presentation stop. Options configure the following clip. */
   stop(options: StopOptions = {}): this {
     this._requireProgram();
+    this.presenter.comeBack(this);
     this.presenter.boundary(this, 'program', { force: true, options });
     return this;
   }
@@ -1138,7 +1147,8 @@ export class Presenter {
     this.history.mark(ctx.slide, kind);
   }
 
-  private async _focus(ctx: SlideContext, { returning = false, initial = false, from = null as Slide | null } = {}): Promise<void> {
+  private _focus(ctx: SlideContext, { returning = false, initial = false, from = null as Slide | null } = {}): void {
+    ctx.stayedIn = null;
     this.history.mark(ctx.slide, returning ? 'return' : 'entry');
     // An entry shows the slide's definition; a return shows the line of the parent that placed the child.
     this.history.openClip.source = (returning ? from?.placement : null) ?? ctx.slide.source;
@@ -1192,7 +1202,7 @@ export class Presenter {
       ctx.display.gridOpacity = ctx.display.backgrounds.length ? 1 : 0;
       ctx.display.sync(ctx.transform);
     }
-    await this._focus(ctx, { initial });
+    this._focus(ctx, { initial });
     let result: unknown = ctx.slide.construct(ctx);
     if (result instanceof Promise) result = await result;
     if (result === ctx || result == null) result = null;
@@ -1225,17 +1235,30 @@ export class Presenter {
 
   /**
    * Whether leaving `slide` zooms back to its parent: as the slide says when it says anything,
-   * otherwise only when no sibling is left to visit, so that the camera goes straight from one
-   * child to the next and comes back after the last. A hidden parent is never returned to.
+   * otherwise when no sibling is left to visit or the parent plays steps of its own before the
+   * next one, so that the camera goes straight from one child to the next only when nothing
+   * happens in between, and comes back after the last. A hidden parent is never returned to.
    */
   private _returnsToParent(slide: Slide): boolean {
     const parent = slide.parent;
     if (parent === null || parent.hidden) return false;
     if (slide.returnToParent !== null) return slide.returnToParent;
-    return !parent._children.some((sibling) => {
+    const left = parent._children.some((sibling) => {
       if (sibling instanceof PlaceholderSlide || !this.enabled(sibling)) return false;
       return !(this.contexts.get(sibling) as SlideContext).visited;
     });
+    return !left || parent.playsAfter(slide) === true;
+  }
+
+  /**
+   * @internal Bring the camera back to `ctx` before it plays or stops, when it stayed in a child
+   * whose return was skipped only because other children were left (a construct program cannot
+   * tell ahead that it plays steps of its own between two children).
+   */
+  comeBack(ctx: SlideContext): void {
+    const from = ctx.stayedIn;
+    if (from === null || this.active !== ctx || this.focused === ctx) return;
+    this._focus(ctx, { returning: true, from });
   }
 
   /** The context the camera shows first: a hidden root's first child that will be a stop, else the root itself. */
@@ -1299,12 +1322,16 @@ export class Presenter {
         }
         const childCtx = this.contexts.get(visit.child) as SlideContext;
         if (childCtx.display.earlyOpacity < 1 && childCtx.mobjects.some(isEarly) && this.enabled(ctx.slide) && this.enabled(visit.child)) {
-          // The child's early members (step=-1) appear at a stop of the parent, right before the visit.
+          // The child's early members (step=-1) appear at a stop of the parent, right before the visit,
+          // with the camera on the parent.
+          this.comeBack(ctx);
           this.history.mark(ctx.slide, 'program');
           this.history.openClip.source = visit.child.placement ?? ctx.slide.source;
           this.history.record(new RevealOp(ctx, childCtx));
           this.boundary(ctx, 'program');
         }
+        // Straight on to the next child: the camera stays away from this slide.
+        ctx.stayedIn = null;
         await this._enter(childCtx);
         continue;
       }
@@ -1316,10 +1343,13 @@ export class Presenter {
         break;
       }
       this.active = this.contexts.get(parent) as SlideContext;
-      ctx.returnSkipped = !this._returnsToParent(ctx.slide) || this._consumeSkipNext();
+      const returns = this._returnsToParent(ctx.slide);
+      ctx.returnSkipped = !returns || this._consumeSkipNext();
+      // Skipped only for the siblings left (not by the child's choice or a skipNext): the parent may still need the camera back.
+      this.active.stayedIn = !returns && ctx.slide.returnToParent === null && !parent.hidden ? ctx.slide : null;
       if (this.enabled(parent)) {
         if (!ctx.returnSkipped && (!this.selectedRender || this.focused !== this.active)) {
-          await this._focus(this.active, { returning: true, from: ctx.slide });
+          this._focus(this.active, { returning: true, from: ctx.slide });
         } else if (!this.selectedRender) {
           this.history.mark(this.active.slide, 'program');
         }
