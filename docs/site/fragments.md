@@ -29,7 +29,8 @@ description: Reveal and hide elements on clicks, time the fades, advance automat
 An omitted `step` (or `step=0`) makes an element part of the slide's initial content; `step=N`
 fades it in at click N and `hide=M` fades it out later. `[[show: #id step=N]]` and
 `[[hide: #id step=N]]` repeat changes as often as needed. Showing a visible element or hiding a
-hidden one is an error, reported with its line.
+hidden one is an error, reported with its line. A fade in ends at the element's own opacity, from
+`opacity=` or its style, each part of a group at its own, however often it is shown.
 
 Numbers are local to each slide and need not be consecutive: a lone `step=4` creates one click,
 not four. All changes sharing a number play together, followed by a pause; if a step also visits

@@ -542,7 +542,8 @@ cannot target them. Member IDs without an explicit `#id` are prefixed with the g
 An omitted `step` (or `step=0`) makes an element part of the initial content; `step=N` fades it in
 at click N and `hide=M` fades it out later. `[[show: #id step=N]]` and `[[hide: #id step=N]]`
 repeat changes; showing a visible element or hiding a hidden one is an error. All changes sharing a
-number play together, followed by a pause. Each fade lasts `layout.animationTime` unless the element
+number play together, followed by a pause. A fade in ends at the element's own opacity, from
+`opacity=` or its style, each part of a group at its own. Each fade lasts `layout.animationTime` unless the element
 sets `run_time=S`; `lag=S` delays its start inside the step, so one click can stagger several
 elements. A `show`/`hide` directive may carry its own `run_time` and `lag`. Numbers are local to the slide
 and need not be consecutive. Only the root is visible at the start; each descendant fades in on its

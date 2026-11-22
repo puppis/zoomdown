@@ -5,7 +5,7 @@
  * them like fades.
  */
 import {
-  Animation, ApplyWave, Circumscribe, Create, DrawBorderThenFill, FadeIn, FadeOut, Flash, FocusOn, GrowFromCenter, Indicate,
+  Animation, ApplyWave, Circumscribe, Create, DrawBorderThenFill, Flash, FocusOn, GrowFromCenter, Indicate,
   ShrinkToCenter, Uncreate, VMobject, Wiggle, Write, type Mobject,
   easeInOutSine, easeInSine, easeOutSine, linear, rushFrom, rushInto, smooth, thereAndBack,
 } from 'manim-web';
@@ -315,14 +315,52 @@ export function makeEffect(name: string, mobject: Mobject, options: EffectOption
 export const ENTER_STYLES = ['fade', 'grow', 'write', 'create', 'draw'] as const;
 export const EXIT_STYLES = ['fade', 'shrink', 'uncreate'] as const;
 
+/**
+ * A fade in to the opacities an object's parts have of their own, or out from them, where the engine's
+ * fades bring every part to 1 and leave every part at 0. The opacities are taken when the fade first
+ * begins, as the deck is recorded, so a replay ends at them whatever an interrupted replay left behind,
+ * and an object faded out leaves with them, so a fade that shows it again ends at them too.
+ */
+export class OpacityFade extends Animation {
+  private _own: Array<[Mobject, number]> | null = null;
+
+  constructor(mobject: Mobject, readonly entering: boolean, options: AnimationTiming = {}) {
+    super(mobject, timing(options));
+    this.remover = !entering;
+  }
+
+  override begin(): void {
+    super.begin();
+    // Parts before their own parts (a group passes its opacity on to its members).
+    this._own ??= this.mobject.getFamily().map((member) => [member, member.opacity]);
+    this.interpolate(0);
+  }
+
+  interpolate(alpha: number): void {
+    const factor = this.entering ? alpha : 1 - alpha;
+    for (const [member, own] of this._own ?? []) member.opacity = own * factor;
+  }
+
+  override finish(): void {
+    this.interpolate(1);
+    super.finish();
+  }
+
+  override cleanUpFromScene(scene: Parameters<Animation['cleanUpFromScene']>[0]): void {
+    super.cleanUpFromScene(scene);
+    // Out of the scene, a faded-out object takes its own opacities back.
+    if (!this.entering) this.interpolate(0);
+  }
+}
+
 /** The animation of an element's appearance: a fade, or the named style. */
 export function enterAnimation(style: string, mobject: Mobject, options: AnimationTiming = {}): Animation {
-  if (style === 'fade' || !style) return new FadeIn(mobject, timing(options));
+  if (style === 'fade' || !style) return new OpacityFade(mobject, true, options);
   return makeEffect(style, mobject, options);
 }
 
 /** The animation of an element's disappearance: a fade, or the named style. */
 export function exitAnimation(style: string, mobject: Mobject, options: AnimationTiming = {}): Animation {
-  if (style === 'fade' || !style) return new FadeOut(mobject, timing(options));
+  if (style === 'fade' || !style) return new OpacityFade(mobject, false, options);
   return makeEffect(style, mobject, options);
 }
