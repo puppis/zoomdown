@@ -121,6 +121,7 @@ and the options' folders come before the front matter's.
 | `margin` | 0.65 | distance of the flow from the canvas edges; a slide's `flow_top` and `flow_left` move its start |
 | `gap` | 0.35 | distance between flowing blocks that are not text, and default `buff` |
 | `lineGap` | 0.12 | extra space between wrapped lines |
+| `lineHeight` | unset | the distance between the baselines of two lines of prose in ems, replacing the font's reach plus `lineGap` |
 | `paragraphSpacing` | 1.5 | the distance between the baselines of two paragraphs, in interlines |
 | `listIndent` | 0.6 | marker column of list items and indentation per nesting level |
 | `haloBridgeTolerance` | 0.2 | arrows and lines whose ends lie closer than this never bridge one another (`halo_bridge`) |

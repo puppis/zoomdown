@@ -93,6 +93,11 @@ palette name (`BLUE`, `RED`, `TEAL`, `ORANGE`, `YELLOW`, `GOLD`, `GRAY`, `GREEN`
 color. A color-only span stays inline; any other attribute makes the bracketed text a positioned
 element of its own, which then must be a whole block.
 
+`~~text~~` strikes text through, and `[text]{underline=true}` underlines it without making it a
+link; an inline span takes `color` and `underline` together. HTML entities keep spaces Markdown
+would collapse: `&nbsp;` (never breaking the line), `&ensp;`, `&emsp;` and `&thinsp;`, as in
+`WWW,&nbsp;&nbsp;Wikipedia`.
+
 ## Links
 
 `[label](https://…)` renders an underlined label that opens the page in a new tab; `mailto:` and
@@ -128,3 +133,9 @@ shrinking slightly per level. Any element can override its size with
 arrow label or brace label can also pick its own face with `font=`: any font the page has, or the
 bundled handwriting face **Zeyada**, which pairs with [hand-drawn shapes](sketch.html)
 (`[A note]{font=Zeyada font_size=36}`).
+
+Lines of a paragraph are as far apart as the font reaches above and below its baseline, plus
+`layout.lineGap`. `layout.lineHeight` sets that distance in ems instead, as CSS's `line-height`,
+and `line_height=` sets it for one text: a face with a tall natural interline, such as EB
+Garamond's, can so be set as tightly as a design asks (`layout: lineHeight: 1.15`). Paragraphs
+stay `layout.paragraphSpacing` interlines apart.

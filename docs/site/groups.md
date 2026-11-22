@@ -41,3 +41,14 @@ the target of an [animation](animations.html).
 
 Members cannot carry `step`, `hide`, `focus_only` or `play`, and `show`/`hide`/`animate`
 directives cannot target them: animate the group.
+
+`font_size`, `font`, `color` and `line_height` on a group pass to its members, nested groups
+included, that take them and do not set their own, as CSS inherits them; a shape takes the color
+only. A list in one size needs no style on every item:
+
+```markdown
+::: {.group #models below:#in-practice font_size=22.5 step=2}
+- Client-server
+- Peer-to-peer
+:::
+```

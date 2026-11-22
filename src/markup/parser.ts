@@ -14,6 +14,7 @@ import {
   ENTER_STYLES, EXIT_STYLES, FILL_ATTRS, GEOMETRY, GROUP_ANCHORS, GROUP_ATTRS, HORIZONTAL_POSITION, ICON_KINDS, IDENTIFIER,
   LABEL_SIDES, LAYOUT, NEIGHBORS, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, STROKE_ATTRS, TEXT_LIKE, TIMING_ATTRS, TREMBLE_ATTRS,
   VECTOR_KINDS, VERTICAL_POSITION, VIDEO_EXTENSIONS, FILL_STYLE_NAMES, CHART_ATTRS, CHART_TYPE_NAMES, TABLE_ATTRS, TABLE_RULE_NAMES,
+  INHERITED_ATTRS, gradientColor,
   ActionSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
   type CellAlignment,
   type ListItem,
@@ -90,9 +91,10 @@ function coloredSpan(state: StateInline, silent: boolean): boolean {
   const line = (state.env as Env).line ?? 1;
   if (close < 0) throw new MarkupError('Unclosed span attributes', line);
   const attrs = parseAttributes(state.src.slice(end + 1, close + 1), line);
-  if (Object.keys(attrs).some((key) => key !== 'color')) {
-    throw new MarkupError('A [text]{…} with attributes other than color must be a block of its own: put a blank line between it and the lines around it (lines with no blank line between them form one paragraph, where a span takes color only)', line);
+  if (Object.keys(attrs).some((key) => key !== 'color' && key !== 'underline')) {
+    throw new MarkupError('A [text]{…} with attributes other than color and underline must be a block of its own: put a blank line between it and the lines around it (lines with no blank line between them form one paragraph, where a span takes color and underline only)', line);
   }
+  if ('underline' in attrs && !['true', 'false'].includes(attrs.underline)) throw new MarkupError('underline must be true or false', line);
   if (!silent) {
     const token = state.push('styled_span', 'span', 0);
     token.meta = attrs;
@@ -103,21 +105,42 @@ function coloredSpan(state: StateInline, silent: boolean): boolean {
   return true;
 }
 
-function spans(tokens: Token[], bold = false, italic = false, color: string | null = null, href: string | null = null): InlineSpan[] {
+/** The style a span inherits from the spans around it. */
+interface SpanStyle {
+  bold: boolean;
+  italic: boolean;
+  color: string | null;
+  href: string | null;
+  strike: boolean;
+  underline: boolean;
+}
+
+const PLAIN: SpanStyle = { bold: false, italic: false, color: null, href: null, strike: false, underline: false };
+
+function spans(tokens: Token[], outer: SpanStyle = PLAIN): InlineSpan[] {
   const result: InlineSpan[] = [];
-  let strong = bold ? 1 : 0;
-  let emphasis = italic ? 1 : 0;
+  let strong = outer.bold ? 1 : 0;
+  let emphasis = outer.italic ? 1 : 0;
+  let struck = outer.strike ? 1 : 0;
   const links: Array<string | null> = [];
-  const currentHref = () => (links.length ? links[links.length - 1] : href);
+  const currentHref = () => (links.length ? links[links.length - 1] : outer.href);
+  const style = (): SpanStyle => ({ bold: strong > 0, italic: emphasis > 0, color: outer.color, href: currentHref(), strike: struck > 0, underline: outer.underline });
   for (const token of tokens) {
     switch (token.type) {
       case 'strong_open': strong += 1; break;
       case 'strong_close': strong -= 1; break;
       case 'em_open': emphasis += 1; break;
       case 'em_close': emphasis -= 1; break;
-      case 'styled_span':
-        result.push(...spans(token.children ?? [], strong > 0, emphasis > 0, (token.meta as Attributes).color ?? color, currentHref()));
+      case 's_open': struck += 1; break;
+      case 's_close': struck -= 1; break;
+      case 'styled_span': {
+        const attrs = token.meta as Attributes;
+        const inner = style();
+        if (attrs.color) inner.color = attrs.color;
+        if (attrs.underline) inner.underline = attrs.underline === 'true';
+        result.push(...spans(token.children ?? [], inner));
         break;
+      }
       case 'text':
       case 'text_special':
       case 'code_inline':
@@ -126,8 +149,11 @@ function spans(tokens: Token[], bold = false, italic = false, color: string | nu
       case 'hardbreak': {
         const kind = token.type === 'math_inline' ? 'math' : token.type === 'code_inline' ? 'code' : 'text';
         const content = token.type === 'softbreak' ? ' ' : token.type === 'hardbreak' ? '\n' : token.content;
-        const piece = span(content, kind, strong > 0, emphasis > 0, color, currentHref());
+        const now = style();
+        const piece = span(content, kind, now.bold, now.italic, now.color, now.href);
         if (token.type === 'softbreak') piece.soft = true;
+        if (now.strike) piece.strike = true;
+        if (now.underline) piece.underline = true;
         result.push(piece);
         break;
       }
@@ -158,6 +184,8 @@ export class MarkupParser {
     this.blockMarkdown = new MarkdownIt('commonmark', { html: false });
     this.blockMarkdown.enable('table');
     this.markdown = new MarkdownIt('commonmark', { html: false });
+    // ~~text~~ strikes text through, as in GitHub's Markdown.
+    this.markdown.enable('strikethrough');
     // An escaped character stays a token of its own, so that `\&&` never reads as a column separator.
     this.markdown.core.ruler.disable('text_join');
     this.markdown.inline.ruler.before('escape', 'dollar_math', dollarMath);
@@ -622,17 +650,27 @@ export class ASTTransformer {
     for (const slide of document.slides) {
       const elements = new Map<string, ElementSpec>();
       const scopeOf = new Map<string, string>();
-      const visit = (items: SlideItem[], scope: string): void => {
+      // What a group passes down to its members that do not set their own: the text's size, face,
+      // color and line height, a member taking those it has (a shape no font, an arrow no line height).
+      const visit = (items: SlideItem[], scope: string, inherited: Attributes = {}): void => {
         for (const item of items) {
           if (item instanceof ElementSpec) {
             applyStyles(item, styles);
             if (!IDENTIFIER.test(item.id) || elements.has(item.id)) {
               throw new MarkupError(`Invalid or duplicate element ID ${JSON.stringify(item.id)} in ${slide.id}`, item.line);
             }
+            const takes = ASTTransformer.allowedAttributes(item);
+            for (const [key, value] of Object.entries(inherited)) {
+              if (!(key in item.attributes) && (takes === null || takes.has(key))) item.attributes[key] = value;
+            }
             this._checkElement(item, scope);
             elements.set(item.id, item);
             scopeOf.set(item.id, scope);
-            if (item instanceof GroupSpec) visit(item.items, item.id);
+            if (item instanceof GroupSpec) {
+              const passed: Attributes = { ...inherited };
+              for (const key of INHERITED_ATTRS) if (key in item.attributes) passed[key] = item.attributes[key];
+              visit(item.items, item.id, passed);
+            }
           } else if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
             if (scope) throw new MarkupError('Groups cannot contain includes or subslides', item.line);
             applyStyles(item, styles);
@@ -756,16 +794,12 @@ export class ASTTransformer {
     return new MarkupDocument([...slides.values()], root, document.basePath, {}, roots);
   }
 
-  /** Validate one element's kind-specific attributes; `scope` is the enclosing group ID or ''. */
-  private _checkElement(item: ElementSpec, scope: string): void {
-    const decoration = CONNECTIONS.has(item.kind) || ATTACHMENTS.has(item.kind);
-    if (!['text', 'image', 'math', 'code', 'group', 'iframe', 'icon', 'table', 'chart', 'custom'].includes(item.kind) && !SHAPES.has(item.kind) && !decoration) {
-      throw new MarkupError(`Unknown element kind ${JSON.stringify(item.kind)}`, item.line);
-    }
+  /** The attributes an element of this kind takes, or null when it takes any (an artwork or element of the deck's own). */
+  static allowedAttributes(item: ElementSpec): Set<string> | null {
     let allowed: Set<string> | null;
     if (item.kind === 'group') allowed = new Set(GROUP_ATTRS);
     else if (CONNECTIONS.has(item.kind)) {
-      allowed = new Set(['id', 'step', 'hide', 'color', 'from', 'to', 'buff', 'buff_start', 'buff_end', 'dashed', 'halo_bridge', 'halo_width', 'tip', 'tip_length', 'tip_width', 'bend', 'loop', 'looseness', 'wavy', 'amplitude', 'via', 'label', 'label_buff', 'label_color', 'label_pos', 'label_side', 'slanted', 'font', 'font_size', 'opacity', 'href', ...STROKE_ATTRS, ...TIMING_ATTRS, ...SKETCH_ATTRS]);
+      allowed = new Set(['id', 'step', 'hide', 'color', 'from', 'to', 'buff', 'buff_start', 'buff_end', 'dashed', 'halo_bridge', 'halo_width', 'tip', 'tip_length', 'tip_width', 'bend', 'loop', 'looseness', 'wavy', 'amplitude', 'via', 'label', 'label_buff', 'label_color', 'label_pos', 'label_side', 'label_width', 'slanted', 'font', 'font_size', 'opacity', 'href', ...STROKE_ATTRS, ...TIMING_ATTRS, ...SKETCH_ATTRS]);
     }
     else if (ATTACHMENTS.has(item.kind)) {
       allowed = new Set(['id', 'target', 'step', 'hide', 'color', 'buff', 'opacity', 'href', ...STROKE_ATTRS, ...TIMING_ATTRS, ...SKETCH_ATTRS]);
@@ -789,7 +823,7 @@ export class ASTTransformer {
       for (const key of [...STROKE_ATTRS, ...SKETCH_ATTRS]) allowed.add(key);
       if (item.kind === 'polyline') allowed.add('points');
       else {
-        for (const key of FILL_ATTRS) allowed.add(key);
+        for (const key of [...FILL_ATTRS, 'fill_gradient', 'gradient_direction']) allowed.add(key);
         if (item.kind === 'polygon') allowed.add('points');
         else if (item.kind === 'circle' || item.kind === 'dot') allowed.add('radius');
         else if (item.kind === 'arc') for (const key of ['radius', 'start_angle', 'angle']) allowed.add(key);
@@ -802,12 +836,23 @@ export class ASTTransformer {
     } else {
       allowed = new Set(ELEMENT_ATTRS);
       if (item.kind !== 'text') allowed.delete('font');
+      else allowed.add('line_height');
       if (item.kind === 'image') {
         allowed.add('play');
         if (VIDEO_EXTENSIONS.test(item.source)) allowed.add('muted');
       } else if (item.kind === 'code') allowed.add('lang');
     }
     if (allowed && VECTOR_KINDS.has(item.kind)) for (const key of TREMBLE_ATTRS) allowed.add(key);
+    return allowed;
+  }
+
+  /** Validate one element's kind-specific attributes; `scope` is the enclosing group ID or ''. */
+  private _checkElement(item: ElementSpec, scope: string): void {
+    const decoration = CONNECTIONS.has(item.kind) || ATTACHMENTS.has(item.kind);
+    if (!['text', 'image', 'math', 'code', 'group', 'iframe', 'icon', 'table', 'chart', 'custom'].includes(item.kind) && !SHAPES.has(item.kind) && !decoration) {
+      throw new MarkupError(`Unknown element kind ${JSON.stringify(item.kind)}`, item.line);
+    }
+    const allowed = ASTTransformer.allowedAttributes(item);
     if (allowed) this._checkAttrs(item.attributes, allowed, item.line);
     if (CONNECTIONS.has(item.kind)) {
       if ('dashed' in item.attributes && !['true', 'false'].includes(item.attributes.dashed)) throw new MarkupError('dashed must be true or false', item.line);
@@ -847,7 +892,7 @@ export class ASTTransformer {
     // How a label looks needs a label, when the element says so itself: a style that sets it for
     // labeled and unlabeled elements alike just has no effect on the unlabeled ones.
     const styled = styledKeys(item);
-    for (const key of ['label_side', 'slanted', 'label_pos', 'label_color', 'label_buff']) {
+    for (const key of ['label_side', 'slanted', 'label_pos', 'label_color', 'label_buff', 'label_width']) {
       if (key in item.attributes && !styled.has(key) && !('label' in item.attributes)) throw new MarkupError(`${key} requires a label`, item.line);
     }
     if ('href' in item.attributes && !LINK_TARGET.test(item.attributes.href)) {
@@ -886,7 +931,31 @@ export class ASTTransformer {
           throw new MarkupError(`col_width gives ${widths.length} widths for ${columns} columns: give one for all, or one per column`, item.line);
         }
       }
+      if ('col_font_size' in item.attributes) {
+        const sizes = item.attributes.col_font_size.trim().split(/[\s,]+/);
+        const columns = Math.max(...(item as TableSpec).rows.map((row) => row.length));
+        if (sizes.some((size) => size !== 'auto' && !(Number(size) > 0))) throw new MarkupError('col_font_size must be positive sizes or auto', item.line);
+        if (sizes.length > 1 && sizes.length !== columns) {
+          throw new MarkupError(`col_font_size gives ${sizes.length} sizes for ${columns} columns: give one for all, or one per column`, item.line);
+        }
+      }
       for (const row of (item as TableSpec).rows) for (const cell of row) for (const s of cell) if (s.color) ASTTransformer._checkColor(s.color, item.line);
+    }
+    if ('fill_gradient' in item.attributes) {
+      const stops = item.attributes.fill_gradient.trim().split(/\s+/).filter(Boolean);
+      if (stops.length < 2) throw new MarkupError('fill_gradient needs two colors or more, first to last', item.line);
+      for (const stop of stops) {
+        try {
+          gradientColor(stop);
+        } catch {
+          throw new MarkupError(`Invalid color ${JSON.stringify(stop)} in fill_gradient`, item.line);
+        }
+      }
+      if ((item.attributes.sketch ?? 'false') !== 'false') throw new MarkupError('A hand-drawn shape cannot have fill_gradient', item.line);
+    }
+    if ('gradient_direction' in item.attributes) {
+      if (!['up', 'down', 'left', 'right'].includes(item.attributes.gradient_direction)) throw new MarkupError('gradient_direction must be up, down, left or right', item.line);
+      if (!styled.has('gradient_direction') && !('fill_gradient' in item.attributes)) throw new MarkupError('gradient_direction requires fill_gradient', item.line);
     }
     if (item.kind === 'chart') {
       // A built-in type, or a chart of the deck's own, found in its charts folders when the slide is built.
@@ -1085,13 +1154,13 @@ export class ASTTransformer {
     for (const key of [...GEOMETRY, 'font_size', 'size', 'buff', 'radius', 'corner_radius', 'stroke_width', 'fill_opacity', 'opacity', 'dx', 'dy', 'run_time', 'lag',
       'start_angle', 'scale', 'roughness', 'bowing', 'hachure_angle', 'hachure_gap', 'fill_weight', 'seed', 'smoothness', 'tremble_amplitude', 'tremble_rate',
       'padding_x', 'padding_y', 'header_opacity', 'stripe_opacity', 'min', 'max', 'row_rule_width', 'col_rule_width', 'label_buff', 'halo_width',
-      'tip_length', 'tip_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end', 'flow_top', 'flow_left']) {
+      'tip_length', 'tip_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end', 'flow_top', 'flow_left', 'label_width', 'line_height', 'header_font_size']) {
       if (!(key in attrs)) continue;
       const number = numberValue(attrs, key, line) as number;
       if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'label_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
         throw new MarkupError(`${key} must be nonnegative`, line);
       }
-      if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);
+      if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);
       if (['fill_opacity', 'opacity', 'smoothness', 'header_opacity', 'stripe_opacity'].includes(key) && (number < 0 || number > 1)) {
         throw new MarkupError(`${key} must be between zero and one`, line);
       }

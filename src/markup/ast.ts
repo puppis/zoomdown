@@ -37,6 +37,10 @@ export interface InlineSpan {
   href?: string | null;
   /** A line end of the source (a space in prose; a row break in a block with `&&` columns). */
   soft?: boolean;
+  /** Struck through, `~~text~~`. */
+  strike?: boolean;
+  /** Underlined without being a link, `[text]{underline=true}`. */
+  underline?: boolean;
 }
 
 export function span(
@@ -268,8 +272,10 @@ export const ELEMENT_ATTRS = new Set([
 /** Attributes of a `::: {.group}` container. */
 export const GROUP_ATTRS = new Set([
   'id', 'x', 'y', 'width', 'angle', 'step', 'hide', 'opacity', 'anchor', 'dx', 'dy', 'at', 'class', 'focus_only', 'enter', 'exit', 'href',
-  ...POSITION_REFERENCES, 'buff', ...TIMING_ATTRS,
+  ...POSITION_REFERENCES, 'buff', ...TIMING_ATTRS, 'font_size', 'font', 'color', 'line_height',
 ]);
+/** What a group passes down to the members that take it and do not set their own. */
+export const INHERITED_ATTRS = ['font_size', 'font', 'color', 'line_height'] as const;
 /** Anchor points: bounding-box center, edges and corners, plus the first baseline for text-like elements. */
 export const ANCHORS = new Set([
   'center', 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'left-baseline', 'baseline', 'right-baseline',
@@ -301,7 +307,7 @@ export const CHART_TYPE_NAMES = new Set<string>(CHART_TYPES);
 /** Values of `rules=` on tables. */
 export const TABLE_RULE_NAMES = new Set<string>(TABLE_RULES);
 /** Attributes of tables beyond the common element attributes. */
-export const TABLE_ATTRS = new Set(['header', 'padding', 'padding_x', 'padding_y', 'col_width', 'rules', 'valign', 'border_color', 'stroke_width', 'row_rule_color', 'row_rule_width', 'col_rule_color', 'col_rule_width', 'fill_color', 'fill_opacity', 'header_color', 'header_opacity', 'stripe_opacity']);
+export const TABLE_ATTRS = new Set(['header', 'header_font_size', 'col_font_size', 'padding', 'padding_x', 'padding_y', 'col_width', 'rules', 'valign', 'border_color', 'stroke_width', 'row_rule_color', 'row_rule_width', 'col_rule_color', 'col_rule_width', 'fill_color', 'fill_opacity', 'header_color', 'header_opacity', 'stripe_opacity']);
 /** Attributes of chart fences beyond the common element attributes. */
 export const CHART_ATTRS = new Set(['type', 'src', 'header', 'colors', 'axis_color', 'border_color', 'stroke_width', 'fill_opacity', 'grid', 'legend', 'values', 'min', 'max']);
 /** File extensions rendered as videos by the image syntax. */
@@ -661,6 +667,26 @@ export function parseCssColor(value: string): string {
   const rgb = parseCssRgb(trimmed);
   if (rgb) return rgb;
   throw new Error(`Invalid color ${JSON.stringify(value)}`);
+}
+
+/**
+ * A color of a gradient, which may be translucent: a palette name or CSS color, or a hex value
+ * with an alpha (`#RRGGBBAA`, `#RGBA`), or `rgba(…)`; its opaque hex and its alpha from 0 to 1.
+ */
+export function gradientColor(value: string): { color: string; alpha: number } {
+  const trimmed = value.trim();
+  const hex = /^#([0-9a-fA-F]{4}|[0-9a-fA-F]{8})$/.exec(trimmed);
+  if (hex) {
+    const digits = hex[1].length === 4 ? hex[1].split('').map((d) => d + d).join('') : hex[1];
+    return { color: '#' + digits.slice(0, 6).toUpperCase(), alpha: parseInt(digits.slice(6), 16) / 255 };
+  }
+  const rgba = /^rgba\(\s*([^,\s]+)\s*,\s*([^,\s]+)\s*,\s*([^,\s]+)\s*,\s*([^,\s)]+)\s*\)$/i.exec(trimmed);
+  if (rgba) {
+    const alpha = rgba[4].endsWith('%') ? Number(rgba[4].slice(0, -1)) / 100 : Number(rgba[4]);
+    if (!(alpha >= 0 && alpha <= 1)) throw new Error(`Invalid alpha in ${JSON.stringify(value)}`);
+    return { color: parseColor(`rgb(${rgba[1]}, ${rgba[2]}, ${rgba[3]})`), alpha };
+  }
+  return { color: parseColor(trimmed), alpha: 1 };
 }
 
 /** Normalize an engine palette name, hex value or CSS color into a hex string. */

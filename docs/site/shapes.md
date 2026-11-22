@@ -21,6 +21,14 @@ Every shape needs an `#id`. All accept `color` (the layout color by default), `s
 (default 2), `fill_color` and `fill_opacity` (0 by default; polylines have no fill), `opacity`,
 the placement attributes of [Positioning](positioning.html), `step`, `hide` and `focus_only`.
 
+`fill_gradient` fills a shape with a linear gradient through two colors or more, from the first
+to the last in `gradient_direction` (`right`, `left`, `up` or `down`). Its colors may be
+translucent (`#RRGGBBAA`, `#RGBA`), so a picture can fade under a white gradient as in Figma:
+
+```markdown
+[[rectangle: #fade x=0 y=-2 width=8 height=2 stroke_width=0 fill_gradient="#ffffff00 #ffffff" gradient_direction=down]]
+```
+
 | Directive | Required | Optional |
 | --- | --- | --- |
 | `rectangle` | `width`, `height` | `corner_radius` |

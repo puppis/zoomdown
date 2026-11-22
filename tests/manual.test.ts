@@ -28,7 +28,7 @@ describe('the markup manual', () => {
     expectAll(ANIMATE_PROPS, 'animate properties');
     expectAll(POSITION_REFERENCES, 'position references');
     expectAll(BARE_FLAGS, 'bare flags');
-    expectAll(['size', 'label', 'label_side', 'side', 'smoothness', 'corner_radius', 'radius', 'points', 'start_angle', 'angle', 'play', 'muted', 'lang', 'url', 'title', 'poster', 'path', 'rotate', 'to', 'from', 'name', 'scale', 'rate', 'target', 'only_this', 'transition', 'title'], 'other attributes');
+    expectAll(['size', 'label', 'label_side', 'side', 'smoothness', 'corner_radius', 'radius', 'points', 'start_angle', 'angle', 'play', 'muted', 'lang', 'url', 'title', 'poster', 'path', 'rotate', 'to', 'from', 'name', 'scale', 'rate', 'target', 'only_this', 'transition', 'title', 'label_width', 'line_height', 'fill_gradient', 'gradient_direction', 'underline', 'flow_top', 'flow_left'], 'other attributes');
   });
 
   it('names every value the parser recognizes', () => {

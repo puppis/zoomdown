@@ -43,6 +43,10 @@ export interface TextRun {
   mono: boolean;
   /** Link target; linked runs are underlined and get a DOM hit area in the player. */
   href?: string | null;
+  /** Struck through. */
+  strike?: boolean;
+  /** Underlined without being a link. */
+  underline?: boolean;
 }
 
 /** A link's horizontal extent on a rendered line, in the line's local world coordinates. */
@@ -134,6 +138,19 @@ export function measureRun(run: TextRun, px: number, family: string): RunMetrics
     fontAscent,
     fontDescent,
   };
+}
+
+const X_HEIGHTS = new Map<string, number>();
+
+/** The height of a lowercase x in the context's current font, `px` pixels large, as a share of `px` cached per font. */
+function xHeight(ctx: CanvasRenderingContext2D, px: number): number {
+  let share = X_HEIGHTS.get(ctx.font);
+  if (share === undefined) {
+    const measured = ctx.measureText('x').actualBoundingBoxAscent;
+    share = Number.isFinite(measured) && measured > 0 ? measured / px : 0.45;
+    X_HEIGHTS.set(ctx.font, share);
+  }
+  return share * px;
 }
 
 /** One rendered line of styled prose with baseline metadata. */
@@ -344,12 +361,15 @@ export class StyledLine extends Text {
     const tint = this.color !== this._baseColor ? this.color : null;
     const px = layout.px;
     let x = layout.originX;
+    const rule = Math.max(1, px * 0.05);
     runs.forEach((run, i) => {
       ctx.font = fontString(run, px, this._family);
       ctx.fillStyle = tint ?? run.color;
       ctx.globalAlpha = this.fillOpacity;
       if (run.text.trim()) ctx.fillText(run.text, x, layout.baselineY);
-      if (run.href) ctx.fillRect(x, layout.baselineY + px * 0.1, layout.metrics[i].advance, Math.max(1, px * 0.05));
+      if (run.href || run.underline) ctx.fillRect(x, layout.baselineY + px * 0.1, layout.metrics[i].advance, rule);
+      // A strike runs through the middle of the lowercase letters, by the font's own x-height.
+      if (run.strike) ctx.fillRect(x, layout.baselineY - xHeight(ctx, px) / 2 - rule / 2, layout.metrics[i].advance, rule);
       x += layout.metrics[i].advance;
     });
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -398,8 +418,8 @@ export class StyledLine extends Text {
       inkRight = 0;
     }
     const width = Math.max(1, Math.ceil(inkRight - inkLeft + 2 * PADDING_PX));
-    // Underlines of links sit below the ink; keep room for them on the canvas.
-    const underlineDepth = runs.some((run) => run.href) ? px * 0.1 + Math.max(1, px * 0.05) : 0;
+    // Underlines sit below the ink; keep room for them on the canvas.
+    const underlineDepth = runs.some((run) => run.href || run.underline) ? px * 0.1 + Math.max(1, px * 0.05) : 0;
     const height = Math.max(1, Math.ceil(ascent + Math.max(descent, underlineDepth) + 2 * PADDING_PX));
     const originX = PADDING_PX - inkLeft;
     const baselineY = PADDING_PX + ascent;
@@ -475,7 +495,17 @@ export interface ParagraphOptions {
   defaultColor: string;
   fontFamily: string;
   lineGap: number;
+  /**
+   * The distance between the baselines of two lines, in ems of `fontSize`; when set, it replaces
+   * the font's reach above and below the baseline plus `lineGap`, and the lines' reach is split
+   * from it as CSS splits a line box.
+   */
+  lineHeight?: number | null;
 }
+
+/** Whitespace that separates words: only ASCII's, so that a no-break or em space written as `&nbsp;` or `&emsp;` keeps its width. */
+const BLANK = /^[ \t\n\r\f\v]*$/;
+const isBlank = (text: string) => BLANK.test(text);
 
 type Atom = InlineSpan;
 type Word = Atom[];
@@ -517,18 +547,23 @@ export function inlineRows(spans: InlineSpan[]): Row[] {
     rows.push(cells);
     cells = [];
   };
-  const pattern = columns ? /\n|&&|[^\S\n]+|(?:[^\s&]|&(?!&))+/g : /\n|[^\S\n]+|[^\s]+/g;
+  const pattern = columns ? /\n|&&|[ \t\r\f\v]+|(?:[^ \t\n\r\f\v&]|&(?!&))+/g : /\n|[ \t\r\f\v]+|[^ \t\n\r\f\v]+/g;
   for (const s of spans) {
     const atoms = s.kind === 'math' ? [s.content] : (columns && s.soft ? '\n' : s.content).match(pattern) ?? [];
     for (const atom of atoms) {
       const part: Atom = { ...s, content: atom };
       if (s.kind === 'text' && columns && atom === '&&') {
         endCell();
-      } else if (s.kind !== 'math' && !atom.trim()) {
+      } else if (s.kind !== 'math' && isBlank(atom)) {
         endWord();
         if (atom === '\n') endRow();
         else if (s.kind === 'code') gap.push(part);
-        else gap = [{ content: ' ', kind: 'text', bold: false, italic: false, color: null, href: s.href ?? null }];
+        else {
+          // The space between two words of a link, a strike or an underline is drawn as they are.
+          gap = [{ content: ' ', kind: 'text', bold: false, italic: false, color: null, href: s.href ?? null }];
+          if (s.strike) gap[0].strike = true;
+          if (s.underline) gap[0].underline = true;
+        }
       } else {
         current.push(...gap);
         gap = [];
@@ -551,8 +586,11 @@ function runsOf(atoms: Atom[], defaultColor: string): TextRun[] {
     const run: TextRun = {
       text: atom.content, bold: atom.bold, italic: atom.italic, color: atom.color ?? defaultColor, mono: atom.kind === 'code', href: atom.href ?? null,
     };
+    if (atom.strike) run.strike = true;
+    if (atom.underline) run.underline = true;
     const last = runs[runs.length - 1];
-    if (last && last.bold === run.bold && last.italic === run.italic && last.color === run.color && last.mono === run.mono && (last.href ?? null) === run.href) {
+    if (last && last.bold === run.bold && last.italic === run.italic && last.color === run.color && last.mono === run.mono && (last.href ?? null) === run.href
+      && Boolean(last.strike) === Boolean(run.strike) && Boolean(last.underline) === Boolean(run.underline)) {
       last.text += run.text;
     } else runs.push(run);
   }
@@ -566,7 +604,7 @@ function segments(words: Word[]): Array<{ math: Atom } | { prose: Atom[] }> {
   const atoms = words.flat();
   // Leading prose whitespace is discarded at a wrapped line start.
   let start = 0;
-  while (start < atoms.length && atoms[start].kind === 'text' && !atoms[start].content.trim()) start += 1;
+  while (start < atoms.length && atoms[start].kind === 'text' && isBlank(atoms[start].content)) start += 1;
   for (const atom of atoms.slice(start)) {
     if (atom.kind === 'math') {
       if (prose.length) result.push({ prose });
@@ -587,6 +625,15 @@ interface ShapedLine {
 /** Wrap spans to `maxWidth` logical units and assemble a left-aligned block. */
 export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOptions, mathFactory: MathFactory): Promise<Mobject> {
   const { fontSize, maxWidth, defaultColor, fontFamily, lineGap } = options;
+  const lineHeight = options.lineHeight ?? null;
+  // The interline: the font's reach plus the gap, or the line height in ems; with a line height,
+  // the lines reach as far as their half of the difference takes them, as in CSS.
+  const lineBox = (ascent: number, descent: number) => {
+    if (lineHeight === null) return { spacing: ascent + descent + lineGap, ascent, descent };
+    const spacing = lineHeight * (((fontSize * 4) / 3) / PX_PER_WORLD_BASE);
+    const half = (spacing - ascent - descent) / 2;
+    return { spacing, ascent: ascent + half, descent: descent + half };
+  };
   const scale = textResolutionScale();
   const pxPerWorld = PX_PER_WORLD_BASE * scale;
   const px = (fontSize * 4) / 3 * scale;
@@ -685,13 +732,14 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       rowNumber += 1;
     }
     if (!groups.length) return new Group();
-    const spacing = ascent + descent + lineGap;
+    const box = lineBox(ascent, descent);
+    const spacing = box.spacing;
     for (const group of groups) group.shift([0, -((group as Group & { rowNumber?: number }).rowNumber ?? 0) * spacing, 0]);
     const block = new Group(...groups) as Group & { markupBaselineFraction: number };
     const height = block.getHeight();
     block.markupBaselineFraction = height > 0 ? -block.getCenter()[1] / height : 0;
     const lastRow = Math.max(...groups.map((group) => (group as Group & { rowNumber?: number }).rowNumber ?? 0));
-    markLines(block, { ascent, descent, interline: spacing, first: 0, last: -lastRow * spacing });
+    markLines(block, { ascent: box.ascent, descent: box.descent, interline: spacing, first: 0, last: -lastRow * spacing });
     block.center();
     return block;
   }
@@ -762,7 +810,8 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
     }
     lineGroups.push(group);
   }
-  const spacing = ascent + descent + lineGap;
+  const box = lineBox(ascent, descent);
+  const spacing = box.spacing;
   const preserveIndent = visible.some((line) => line.keepIndent);
   const present = lineGroups.filter((g): g is Group => g !== null);
   const commonLeft = Math.min(...present.map((group) => group.getLeft()[0]));
@@ -775,7 +824,7 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
   const height = block.getHeight();
   block.markupBaselineFraction = height > 0 ? -block.getCenter()[1] / height : 0;
   const lastLine = lineGroups.reduce((last, group, number) => (group ? number : last), 0);
-  markLines(block, { ascent, descent, interline: spacing, first: 0, last: -lastLine * spacing });
+  markLines(block, { ascent: box.ascent, descent: box.descent, interline: spacing, first: 0, last: -lastLine * spacing });
   block.center();
   return block;
 }

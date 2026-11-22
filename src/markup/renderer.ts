@@ -22,6 +22,7 @@ import type { CodeTheme } from './code';
 import type { Animation } from 'manim-web';
 import { blobMobject, type Rect } from '../blob';
 import { installMathPathFix } from '../pathdata';
+import { setGradientFill, type GradientDirection } from '../gradient';
 import { buildChart, parseChartData, type ChartType } from '../charts';
 import { buildTable, type TableRules, type TableValign } from './table';
 import { DEFAULT_ANIMATION_TIME, Slide, resolveSize } from '../slides';
@@ -30,7 +31,7 @@ import { VideoClip } from '../video';
 import { IframeHost } from './iframe';
 import {
   ALIGNMENTS, BRACE_SIDES, CONNECTIONS, GROUP_ANCHORS, NEIGHBORS, POSITION_REFERENCES, SHAPES, TEXT_ANCHORS, TEXT_LIKE, VIDEO_EXTENSIONS,
-  ElementSpec, CodeSlideSpec, GroupSpec, IncludeSpec, InlineSpan, MarkupError, TableSpec, attachmentTargets, connectionEnd, endpoint, numberValue, parseAt, parseColor,
+  ElementSpec, CodeSlideSpec, GroupSpec, IncludeSpec, InlineSpan, MarkupError, TableSpec, attachmentTargets, connectionEnd, endpoint, gradientColor, numberValue, parseAt, parseColor,
   polylinePoints, span,
 } from './ast';
 import { MarkupParser } from './parser';
@@ -57,6 +58,11 @@ export interface LayoutConfigOptions {
   margin?: number;
   gap?: number;
   lineGap?: number;
+  /**
+   * The distance between the baselines of two lines of prose, in ems of its size; when set, it
+   * replaces the font's own reach above and below the baseline plus `lineGap`. Unset by default.
+   */
+  lineHeight?: number;
   /**
    * The distance between the baselines of two paragraphs in the flow, in interlines (the distance
    * between the baselines of two lines of one paragraph); 1.5 by default.
@@ -86,6 +92,7 @@ export class LayoutConfig {
   readonly margin: number;
   readonly gap: number;
   readonly lineGap: number;
+  readonly lineHeight: number | null;
   readonly paragraphSpacing: number;
   readonly listIndent: number;
   readonly haloBridgeTolerance: number;
@@ -104,6 +111,8 @@ export class LayoutConfig {
     this.margin = options.margin ?? 0.65;
     this.gap = options.gap ?? 0.35;
     this.lineGap = options.lineGap ?? 0.12;
+    this.lineHeight = options.lineHeight ?? null;
+    if (this.lineHeight !== null && !(Number.isFinite(this.lineHeight) && this.lineHeight > 0)) throw new Error('lineHeight must be finite and positive');
     this.paragraphSpacing = options.paragraphSpacing ?? 1.5;
     this.listIndent = options.listIndent ?? 0.6;
     this.haloBridgeTolerance = options.haloBridgeTolerance ?? 0.2;
@@ -936,7 +945,12 @@ export class MarkupRenderer {
       const fillOpacity = Number(attrs.fill_opacity ?? (element.kind === 'dot' ? 1 : 0));
       // Setting the stroke color through setStyle also resets the fill color, so apply the fill afterwards.
       shape.setStyle({ strokeColor: color, strokeWidth });
-      shape.setFill(fillColor, fillOpacity);
+      if (attrs.fill_gradient) {
+        // A gradient's colors carry their own alphas; fill_opacity, 1 here, scales them all.
+        const stops = attrs.fill_gradient.trim().split(/\s+/).map(gradientColor);
+        shape.setFill(stops[0].color, Number(attrs.fill_opacity ?? 1));
+        setGradientFill(shape, stops, (attrs.gradient_direction as GradientDirection | undefined) ?? 'right');
+      } else shape.setFill(fillColor, fillOpacity);
       const sketchy = sketchOptions(element, { color, strokeWidth, fillColor, fillOpacity }, element.kind === 'dot' ? 'solid' : undefined);
       if (sketchy) obj = sketchShape(element, shape, sketchy);
       if (element.kind === 'circle' || element.kind === 'dot' || element.kind === 'ellipse') (obj as RoundMobject).markupRound = true;
@@ -971,6 +985,8 @@ export class MarkupRenderer {
       const borderColor = attrs.border_color ? parseColor(attrs.border_color) : color;
       obj = await buildTable(table.rows, {
         fontSize: size,
+        ...('header_font_size' in attrs ? { headerFontSize: Number(attrs.header_font_size) } : {}),
+        ...('col_font_size' in attrs ? { columnFontSizes: columnWidths(attrs.col_font_size) } : {}),
         color,
         aligns: table.aligns,
         header: attrs.header !== 'false',
@@ -1050,12 +1066,14 @@ export class MarkupRenderer {
       const piece = await this.mathPiece(element.source, color, size);
       obj = piece.mobject;
       // A display formula is one line on its baseline (y = 0 here), spaced as a line of prose of its size.
-      markLines(obj, { first: 0, last: 0, ascent: piece.ascent, descent: piece.descent, interline: (size / 72) * 1.2 + this.layout.lineGap });
+      const interline = this.layout.lineHeight !== null ? this.layout.lineHeight * (size / 72) : (size / 72) * 1.2 + this.layout.lineGap;
+      markLines(obj, { first: 0, last: 0, ascent: piece.ascent, descent: piece.descent, interline });
       if (obj.getWidth() > width) obj.scale(width / obj.getWidth());
     } else if (element.kind === 'text') {
+      const lineHeight = numberValue(attrs, 'line_height', element.line);
       obj = element.list?.marker
-        ? await this.listItem(element.spans, element.list.marker, size, width, color, attrs.font)
-        : await this.text(element.spans, size, width, color, attrs.font);
+        ? await this.listItem(element.spans, element.list.marker, size, width, color, attrs.font, lineHeight)
+        : await this.text(element.spans, size, width, color, attrs.font, lineHeight);
     } else if (element.kind === 'code') {
       obj = this.code(element.source, attrs.lang ?? '', size, width, color, await this.prepareCode(attrs.lang ?? ''));
     } else {
@@ -1168,7 +1186,7 @@ export class MarkupRenderer {
   }
 
   /** Lay out styled prose with inline math within `maxWidth` logical units. */
-  async text(spans: InlineSpan[], fontSize: number, maxWidth: number, defaultColor: string, font?: string): Promise<Mobject> {
+  async text(spans: InlineSpan[], fontSize: number, maxWidth: number, defaultColor: string, font?: string, lineHeight?: number | null): Promise<Mobject> {
     if (!spans.some((s) => s.content.trim())) return new Group();
     await this.layoutFonts();
     if (font) await this.ensureFont(font);
@@ -1176,7 +1194,7 @@ export class MarkupRenderer {
     const resolved = spans.map((s) => (s.color ? { ...s, color: parseColor(s.color) } : s));
     return layoutParagraph(
       resolved,
-      { fontSize, maxWidth, defaultColor, fontFamily: this.layout.fontFamilyFor(font), lineGap: this.layout.lineGap },
+      { fontSize, maxWidth, defaultColor, fontFamily: this.layout.fontFamilyFor(font), lineGap: this.layout.lineGap, lineHeight: lineHeight ?? this.layout.lineHeight },
       (latex, color) => this.mathPiece(latex, color, fontSize),
     );
   }
@@ -1185,11 +1203,11 @@ export class MarkupRenderer {
    * A list item: the marker in a hanging-indent column of at least `layout.listIndent`, the prose
    * wrapped to the rest of `maxWidth` next to it, first baselines aligned.
    */
-  async listItem(spans: InlineSpan[], marker: string, fontSize: number, maxWidth: number, defaultColor: string, font?: string): Promise<Mobject> {
-    const label = await this.text([span(marker)], fontSize, maxWidth, defaultColor, font);
+  async listItem(spans: InlineSpan[], marker: string, fontSize: number, maxWidth: number, defaultColor: string, font?: string, lineHeight?: number | null): Promise<Mobject> {
+    const label = await this.text([span(marker)], fontSize, maxWidth, defaultColor, font, lineHeight);
     if (!spans.some((s) => s.content.trim())) return label;
     const column = Math.max(this.layout.listIndent, label.getWidth() + 0.15);
-    const body = await this.text(spans, fontSize, Math.max(maxWidth - column, 0.5), defaultColor, font);
+    const body = await this.text(spans, fontSize, Math.max(maxWidth - column, 0.5), defaultColor, font, lineHeight);
     body.shift([label.getLeft()[0] + column - body.getLeft()[0], baselineY(label) - baselineY(body), 0]);
     const item = new Group(label, body) as Group & { markupBaselineFraction: number };
     item.markupBaselineFraction = (baselineY(body) - item.getCenter()[1]) / item.getHeight();
@@ -1328,7 +1346,8 @@ export class MarkupRenderer {
       const size = numberValue(attrs, 'font_size', element.line, this.layout.fontSize * 0.8) as number;
       // The label in label_color, else in the connection's color, which is the text color unless color= sets it.
       const labelColor = attrs.label_color ? parseColor(attrs.label_color) : color;
-      const text = await this.text(spans, size, 4, labelColor, attrs.font);
+      // A label wraps at label_width, else not before it is as long as the connection (4 at least).
+      const text = await this.text(spans, size, numberValue(attrs, 'label_width', element.line) ?? Math.max(4, length), labelColor, attrs.font);
       const along = numberValue(attrs, 'label_pos', element.line, 0.5) as number;
       const labelGap = numberValue(attrs, 'label_buff', element.line, 0.1) as number;
       const slanted = attrs.slanted === 'true';

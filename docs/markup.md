@@ -105,6 +105,8 @@ Normal text with **bold**, *italic*, ***both***, `inline code` and [blue **empha
 
 [CSS colors too]{style="color:#ff0000"} and inline math $E=mc^2$; a literal dollar: \$5.
 
+~~read-after-write consistency~~, [Erlang]{underline=true}, WWW,&nbsp;&nbsp;Wikipedia&emsp;Google
+
 First line.\\
 Second line.
 
@@ -123,6 +125,20 @@ makes the whole element a link that opens in a new tab. Links (`[label](https://
 URLs) are underlined and clickable in the player, opening in a new tab. Explicit line breaks take two
 trailing spaces, a backslash before the newline, or `\\`. Prose wraps to the element's `width`,
 mixed prose and math share one baseline, and a paragraph with inline math stays one element.
+
+`~~text~~` strikes text through, at the middle of its lowercase letters, and `[text]{underline=true}`
+underlines it without making it a link; inside a paragraph a `[text]{…}` span takes `color` and
+`underline` (a strike or an underline covers the spaces between its words, not inline math). HTML
+entities give spaces Markdown would collapse: `&nbsp;` (a space that never breaks a line), `&ensp;`,
+`&emsp;` (an em) and `&thinsp;` keep their width, so `WWW,&nbsp;&nbsp;Wikipedia` sets two spaces
+between the words; only plain spaces, tabs and line ends separate words and collapse.
+
+The interline, the distance between the baselines of two lines of a paragraph, is the font's reach
+above and below the baseline plus `layout.lineGap` (0.12). `layout.lineHeight` replaces it with a
+distance in ems of the text's size, as CSS's `line-height` (`1.15` sets lines closer than most
+fonts' own interline), and `line_height=` sets it for one text, a heading or a list item. Paragraph
+spacing is counted in that interline, and a line's reach is its share of it, so text placed by
+lines stays evenly spaced. Listings keep their own spacing.
 
 Colors are palette names (`BLUE`, `RED`, `TEAL`, `ORANGE`, `YELLOW`, `GRAY`, …), CSS names, hex
 values or `rgb(…)`, written as `color=…` or `style="color:…"` (not both). Nested emphasis and
@@ -214,6 +230,16 @@ polygons at least three `points` (closed, fillable); arcs `radius`, `angle` and 
 `hide` and `focus_only`. Point-defined shapes without positioning keep their coordinates. Shapes
 serve as anchors and connection endpoints.
 
+`fill_gradient` fills a shape with a linear gradient through two colors or more, spaced evenly
+from the first to the last in `gradient_direction` (`right` by default, `left`, `up` or `down`).
+Its colors may be translucent (`#RRGGBBAA`, `#RGBA`, `rgba(r,g,b,a)` written without spaces), so
+that a picture fades under a white gradient as in Figma; `fill_opacity` (1 here) scales them all.
+A hand-drawn shape takes no gradient.
+
+```markdown
+[[rectangle: #fade x=0 y=-2 width=8 height=2 stroke_width=0 fill_gradient="#ffffff00 #ffffff" gradient_direction=down]]
+```
+
 A `brace` is **attached** to one element, named first: `[[brace: #target, #id, …]]`; it takes
 `side` (`bottom` by default, or `left`, `right`, `top`), `buff`, an optional inline `label` with
 `font_size` and `font`, `color` and `stroke_width`. A `box` (a surrounding rectangle) and a `blob`
@@ -228,7 +254,8 @@ elements or serve as endpoints.
 
 Arrows and lines go from one endpoint to another: an element ID (attached at the facing bounding
 edge) or a literal `(x,y)` point. They take an optional `#id`, `label` (inline text and math,
-placed above the connection), `color`, `stroke_width`, `step` and `hide`. `buff` (0.08 on an
+placed above the connection, wrapping at `label_width`, by default as long as the connection and
+4 units at least), `color`, `stroke_width`, `step` and `hide`. `buff` (0.08 on an
 arrow, 0 on a line) is the space left at both ends, `buff_start` and `buff_end` at one, measured
 along the path whatever the end joins. An arrow's `tip` is
 `triangle` (filled, the default), `open` (two strokes meeting at the point, which the shaft
@@ -317,7 +344,9 @@ grid of cells holding inline markup; a `::: {.element …}` container positions 
 (`false` makes the first row ordinary), `header_color`/`header_opacity` (0.12), `stripe_opacity`,
 `fill_color`/`fill_opacity`, `padding` (0.15; two values, vertical first, as in CSS),
 `padding_x`/`padding_y`, `col_width` (one width for every column, or one per column, `auto` for a
-natural one), `font_size`, `font`, `color`, `opacity`, `width` (columns shrink and wrap beyond it)
+natural one), `font_size`, `header_font_size` (the header row's), `col_font_size` (the body
+cells' size per column, one for every column or one each, `auto` keeping `font_size`, as
+`col_font_size="18 14 14"`), `font`, `color`, `opacity`, `width` (columns shrink and wrap beyond it)
 and `sketch=true`. Every row is at least as tall as the font's letters, ascenders and descenders
 included (a TeX strut), plus the vertical padding; a taller formula makes its row taller. A fence with language `chart` holds rows
 separated by commas, semicolons or tabs (the first row names the series unless it is plain
@@ -470,7 +499,16 @@ reference members of the same group. The group is then one element of the slide:
 its `origin` (the local `(0,0)`) unless `anchor=` names a bounding-box point; relative constraints,
 `at=`, `dx`/`dy`, `width` (the members' wrapping width), `opacity`, `step`, `hide` and
 `focus_only` apply to the whole; it can be an `at=` or relative reference, an arrow endpoint and a
-brace or box target. Members cannot carry `step`, `hide`, `focus_only` or `play`, and `show`/`hide`
+brace or box target. `font_size`, `font`, `color` and `line_height` on a group pass to its members
+(nested groups included) that take them and do not set their own, as CSS inherits them: a list of
+items in one size needs no style on every item, and a shape takes the color only.
+
+```markdown
+::: {.group #models below:#in-practice font_size=22.5 step=2}
+- Client-server
+- Peer-to-peer
+:::
+``` Members cannot carry `step`, `hide`, `focus_only` or `play`, and `show`/`hide`
 cannot target them. Member IDs without an explicit `#id` are prefixed with the group ID.
 
 ## Fragments and click steps
@@ -589,7 +627,7 @@ A deck is black text on a white canvas unless `background` and `layout.color` sa
 Prose is set in the bundled Latin Modern Roman and code in Latin Modern Mono (the LaTeX text and
 typewriter faces) unless `layout.font` or `layout.codeFont` name other families, and formula sizes
 are calibrated so that a `font_size` means the same em for text, code and math. `layout` takes `fontSize`, `headingSize`, `codeSize`, `color`, `font`, `codeFont`, `margin`,
-`gap`, `lineGap`, `listIndent`, `animationTime`, `defaultSlideSize` and `textAnchor`. `presenter` takes
+`gap`, `lineGap`, `lineHeight` (unset; see [Text](#text)), `paragraphSpacing`, `listIndent`, `animationTime`, `defaultSlideSize` and `textAnchor`. `presenter` takes
 `transitionTime`, `transition` (`zoom` or `cut`), `padding`, `pauseOnEntry`, `pauseOnReturn`, `showSlideBorders`,
 `slideBorderColor`, `slideBorderWidth`, `showSlideGrid`, `revealOnEntry` (default true: children fade in
 when first entered; false shows them from the start) and `reversePlayback` (default true: the

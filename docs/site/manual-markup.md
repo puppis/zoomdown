@@ -262,6 +262,7 @@ Text elements take the common attributes:
 | `color` | color | `layout.color` | the text color; inline spans may override parts |
 | `font` | family | `layout.font` | the typeface (text only; code and formulas have their own) |
 | `font_size` | points | by level | the size |
+| `line_height` | ems | `layout.lineHeight`, else the font's own | the distance between the baselines of two lines; see [Line height](#line-height) |
 | `opacity` | 0 to 1 | 1 | uniform opacity |
 | `step`, `hide`, `enter`, `exit`, `run_time`, `lag` | | | visibility and its timing, see [Steps and motion](#steps-and-motion) |
 | `focus_only` | flag | false | a decoration shown only while the slide is focused |
@@ -279,12 +280,27 @@ or icon:
 | `` `code` `` | inline code, in the code face |
 | `$x^2$` | an inline formula, rendered by MathJax with the deck's `macros`; a dollar needs a backslash to stay literal |
 | `[text](https://…)` | a link; targets as under [Links](#links) |
-| `[text]{color=RED}` | a colored span; `color` is the only attribute an inline span takes |
+| `[text]{color=RED}` | a colored span; an inline span takes `color` and `underline` only |
+| `[text]{underline=true}` | underlined text that is no link |
+| `~~text~~` | text struck through the middle of its lowercase letters |
+| `&nbsp;`, `&ensp;`, `&emsp;`, `&thinsp;` | a space that keeps its width: no-break, half an em, an em, thin; Markdown collapses runs of plain spaces, and a no-break space never breaks a line |
 | `\\` | a hard line break; a lone newline inside a paragraph is a space |
 | `&&` | a column separator: in a block that contains one, every source line is a row and the cells align in columns across the rows, each as wide as its widest cell, an em apart ([Columns](text.html#columns)); `\&&` is a literal |
 
-A `[text]{…}` at the end of a block with any attribute other than `color` is the block's
-attribute list, not a span. Raw HTML is not interpreted.
+A `[text]{…}` at the end of a block with any attribute other than `color` and `underline` is the
+block's attribute list, not a span. A strike or an underline covers the spaces between its words,
+not inline formulas. Raw HTML is not interpreted; its entities are.
+
+### Line height
+
+The interline, the distance between the baselines of two lines of a paragraph, is the font's
+reach above and below the baseline plus `layout.lineGap` (0.12). `layout.lineHeight` sets it
+instead in ems of the text's size, as CSS's `line-height`, and `line_height=` sets it for one
+text, heading or list item (or a group's text). A font with a tall natural interline, such as EB
+Garamond's 1.37 em, can so match a design set at 1.1 to 1.2 em. A line then reaches above and
+below its baseline its share of the interline, half the difference each way, so paragraphs stay
+`layout.paragraphSpacing` interlines apart and text placed by its lines stays evenly spaced.
+Listings keep their own spacing.
 
 ### Lists
 
@@ -398,6 +414,8 @@ hand-drawn attributes, and:
 | `header` | `true`, `false` | true | whether the first row is a header |
 | `padding` | units, one or two | 0.15 | space between a cell's text and its rules on all four sides; two values give the vertical then the horizontal space, as in CSS: `padding="0.02 0.07"` |
 | `padding_x`, `padding_y` | units | `padding` | the space beside a cell's text, and above and below it |
+| `header_font_size` | points | the column's size | the size of the header row's text |
+| `col_font_size` | points, one or one per column, `auto` | `font_size` | the size of the body cells' text, one for every column or a list with one per column, where `auto` keeps `font_size`: `col_font_size="18 14 14"` |
 | `col_width` | units, one or one per column, `auto` | the natural widths | a fixed width for every column, rules to rules, or a list with one per column where `auto` keeps a natural one; a cell wraps to its column, a line height wide at the narrowest, and a column too narrow for that and its padding widens |
 | `rules` | `all`, `rows`, `cols`, `outer`, `none` | `all` | which rules are drawn |
 | `valign` | `baseline`, `center`, `top`, `bottom` | `baseline` | how the cells of a row line up: on their first baseline, so that text, formulas and descenders share a line, or by the middle, top or bottom of their box |
@@ -482,6 +500,16 @@ units: one hundredth of a logical unit), `fill_color` (the stroke color by defau
 `fill_opacity` (0 unless noted), `opacity`. `x`, `y` place the center (or the `anchor`);
 polygons, polylines and arcs stay at their own coordinates unless positioned.
 
+Every shape but a polyline takes `fill_gradient`, a linear gradient through two colors or more,
+evenly spaced from the first to the last in `gradient_direction`: `right` (the default), `left`,
+`up` or `down`. Its colors may be translucent, `#RRGGBBAA`, `#RGBA` or `rgba(r,g,b,a)` without
+spaces, and `fill_opacity` (1 with a gradient) scales them all; the fill color is then unused. A
+hand-drawn shape takes no gradient.
+
+```markdown
+[[rectangle: #fade x=0 y=-2 width=8 height=2 stroke_width=0 fill_gradient="#ffffff00 #ffffff" gradient_direction=down]]
+```
+
 ### [[arrow]] and [[line]]
 
 ```markdown
@@ -515,6 +543,7 @@ labels, `label_pos`, `slanted`, dashes, hand-drawn strokes and `halo_bridge` fol
 | `buff` | units | 0.08 on an arrow, 0 on a line | the space left at both ends, between the connection and what it joins (an element's border, an anchor or a point), measured along its path; on an arrow by default at most a third of its length |
 | `buff_start`, `buff_end` | units | `buff` | the space at one end only, as TikZ's `shorten <` and `shorten >` |
 | `label` | inline markup | | text at the middle of the connection |
+| `label_width` | units | the connection's length, 4 at least | the width the label wraps at |
 | `label_side` | `above`, `below` | `above` | the side of the edge the label sits on, in the label's own frame along the edge: it reads from left to right (bottom to top on a vertical edge), and `above` is the side its letters stand on, so the left of a vertical edge |
 | `slanted` | `true`, `false` | `false` | turn the label along the edge; otherwise it stays upright, beside the middle of the edge and clear of the line |
 | `font`, `font_size` | | the text face, `layout.fontSize` | the label's face and size |
@@ -663,6 +692,7 @@ or `play` of their own. Relative references stay within a group.
 | `anchor` | the anchors, or `origin` | `origin` | `origin` is the local (0, 0), where the members' flow starts |
 | `width` | units | the available width | the flow width inside the group |
 | `at`, `dx`, `dy`, `buff`, the relative references, `angle`, `class`, `opacity`, `step`, `hide`, `enter`, `exit`, `run_time`, `lag`, `focus_only`, `href` | | | as for elements; a group turns about its origin |
+| `font_size`, `font`, `color`, `line_height` | | | passed to the members, nested groups included, that take them and do not set their own (a shape takes the color only), as CSS inherits them |
 | `tremble`, `tremble_amplitude`, `tremble_rate` | | | shake the group's geometry |
 
 ## Positioning
@@ -984,6 +1014,7 @@ matter in the same way.
 | `margin` | 0.65 | distance of the flow from the canvas edges; a slide's `flow_top` and `flow_left` move its start |
 | `gap` | 0.35 | distance between flowing blocks that are not text, and the default `buff` |
 | `lineGap` | 0.12 | extra space between wrapped lines |
+| `lineHeight` | unset | the distance between the baselines of two lines of prose in ems, replacing the font's reach plus `lineGap`; see [Line height](#line-height) |
 | `paragraphSpacing` | 1.5 | the distance between the baselines of two paragraphs in the flow, in interlines; a text and another block keep the space two paragraphs have between their lines |
 | `listIndent` | 0.6 | indentation per list level, and the minimum width of the marker column |
 | `haloBridgeTolerance` | 0.2 | two arrows or lines whose ends lie closer than this never bridge one another with `halo_bridge` |

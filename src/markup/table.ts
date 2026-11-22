@@ -26,6 +26,10 @@ export type CellAlign = 'left' | 'center' | 'right';
 export interface TableOptions {
   /** Text size in points; the layout's font size by default. */
   fontSize: number;
+  /** Text size of the header row; the column's size by default. */
+  headerFontSize?: number;
+  /** Text size of each column's cells, one for all or one per column, where null keeps `fontSize`. */
+  columnFontSizes?: ReadonlyArray<number | null>;
   /** Text color and default rule color. */
   color: string;
   /** Column alignments; left where missing. */
@@ -115,15 +119,23 @@ export async function buildTable(rows: InlineSpan[][][], options: TableOptions, 
   if (given.length > 1 && given.length !== columns) throw new Error(`col_width gives ${given.length} widths for ${columns} columns`);
   const fixed = Array.from({ length: columns }, (_, j) => (given.length === 1 ? given[0] : given[j]) ?? null);
   if (fixed.some((w) => w !== null && !(w > 0))) throw new Error('Column widths must be positive');
+  // Each cell's text size: the header's, else its column's, else the table's.
+  const sizes = options.columnFontSizes ?? [];
+  if (sizes.length > 1 && sizes.length !== columns) throw new Error(`col_font_size gives ${sizes.length} sizes for ${columns} columns`);
+  const columnSize = (j: number) => (sizes.length === 1 ? sizes[0] : sizes[j]) ?? options.fontSize;
+  const sizeAt = (i: number, j: number) => (header && i === 0 && options.headerFontSize !== undefined ? options.headerFontSize : columnSize(j));
+  if (rows.some((row, i) => row.some((_, j) => !(sizeAt(i, j) > 0))) || Array.from({ length: columns }, (_, j) => columnSize(j)).some((size) => !(size > 0))) {
+    throw new Error('Table font sizes must be positive');
+  }
   const lineHeight = (options.fontSize / 72) * 1.3;
   // Natural widths first: every cell on one line, except in a column of fixed width, whose cells
   // wrap to it, never narrower than a line height, so that a short entry keeps its size and a
   // column too narrow for it and its padding widens.
   const fixedTargets = fixed.map((w) => (w === null ? null : Math.max(w - 2 * paddingX, lineHeight)));
   const render = async (targets: ReadonlyArray<number | null>): Promise<Mobject[][]> =>
-    Promise.all(rows.map((row) => Promise.all(Array.from({ length: columns }, (_, j) => {
+    Promise.all(rows.map((row, i) => Promise.all(Array.from({ length: columns }, (_, j) => {
       const spans = row[j] ?? [];
-      return spans.some((s) => s.content.trim()) ? cell(spans, options.fontSize, targets[j] ?? 1000) : Promise.resolve(new Group());
+      return spans.some((s) => s.content.trim()) ? cell(spans, sizeAt(i, j), targets[j] ?? 1000) : Promise.resolve(new Group());
     }))));
   let cells = await render(fixedTargets);
   // A column of natural width is at least a line height wide, so that an empty one still shows.
@@ -143,10 +155,18 @@ export async function buildTable(rows: InlineSpan[][][], options: TableOptions, 
   }
   const columnWidths = contentWidths.map((_, j) => widthOf(j));
   // The strut: how far the font's letters reach above and below the baseline, a capital or an
-  // ascender and a descender, laid out and measured as the cells are, in their font and size.
-  const strutCell = await cell([{ content: 'Hdp', kind: 'text', bold: false, italic: false, color: null }], options.fontSize, 1000);
-  const strutBase = baselineY(strutCell);
-  const strut = { above: strutCell.getTop()[1] - strutBase, below: strutBase - strutCell.getBottom()[1] };
+  // ascender and a descender, laid out and measured as the cells are, in their font and size; a
+  // row's is that of the largest size among its cells.
+  const struts = new Map<number, { above: number; below: number }>();
+  for (const size of new Set(rows.flatMap((row, i) => Array.from({ length: columns }, (_, j) => sizeAt(i, j))))) {
+    const strutCell = await cell([{ content: 'Hdp', kind: 'text', bold: false, italic: false, color: null }], size, 1000);
+    const strutBase = baselineY(strutCell);
+    struts.set(size, { above: strutCell.getTop()[1] - strutBase, below: strutBase - strutCell.getBottom()[1] });
+  }
+  const strutOf = (i: number) => {
+    const row = Array.from({ length: columns }, (_, j) => struts.get(sizeAt(i, j)) as { above: number; below: number });
+    return { above: Math.max(...row.map((s) => s.above)), below: Math.max(...row.map((s) => s.below)) };
+  };
   // How far each cell reaches above and below its first baseline: on the baseline, a row is as
   // tall as its tallest reach above plus its deepest below, the strut's at least, so that a
   // formula or a descender never leaves the row and rows of plain text are equal.
@@ -155,14 +175,14 @@ export async function buildTable(rows: InlineSpan[][][], options: TableOptions, 
     const base = baselineY(obj);
     return { above: obj.getTop()[1] - base, below: base - obj.getBottom()[1] };
   }));
-  const rowReach = reach.map((row) => ({
-    above: Math.max(strut.above, ...row.map((r) => r?.above ?? 0)),
-    below: Math.max(strut.below, ...row.map((r) => r?.below ?? 0)),
+  const rowReach = reach.map((row, i) => ({
+    above: Math.max(strutOf(i).above, ...row.map((r) => r?.above ?? 0)),
+    below: Math.max(strutOf(i).below, ...row.map((r) => r?.below ?? 0)),
   }));
   // A row is as tall as its text, the strut at least (an empty row too), plus the padding; by
   // the middle, top or bottom of their boxes, its tallest cell or the strut's whole height.
   const rowHeights = cells.map((row, i) => {
-    const content = valign === 'baseline' ? rowReach[i].above + rowReach[i].below : Math.max(strut.above + strut.below, ...row.map((obj) => obj.getHeight()));
+    const content = valign === 'baseline' ? rowReach[i].above + rowReach[i].below : Math.max(strutOf(i).above + strutOf(i).below, ...row.map((obj) => obj.getHeight()));
     return content + 2 * paddingY;
   });
   const width = columnWidths.reduce((sum, w) => sum + w, 0);

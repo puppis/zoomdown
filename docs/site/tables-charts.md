@@ -35,6 +35,9 @@ as TeX's strut makes them, plus the vertical padding: rows of plain text in one 
 whether they hold "…", "ace", "A" or nothing, and a cell may still be wide and flat. A formula
 reaching beyond the letters makes its row taller.
 
+`header_font_size` sets the size of the header row's text, and `col_font_size` the size of the
+body cells' text per column, as `col_width` sets widths: `header_font_size=20 col_font_size="18 14 14"`.
+
 `col_width` fixes the width of the columns, rules to rules: one value for all of them, or a list
 with one per column, where `auto` keeps a column's natural width. Empty columns then keep their
 width, and a cell wraps to its column, a line height wide at the narrowest; a column too narrow
@@ -62,6 +65,8 @@ for that and its padding widens. With small, flat cells:
 | `padding` | 0.15 | space between a cell's text and its rules on all four sides; two values give the vertical then the horizontal space, as in CSS |
 | `padding_x`, `padding_y` | `padding` | the space beside a cell's text, and above and below it |
 | `col_width` | natural widths | the width of every column, or a list with one per column (`auto` for a natural one) |
+| `header_font_size` | the column's | the size of the header row's text |
+| `col_font_size` | `font_size` | the size of the body cells' text, one for every column or one each (`auto` keeps `font_size`) |
 | `font_size`, `font`, `color`, `opacity` | the layout's | typography and translucency |
 | `sketch` and its tuning | `false` | [hand-drawn](sketch.html) rules and backgrounds |
 
