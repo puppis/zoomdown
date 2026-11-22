@@ -353,7 +353,9 @@ South, 2.1, 3.1
 
 A pipe table (header, delimiter row with `:---`/`:---:`/`---:` alignments, body rows) becomes a
 grid of cells holding inline markup; a `::: {.element …}` container positions it and takes
-`rules` (`all`, `rows`, `cols`, `outer`, `none`), `border_color`, `stroke_width`, `header`
+`rules` (`all`, `rows`, `cols`, `outer`, `none`), `border_color`, `stroke_width`, `row_rule_color`/`row_rule_width`,
+`col_rule_color`/`col_rule_width`, `header_col_rules` (`true` carries the rules between columns through
+the header row, where they start under it otherwise) with `header_col_rule_color`/`header_col_rule_width`, `header`
 (`false` makes the first row ordinary), `header_color`/`header_opacity` (0.12), `stripe_opacity`,
 `fill_color`/`fill_opacity`, `padding` (0.15; two values, vertical first, as in CSS),
 `padding_x`/`padding_y`, `col_width` (one width for every column, or one per column, `auto` for a

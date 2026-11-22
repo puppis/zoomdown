@@ -928,7 +928,9 @@ export class ASTTransformer {
       if ('valign' in item.attributes && !['baseline', 'center', 'top', 'bottom'].includes(item.attributes.valign)) {
         throw new MarkupError('valign must be baseline, center, top or bottom', item.line);
       }
-      if ('header' in item.attributes && !['true', 'false'].includes(item.attributes.header)) throw new MarkupError('header must be true or false', item.line);
+      for (const key of ['header', 'header_col_rules']) {
+        if (key in item.attributes && !['true', 'false'].includes(item.attributes[key])) throw new MarkupError(`${key} must be true or false`, item.line);
+      }
       if ('padding' in item.attributes) {
         // One value for all four sides, or two, vertical first as in CSS.
         const values = item.attributes.padding.trim().split(/[\s,]+/);
@@ -1166,11 +1168,11 @@ export class ASTTransformer {
     if (unknown.length) throw new MarkupError(`Unknown attributes: ${unknown.join(', ')}`, line);
     for (const key of [...GEOMETRY, 'font_size', 'size', 'buff', 'radius', 'corner_radius', 'stroke_width', 'fill_opacity', 'opacity', 'dx', 'dy', 'run_time', 'lag',
       'start_angle', 'scale', 'roughness', 'bowing', 'hachure_angle', 'hachure_gap', 'fill_weight', 'seed', 'smoothness', 'tremble_amplitude', 'tremble_rate',
-      'padding_x', 'padding_y', 'header_opacity', 'stripe_opacity', 'min', 'max', 'row_rule_width', 'col_rule_width', 'label_buff', 'halo_width',
+      'padding_x', 'padding_y', 'header_opacity', 'stripe_opacity', 'min', 'max', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'halo_width',
       'tip_length', 'tip_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end', 'flow_top', 'flow_left', 'label_width', 'line_height', 'header_font_size']) {
       if (!(key in attrs)) continue;
       const number = numberValue(attrs, key, line) as number;
-      if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'label_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
+      if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
         throw new MarkupError(`${key} must be nonnegative`, line);
       }
       if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);
@@ -1180,7 +1182,7 @@ export class ASTTransformer {
     }
     // An element's step may be -1 (shown before the slide's first visit); where that makes no sense the caller says so.
     for (const key of ['step', 'hide']) if (key in attrs && !(key === 'step' && attrs.step === '-1')) stepValue(attrs, key, line);
-    for (const key of ['color', 'fill_color', 'border_color', 'header_color', 'axis_color', 'label_color', 'row_rule_color', 'col_rule_color']) if (key in attrs) ASTTransformer._checkColor(attrs[key], line);
+    for (const key of ['color', 'fill_color', 'border_color', 'header_color', 'axis_color', 'label_color', 'row_rule_color', 'col_rule_color', 'header_col_rule_color']) if (key in attrs) ASTTransformer._checkColor(attrs[key], line);
     if ('seed' in attrs && !Number.isInteger(Number(attrs.seed))) throw new MarkupError('seed must be an integer', line);
     if ('sketch' in attrs && !['true', 'false'].includes(attrs.sketch)) throw new MarkupError('sketch must be true or false', line);
     if ('fill_style' in attrs && !FILL_STYLE_NAMES.has(attrs.fill_style)) {

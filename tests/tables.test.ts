@@ -6,6 +6,7 @@ import { columnWidths, tablePadding } from '../src/markup/renderer';
 import { MarkupParser } from '../src/markup/parser';
 import { ElementSpec, TableSpec, span } from '../src/markup/ast';
 import type { InlineSpan } from '../src/markup/ast';
+import { element as rendered, installFakeCanvas, slide } from './helpers/slides';
 
 const parse = (body: string) => new MarkupParser().parse(`::: slide {#s}\n${body}\n:::\n`);
 const element = (body: string, id: string) => parse(body).slides[0].items.find((item) => item instanceof ElementSpec && item.id === id) as ElementSpec;
@@ -80,6 +81,20 @@ describe('charts', () => {
 describe('tables', () => {
   const cell = (text: string): InlineSpan[] => [span(text)];
   const factory = (spans: InlineSpan[], size: number, maxWidth: number) => fakeText(spans.map((s) => s.content).join(''), size, maxWidth);
+  /** A table's rules across, and up and down. */
+  const ruled = (table: Group) => table.children.filter((c) => c instanceof Line) as Line[];
+  const uprights = (table: Group) => ruled(table).filter((line) => Math.abs(line.getStart()[0] - line.getEnd()[0]) < 1e-9);
+  /** The heights of the rules across, from the top. */
+  const levels = (table: Group) => ruled(table).filter((line) => !uprights(table).includes(line)).map((line) => round(line.getStart()[1])).sort((a, b) => b - a);
+  const round = (value: number) => Math.round(value * 1e6) / 1e6;
+  const byPlace = (a: { x: number; from: number }, b: { x: number; from: number }) => a.x - b.x || b.from - a.from;
+  /** Where each upright rule stands, how it is drawn, and from where down to where. */
+  const spans = (table: Group) => uprights(table).map((line) => ({
+    x: round(line.getStart()[0]),
+    style: `${line.color.toUpperCase()} ${line.strokeWidth}`,
+    from: round(Math.max(line.getStart()[1], line.getEnd()[1])),
+    to: round(Math.min(line.getStart()[1], line.getEnd()[1])),
+  })).sort(byPlace);
 
   it('sizes columns by content, draws the requested rules and shades the header', async () => {
     const rows = [[cell('Name'), cell('Value')], [cell('A long first cell'), cell('1')], [cell('B'), cell('22')]];
@@ -113,6 +128,38 @@ describe('tables', () => {
     const rowsOnly = await buildTable(rows, { fontSize: 20, color: '#000000', colRuleWidth: 0 }, factory) as Group;
     expect(lines(rowsOnly)).toHaveLength(4);
     expect(lines(rowsOnly).every(level)).toBe(true);
+  });
+
+  it('starts the rules between columns below the header row, unless asked to cross it, in a style of their own', async () => {
+    const rows = [[cell('Name'), cell('Value'), cell('Note')], [cell('A'), cell('1'), cell('x')], [cell('B'), cell('22'), cell('y')]];
+    const options = { fontSize: 20, color: '#000000', borderColor: '#888888', strokeWidth: 2 };
+    const plain = await buildTable(rows, options, factory) as Group;
+    const [top, under, , bottom] = levels(plain);
+    const [left, right] = [round(plain.getLeft()[0]), round(plain.getRight()[0])];
+    // By default the sides of the frame run whole, and the rules between columns start under the header.
+    expect(spans(plain)).toEqual(spans(plain).map(({ x, style }) => ({ x, style, from: x === left || x === right ? top : under, to: bottom })));
+    expect(spans(plain).filter(({ x }) => x !== left && x !== right)).toHaveLength(2);
+    // Asked to, they cross it whole, one rule each as without a header, which they cross anyway.
+    for (const crossing of [{ headerColRules: true }, { headerColRules: true, headerColRuleColor: '#888888' }, { header: false }, { header: false, headerColRules: true, headerColRuleColor: '#FF0000' }]) {
+      const table = await buildTable(rows, { ...options, ...crossing }, factory) as Group;
+      expect(spans(table), JSON.stringify(crossing)).toEqual(spans(plain).map(({ x, style }) => ({ x, style, from: top, to: bottom })));
+    }
+    // In a color or width of their own, they cross it as a rule of their own; the column rules' width by default.
+    const styled = await buildTable(rows, { ...options, headerColRules: true, headerColRuleColor: '#FF0000' }, factory) as Group;
+    const inner = spans(plain).filter(({ x }) => x !== left && x !== right);
+    expect(spans(styled)).toEqual([...spans(plain), ...inner.map(({ x }) => ({ x, style: '#FF0000 2', from: top, to: under }))].sort(byPlace));
+    const wide = await buildTable(rows, { ...options, headerColRules: true, headerColRuleWidth: 4 }, factory) as Group;
+    expect(spans(wide)).toEqual([...spans(plain), ...inner.map(({ x }) => ({ x, style: '#888888 4', from: top, to: under }))].sort(byPlace));
+    // Width 0 leaves them out there, and the column rules' width 0 leaves out the body's.
+    expect(spans(await buildTable(rows, { ...options, headerColRules: true, headerColRuleWidth: 0 }, factory) as Group)).toEqual(spans(plain));
+    const headerOnly = await buildTable(rows, { ...options, colRuleWidth: 0, headerColRules: true, headerColRuleWidth: 2 }, factory) as Group;
+    expect(spans(headerOnly)).toEqual(inner.map(({ x }) => ({ x, style: '#888888 2', from: top, to: under })));
+    // Without rules between rows, or between columns, the same.
+    expect(spans(await buildTable(rows, { ...options, rules: 'cols' }, factory) as Group)).toEqual(spans(plain));
+    expect(spans(await buildTable(rows, { ...options, rules: 'outer', headerColRules: true }, factory) as Group)).toEqual(spans(plain).filter(({ x }) => x === left || x === right));
+    // A table of a header alone has no body for them.
+    const alone = await buildTable(rows.slice(0, 1), options, factory) as Group;
+    expect(spans(alone).map(({ x }) => x)).toEqual([round(alone.getLeft()[0]), round(alone.getRight()[0])]);
   });
 
   it('lines the cells of a row up on their first baseline, or by the middle, top or bottom of their box', async () => {
@@ -194,6 +241,28 @@ describe('tables', () => {
 });
 
 describe('markup for tables and charts', () => {
+  it('accepts header column rules, their color and width, and draws them', async () => {
+    const table = '| a | b |\n| :- | :- |\n| 1 | 2 |';
+    expect(() => parse(`::: {.element #t header_col_rules=true header_col_rule_color=RED header_col_rule_width=3}\n${table}\n:::`)).not.toThrow();
+    expect(() => parse(`::: {.element #t header_col_rules=yes}\n${table}\n:::`)).toThrow(/header_col_rules must be true or false/);
+    expect(() => parse(`::: {.element #t header_col_rule_width=-1}\n${table}\n:::`)).toThrow(/header_col_rule_width must be nonnegative/);
+    expect(() => parse(`::: {.element #t header_col_rule_color=nope}\n${table}\n:::`)).toThrow(/Invalid color/);
+    installFakeCanvas();
+    const s = await slide('', [
+      `::: {.element #plain x=0 y=2}\n${table}\n:::`,
+      `::: {.element #through x=0 y=0 header_col_rules=true}\n${table}\n:::`,
+      `::: {.element #styled x=0 y=-2 header_col_rules=true header_col_rule_color=RED header_col_rule_width=3}\n${table}\n:::`,
+    ].join('\n\n'));
+    const uprights = (id: string) => ((rendered(s, id) as Group).getFamily().filter((c) => c instanceof Line) as Line[])
+      .filter((line) => Math.abs(line.getStart()[0] - line.getEnd()[0]) < 1e-9);
+    const height = (line: Line) => Math.abs(line.getStart()[1] - line.getEnd()[1]);
+    const whole = rendered(s, 'plain').getHeight();
+    // The sides, and the rule between the columns under the header, through it, or through it in red.
+    expect(uprights('plain').map(height).filter((h) => h < whole - 1e-6)).toHaveLength(1);
+    expect(uprights('through').map(height).every((h) => Math.abs(h - whole) < 1e-6)).toBe(true);
+    expect(uprights('styled').filter((line) => line.strokeWidth === 3).map((line) => line.color.toUpperCase())).toEqual(['#FC6255']);
+  });
+
   it('accepts row and column rule colors and widths on tables', () => {
     const table = '| a | b |\n| :- | :- |\n| 1 | 2 |';
     expect(() => parse(`::: {.element #t row_rule_color=BLUE row_rule_width=3 col_rule_color=RED col_rule_width=0}\n${table}\n:::`)).not.toThrow();

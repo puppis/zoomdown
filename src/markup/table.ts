@@ -61,6 +61,11 @@ export interface TableOptions {
   /** Color and width of the vertical rules, between columns and at the sides; the shared ones by default. */
   colRuleColor?: string;
   colRuleWidth?: number;
+  /** Whether the rules between columns cross the header row; false by default, so that they start below it. */
+  headerColRules?: boolean;
+  /** Color and width of the rules between columns in the header row; the column rules' by default. */
+  headerColRuleColor?: string;
+  headerColRuleWidth?: number;
   /** Background of the whole table. */
   fillColor?: string;
   fillOpacity?: number;
@@ -204,11 +209,23 @@ export async function buildTable(rows: InlineSpan[][][], options: TableOptions, 
   const rowWidth = options.rowRuleWidth ?? strokeWidth;
   const colColor = options.colRuleColor ?? borderColor;
   const colWidth = options.colRuleWidth ?? strokeWidth;
+  // The rules between columns start below the header row unless asked to cross it, in a style of
+  // their own there; the sides of the frame run whole.
+  const crossing = header && (options.headerColRules ?? false);
+  const headerColor = options.headerColRuleColor ?? colColor;
+  const headerWidth = options.headerColRuleWidth ?? colWidth;
+  const restyled = crossing && (headerColor !== colColor || headerWidth !== colWidth);
+  const bodyTop = header && (!crossing || restyled) ? ys[1] : 0;
   if (rules !== 'none') {
     // Column rules first, so that where they cross, the row rules lie on top.
-    for (let j = 0; j <= columns && colWidth > 0; j += 1) {
-      const outer = j === 0 || j === columns;
-      if (vertical || outer) members.push(rule([xs[j], 0], [xs[j], -height], colColor, colWidth, sketchy));
+    for (let j = 0; j <= columns; j += 1) {
+      if (j === 0 || j === columns) {
+        if (colWidth > 0) members.push(rule([xs[j], 0], [xs[j], -height], colColor, colWidth, sketchy));
+        continue;
+      }
+      if (!vertical) continue;
+      if (restyled && headerWidth > 0) members.push(rule([xs[j], 0], [xs[j], ys[1]], headerColor, headerWidth, sketchy));
+      if (colWidth > 0 && bodyTop > -height) members.push(rule([xs[j], bodyTop], [xs[j], -height], colColor, colWidth, sketchy));
     }
     for (let i = 0; i <= rows.length && rowWidth > 0; i += 1) {
       const outer = i === 0 || i === rows.length;
