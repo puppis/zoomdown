@@ -4,7 +4,7 @@ import { MarkupParser } from '../src/markup/parser';
 import { GroupSpec, type ElementSpec, type InlineSpan } from '../src/markup/ast';
 import { LayoutConfig } from '../src/markup/renderer';
 import { buildTable } from '../src/markup/table';
-import { inlineWords, textLines } from '../src/markup/text';
+import { inlineRows, inlineWords, textLines } from '../src/markup/text';
 import { CANVAS_CALLS, element, installFakeCanvas, slide } from './helpers/slides';
 
 beforeAll(installFakeCanvas);
@@ -179,5 +179,49 @@ describe('spaces written as entities', () => {
     const space = width('two') - width('one');
     expect(space).toBeGreaterThan(0.1);
     expect(Math.abs(width('three') - width('two') - 2 * space)).toBeLessThanOrEqual(2 * pixel);
+  });
+});
+
+describe('spaces that start a line after a break', () => {
+  const indents = (source: string) => new MarkupParser().parseInlineSpans(source, 1).filter((s) => s.content === '\n').map((s) => s.indent ?? 0);
+  /** The left edges of a text's lines, from the first. */
+  const lefts = (obj: Mobject) => (obj as Group).children.map((line) => (line as Mobject).getLeft()[0]);
+  /** One plain space of the fake font at 28 points: half an em. */
+  const space = 0.5 * ((28 * 4) / 3 / 96);
+
+  it('are counted after \\\\, a tab to the next multiple of four, and not after a plain line end', () => {
+    expect(indents('a \\\\\n    b \\\\\nc \\\\\n\td \\\\\n  \te \\\\\n     \tf')).toEqual([4, 0, 4, 4, 8]);
+    const soft = new MarkupParser().parseInlineSpans('a\n    b', 1);
+    expect(inlineWords(soft)).toHaveLength(1);
+  });
+
+  it('indent the line by as many spaces of the font, and leading &nbsp; keep their width too', async () => {
+    const s = await slide('', 'Upon m: \\\\\n    if new: \\\\\n        forward m {#p}\n\nUpon: \\\\\n    if new: {#a}\n\nUpon: \\\\\n&nbsp;&nbsp;&nbsp;&nbsp;if new: {#q}');
+    const [first, second, third] = lefts(element(s, 'p'));
+    expect(second - first).toBeCloseTo(4 * space, 2);
+    expect(third - first).toBeCloseTo(8 * space, 2);
+    // No-break spaces have no ink, and the line keeps them: in the fake font they are as wide as spaces.
+    expect(Math.abs(element(s, 'a').getWidth() - element(s, 'q').getWidth())).toBeLessThanOrEqual(2 / 96);
+  });
+
+  it('keep the lines the indented one wraps to at its indent, within the rest of the width', async () => {
+    const s = await slide('', 'First \\\\\n    one two three four five six seven eight {#p width=3}');
+    const all = lefts(element(s, 'p'));
+    expect(all.length).toBeGreaterThan(2);
+    for (const left of all.slice(1)) expect(left - all[0]).toBeCloseTo(4 * space, 2);
+    expect(element(s, 'p').getWidth()).toBeLessThanOrEqual(3 + 1e-6);
+  });
+
+  it('leave a quarter of the width at least', async () => {
+    const s = await slide('', `First \\\\\n${' '.repeat(60)}one two three {#p width=3}`);
+    const [first, second] = lefts(element(s, 'p'));
+    expect(second - first).toBeCloseTo(0.75 * 3, 6);
+  });
+
+  it('are free in a block with && columns, and counted from the text of a list item', () => {
+    expect(inlineRows(new MarkupParser().parseInlineSpans('a && b \\\\\n      && c', 1)).map((row) => row.indent)).toEqual([0, 0]);
+    const [plain, deeper] = items('- item \\\\\n  next\n- item \\\\\n      deeper') as ElementSpec[];
+    expect(plain.spans.find((s) => s.content === '\n')?.indent).toBeUndefined();
+    expect(deeper.spans.find((s) => s.content === '\n')?.indent).toBe(4);
   });
 });

@@ -284,7 +284,7 @@ or icon:
 | `[text]{underline=true}` | underlined text that is no link |
 | `~~text~~` | text struck through the middle of its lowercase letters |
 | `&nbsp;`, `&ensp;`, `&emsp;`, `&thinsp;` | a space that keeps its width: no-break, half an em, an em, thin; Markdown collapses runs of plain spaces, and a no-break space never breaks a line |
-| `\\` | a hard line break; a lone newline inside a paragraph is a space |
+| `\\` | a hard line break; the spaces that start the next source line indent it, each a plain space of the font and a tab to the next multiple of four (not in a block with `&&` columns; in a list item, counted from the item's text), and the lines it wraps to keep the indent; a lone newline inside a paragraph is a space |
 | `&&` | a column separator: in a block that contains one, every source line is a row and the cells align in columns across the rows, each as wide as its widest cell, an em apart ([Columns](text.html#columns)); `\&&` is a literal |
 
 A `[text]{…}` at the end of a block with any attribute other than `color` and `underline` is the

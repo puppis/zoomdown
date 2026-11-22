@@ -53,6 +53,30 @@ keep their indentation to its right.
 HTML comments are discarded and raw HTML is shown as text. Soft line breaks in the source are
 joined; an explicit break takes two trailing spaces, a backslash before the newline, or `\\`.
 
+## Indented lines
+
+After a `\\` break, the spaces that start the next source line indent it, each by a plain space
+of the font and a tab to the next multiple of four, without the `&nbsp;` that would otherwise keep
+them. A long indented line wraps
+within the rest of the width and its lines keep the indent:
+
+```zoomdown {height=4}
+::: slide {#indented width=16 height=4}
+
+Upon receiving a message *m* from a neighbour: \\
+    if *m* is new: \\
+        store *m* and forward it to every other neighbour, which then does the same \\
+    otherwise ignore it
+{x=-7 y=1.2 width=9 font_size=22}
+
+:::
+```
+
+Spaces after a line end without `\\` collapse into one, as Markdown has it. In a block with
+`&&` columns they only align the source; in a list item they count from the column of the item's
+text, so a continuation aligned under it is not indented. An indent leaves a quarter of the width
+at least.
+
 ## Columns
 
 Pieces of text align across lines with `&&` between them, as in a table without rules or in a

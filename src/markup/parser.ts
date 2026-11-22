@@ -74,12 +74,24 @@ function dollarMath(state: StateInline, silent: boolean): boolean {
   throw new MarkupError('Unclosed inline math delimiter', (state.env as Env).line ?? null);
 }
 
-/** Treat a double backslash outside code/math as one explicit prose break. */
+/**
+ * Treat a double backslash outside code/math as one explicit prose break. The spaces that start the
+ * source line after it indent the line it starts, a tab to the next multiple of four.
+ */
 function hardLineBreak(state: StateInline, silent: boolean): boolean {
   if (!state.src.startsWith('\\\\', state.pos)) return false;
-  if (!silent) state.push('hardbreak', 'br', 0);
   state.pos += 2;
-  if (state.pos < state.posMax && state.src[state.pos] === '\n') state.pos += 1;
+  let indent = 0;
+  if (state.pos < state.posMax && state.src[state.pos] === '\n') {
+    state.pos += 1;
+    for (; state.pos < state.posMax && (state.src[state.pos] === ' ' || state.src[state.pos] === '\t'); state.pos += 1) {
+      indent = state.src[state.pos] === '\t' ? (Math.floor(indent / 4) + 1) * 4 : indent + 1;
+    }
+  }
+  if (!silent) {
+    const token = state.push('hardbreak', 'br', 0);
+    if (indent) token.meta = { indent };
+  }
   return true;
 }
 
@@ -152,6 +164,7 @@ function spans(tokens: Token[], outer: SpanStyle = PLAIN): InlineSpan[] {
         const now = style();
         const piece = span(content, kind, now.bold, now.italic, now.color, now.href);
         if (token.type === 'softbreak') piece.soft = true;
+        if (token.type === 'hardbreak' && token.meta?.indent) piece.indent = token.meta.indent as number;
         if (now.strike) piece.strike = true;
         if (now.underline) piece.underline = true;
         result.push(piece);

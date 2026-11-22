@@ -110,6 +110,10 @@ Normal text with **bold**, *italic*, ***both***, `inline code` and [blue **empha
 First line.\\
 Second line.
 
+Upon receiving m: \\
+    if m is new: \\
+        forward m to all neighbours
+
 - Bullet items are prose with a marker
   - Nested items indent, with a hanging indent
     1. Numbered lists nest too
@@ -126,12 +130,20 @@ URLs) are underlined and clickable in the player, opening in a new tab. Explicit
 trailing spaces, a backslash before the newline, or `\\`. Prose wraps to the element's `width`,
 mixed prose and math share one baseline, and a paragraph with inline math stays one element.
 
+The spaces that start the source line after a `\\` indent the line it begins: each by a plain
+space of the font, and a tab to the next multiple of four. The lines an indented
+line wraps to keep its indent, within the rest of the width (an indent leaves a quarter of it at
+least). Spaces after any other line end collapse, those in a block with `&&` columns align only
+the source, and in a list item they count from the column of the item's text, so a continuation
+aligned under the text is not indented.
+
 `~~text~~` strikes text through, at the middle of its lowercase letters, and `[text]{underline=true}`
 underlines it without making it a link; inside a paragraph a `[text]{…}` span takes `color` and
 `underline` (a strike or an underline covers the spaces between its words, not inline math). HTML
 entities give spaces Markdown would collapse: `&nbsp;` (a space that never breaks a line), `&ensp;`,
 `&emsp;` (an em) and `&thinsp;` keep their width, so `WWW,&nbsp;&nbsp;Wikipedia` sets two spaces
-between the words; only plain spaces, tabs and line ends separate words and collapse.
+between the words, at the start of a line too; only plain spaces, tabs and line ends separate words
+and collapse.
 
 The interline, the distance between the baselines of two lines of a paragraph, is the font's reach
 above and below the baseline plus `layout.lineGap` (0.12). `layout.lineHeight` replaces it with a

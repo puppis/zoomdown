@@ -4,7 +4,7 @@ import { hasColumns, inlineRows, inlineWords } from '../src/markup/text';
 import type { InlineSpan } from '../src/markup/ast';
 
 /** The rows' cells as plain text; a word carries the space before it, which the layout drops at a cell's start. */
-const text = (rows: ReturnType<typeof inlineRows>) => rows.map((row) => row.map((cell) => cell.map((word) => word.map((atom) => atom.content).join('').trim()).join(' ')));
+const text = (rows: ReturnType<typeof inlineRows>) => rows.map((row) => row.cells.map((cell) => cell.map((word) => word.map((atom) => atom.content).join('').trim()).join(' ')));
 
 describe('aligned columns', () => {
   const parser = new MarkupParser();
@@ -29,7 +29,7 @@ describe('aligned columns', () => {
     const rows = inlineRows(spans);
     expect(text(rows)).toEqual([['Name', 'Value', 'x^2'], ['a && b', 'Tom & Jerry', 'a && literal']]);
     // The first atom of a cell that is not the first carries the space before it; the styled atom follows.
-    const first = (row: number, cell: number) => rows[row][cell][0].find((atom) => atom.content.trim());
+    const first = (row: number, cell: number) => rows[row].cells[cell][0].find((atom) => atom.content.trim());
     expect(first(0, 0)?.bold).toBe(true);
     expect(first(0, 1)?.italic).toBe(true);
     expect(first(0, 2)?.kind).toBe('math');

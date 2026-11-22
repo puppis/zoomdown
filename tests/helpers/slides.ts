@@ -11,15 +11,18 @@ export const CANVAS_CALLS: Array<{ method: string; args: unknown[]; font: string
 /**
  * A canvas for text layout without a browser: every glyph is half the font size wide, and the
  * font reaches 0.8 of its size above the baseline and 0.2 below; a lowercase x is 0.7 of it tall.
- * Its drawing calls are recorded in `CANVAS_CALLS`.
+ * Spaces, no-break ones too, have no ink. Its drawing calls are recorded in `CANVAS_CALLS`.
  */
 export function installFakeCanvas(): void {
   const state: Record<string, unknown> = { font: '10px serif' };
   const measureText = (text: string) => {
     const px = Number(/(\d+(?:\.\d+)?)px/.exec(state.font as string)?.[1] ?? 10);
     const width = 0.5 * px * text.length;
+    // The ink runs from the first glyph that is not a space to the last one.
+    const first = text.search(/\S/);
+    const last = text.length - (text.match(/\s*$/) as RegExpMatchArray)[0].length;
     return {
-      width, actualBoundingBoxLeft: 0, actualBoundingBoxRight: width,
+      width, actualBoundingBoxLeft: first < 0 ? 0 : -0.5 * px * first, actualBoundingBoxRight: first < 0 ? 0 : 0.5 * px * last,
       fontBoundingBoxAscent: 0.8 * px, fontBoundingBoxDescent: 0.2 * px, actualBoundingBoxAscent: 0.7 * px, actualBoundingBoxDescent: 0.1 * px,
     };
   };

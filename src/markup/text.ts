@@ -510,8 +510,15 @@ const isBlank = (text: string) => BLANK.test(text);
 type Atom = InlineSpan;
 type Word = Atom[];
 
-/** A line of a block: its cells, one unless the block has `&&` columns. */
-export type Row = Word[][];
+/**
+ * A line of a block: its cells, one unless the block has `&&` columns, and its indent, in spaces:
+ * those that start its source line after a `\\` break (none in a block with columns, whose source
+ * may be aligned freely).
+ */
+export interface Row {
+  cells: Word[][];
+  indent: number;
+}
 
 /** Whether a block has columns: an unescaped `&&` in its prose (an escaped `\&&` arrives as two separate spans). */
 export function hasColumns(spans: InlineSpan[]): boolean {
@@ -530,6 +537,7 @@ export function inlineRows(spans: InlineSpan[]): Row[] {
   let words: Word[] = [];
   let current: Atom[] = [];
   let gap: Atom[] = [];
+  let indent = 0;
   const endWord = () => {
     if (current.length) {
       words.push(current);
@@ -542,10 +550,11 @@ export function inlineRows(spans: InlineSpan[]): Row[] {
     words = [];
     gap = [];
   };
-  const endRow = () => {
+  const endRow = (next = 0) => {
     endCell();
-    rows.push(cells);
+    rows.push({ cells, indent });
     cells = [];
+    indent = columns ? 0 : next;
   };
   const pattern = columns ? /\n|&&|[ \t\r\f\v]+|(?:[^ \t\n\r\f\v&]|&(?!&))+/g : /\n|[ \t\r\f\v]+|[^ \t\n\r\f\v]+/g;
   for (const s of spans) {
@@ -556,7 +565,7 @@ export function inlineRows(spans: InlineSpan[]): Row[] {
         endCell();
       } else if (s.kind !== 'math' && isBlank(atom)) {
         endWord();
-        if (atom === '\n') endRow();
+        if (atom === '\n') endRow(s.indent ?? 0);
         else if (s.kind === 'code') gap.push(part);
         else {
           // The space between two words of a link, a strike or an underline is drawn as they are.
@@ -577,7 +586,7 @@ export function inlineRows(spans: InlineSpan[]): Row[] {
 
 /** Split spans into paragraphs of words, the cells of a row run together. */
 export function inlineWords(spans: InlineSpan[]): Word[][] {
-  return inlineRows(spans).map((row) => row.flat());
+  return inlineRows(spans).map((row) => row.cells.flat());
 }
 
 function runsOf(atoms: Atom[], defaultColor: string): TextRun[] {
@@ -620,7 +629,12 @@ interface ShapedLine {
   parts: Array<{ kind: 'text'; line: StyledLine } | { kind: 'math'; piece: MathPiece }>;
   advance: number;
   keepIndent: boolean;
+  /** The width of the spaces that keep it (`&nbsp;`, `&emsp;`, …) at the start of the line, which have no ink. */
+  lead: number;
 }
+
+/** Spaces that keep their width, all but ASCII's, at the start of a text. */
+const KEPT_SPACES = /^[^\S \t\n\r\f\v]+/;
 
 /** Wrap spans to `maxWidth` logical units and assemble a left-aligned block. */
 export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOptions, mathFactory: MathFactory): Promise<Mobject> {
@@ -667,24 +681,35 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       }
     }
     const first = words[0]?.[0];
-    return { parts, advance, keepIndent: Boolean(first && first.kind === 'code' && !first.content.trim()) };
+    // A line is placed by its ink, which its leading kept spaces do not have; it keeps their width.
+    let lead = 0;
+    const opening = segments(words)[0];
+    if (opening && 'prose' in opening) {
+      for (const atom of opening.prose) {
+        const spaces = KEPT_SPACES.exec(atom.content)?.[0];
+        if (!spaces) break;
+        lead += measureRun({ text: spaces, bold: atom.bold, italic: atom.italic, color: defaultColor, mono: atom.kind === 'code', href: null }, px, fontFamily).advance / pxPerWorld;
+        if (spaces.length < atom.content.length) break;
+      }
+    }
+    return { parts, advance, keepIndent: Boolean(first && first.kind === 'code' && !first.content.trim()), lead };
   };
   const rows = inlineRows(spans);
   // Columns: each row's cells are shaped unwrapped, every column is as wide as its widest cell,
   // and a cell starts where the columns before it end, plus a gap of an em; a row with fewer
   // cells leaves the rest empty, a row with one cell spans from the first column.
-  if (rows.some((row) => row.length > 1)) {
+  if (rows.some((row) => row.cells.length > 1)) {
     const em = ((fontSize * 4) / 3) / PX_PER_WORLD_BASE;
     const shaped: Array<ShapedLine[] | null> = [];
     const widths: number[] = [];
-    for (const row of rows) {
+    for (const { cells: row } of rows) {
       if (row.every((cell) => !cell.length)) {
         shaped.push(null);
         continue;
       }
       const cells: ShapedLine[] = [];
       for (const [index, cell] of row.entries()) {
-        const line = cell.length ? await shape(cell) : { parts: [], advance: 0, keepIndent: false };
+        const line = cell.length ? await shape(cell) : { parts: [], advance: 0, keepIndent: false, lead: 0 };
         cells.push(line);
         widths[index] = Math.max(widths[index] ?? 0, line.advance);
       }
@@ -743,35 +768,46 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
     block.center();
     return block;
   }
+  // A line indented by spaces starts that many plain spaces of the font in, and so do the lines it
+  // wraps to, within what remains of the width (a quarter of it at least).
+  const space = rows.some((row) => row.indent)
+    ? measureRun({ text: ' ', bold: false, italic: false, color: defaultColor, mono: false, href: null }, px, fontFamily).advance / pxPerWorld
+    : 0;
   const lines: Array<ShapedLine | null> = [];
-  for (const words of rows.map((row) => row.flat())) {
+  const indents: number[] = [];
+  for (const row of rows) {
+    const words = row.cells.flat();
     if (!words.length) {
       lines.push(null);
+      indents.push(0);
       continue;
     }
+    const indent = Math.min(row.indent * space, 0.75 * maxWidth);
+    const width = maxWidth - indent;
     let start = 0;
     while (start < words.length) {
       let end = words.length;
-      if (start === 0 && (await advanceOf(words)) <= maxWidth) end = words.length;
+      if (start === 0 && (await advanceOf(words)) <= width) end = words.length;
       else {
         // Exponential probing bounds one line, then binary search chooses its last whole word.
         let low = start + 1;
         let count = 2;
         let high = Math.min(start + count, words.length);
         while (high < words.length) {
-          if ((await advanceOf(words.slice(start, high))) > maxWidth) break;
+          if ((await advanceOf(words.slice(start, high))) > width) break;
           low = high;
           count *= 2;
           high = Math.min(start + count, words.length);
         }
         while (low < high) {
           const middle = (low + high + 1) >> 1;
-          if ((await advanceOf(words.slice(start, middle))) <= maxWidth) low = middle;
+          if ((await advanceOf(words.slice(start, middle))) <= width) low = middle;
           else high = middle - 1;
         }
         end = low;
       }
       lines.push(await shape(words.slice(start, end)));
+      indents.push(indent);
       start = end;
     }
   }
@@ -781,7 +817,7 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
   const lineGroups: Array<Group | null> = [];
   let ascent = 0;
   let descent = 0;
-  for (const line of lines) {
+  for (const [number, line] of lines.entries()) {
     if (!line) {
       lineGroups.push(null);
       continue;
@@ -804,9 +840,10 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       }
     }
     const group = new Group(...members);
-    if (line.advance > maxWidth + 1e-6) {
+    const width = maxWidth - indents[number];
+    if (line.advance > width + 1e-6) {
       // A single unbreakable word can exceed the requested width.
-      group.scale(maxWidth / line.advance, { aboutPoint: [0, 0, 0] });
+      group.scale(width / line.advance, { aboutPoint: [0, 0, 0] });
     }
     lineGroups.push(group);
   }
@@ -817,8 +854,9 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
   const commonLeft = Math.min(...present.map((group) => group.getLeft()[0]));
   lineGroups.forEach((group, number) => {
     if (!group) return;
-    const left = preserveIndent ? commonLeft : group.getLeft()[0];
-    group.shift([-left, -number * spacing, 0]);
+    const line = lines[number] as ShapedLine;
+    const left = preserveIndent ? commonLeft : group.getLeft()[0] - line.lead;
+    group.shift([indents[number] - left, -number * spacing, 0]);
   });
   const block = new Group(...present) as Group & { markupBaselineFraction: number };
   const height = block.getHeight();
