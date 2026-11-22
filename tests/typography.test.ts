@@ -1,10 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { Group, Mobject } from 'manim-web';
+import { Rectangle, type Group, type Mobject } from 'manim-web';
 import { MarkupParser } from '../src/markup/parser';
 import { GroupSpec, type ElementSpec, type InlineSpan } from '../src/markup/ast';
 import { LayoutConfig } from '../src/markup/renderer';
 import { buildTable } from '../src/markup/table';
-import { inlineRows, inlineWords, textLines } from '../src/markup/text';
+import { StyledLine, inlineRows, inlineWords, layoutParagraph, textLines, textResolutionScale, type MathPiece } from '../src/markup/text';
 import { CANVAS_CALLS, element, installFakeCanvas, slide } from './helpers/slides';
 
 beforeAll(installFakeCanvas);
@@ -223,5 +223,44 @@ describe('spaces that start a line after a break', () => {
     const [plain, deeper] = items('- item \\\\\n  next\n- item \\\\\n      deeper') as ElementSpec[];
     expect(plain.spans.find((s) => s.content === '\n')?.indent).toBeUndefined();
     expect(deeper.spans.find((s) => s.content === '\n')?.indent).toBe(4);
+  });
+});
+
+describe('no-break spaces before a formula at the start of a line', () => {
+  /** A stand-in for a formula: a box one unit wide, a third tall, its left at 0 and its bottom on the baseline. */
+  const formula = async (): Promise<MathPiece> => {
+    const box = new Rectangle({ width: 1, height: 1 / 3 });
+    box.shift([0.5, 1 / 6, 0]);
+    return { mobject: box, advance: 1, ascent: 1 / 3, descent: 0 };
+  };
+  const layout = (source: string) => layoutParagraph(new MarkupParser().parseInlineSpans(source, 1), {
+    fontSize: 28, maxWidth: 20, defaultColor: '#000000', fontFamily: 'serif', lineGap: 0.12,
+  }, formula);
+  /**
+   * The left of the formula on each line, from the first line's: formulas are measured, as the
+   * engine reports where a box is at once (a line of text, only after the tree is drawn).
+   */
+  const formulas = (obj: Mobject) => {
+    const lefts = ((obj as Group).children as Group[]).map((line) => ((line.children as Mobject[]).find((part) => !(part instanceof StyledLine)) as Mobject).getLeft()[0]);
+    return lefts.map((left) => left - lefts[0]);
+  };
+  const lead = 4 * 0.5 * ((28 * 4) / 3 / 96);
+
+  it('indent it as far as before text', async () => {
+    const nbsp = '&nbsp;'.repeat(4);
+    const indented = formulas(await layout(`$n$ **Notify**: \\\\\n${nbsp}$x \\leftarrow 1$ \\\\\n${nbsp}for all $w$`));
+    const plain = formulas(await layout('$n$ **Notify**: \\\\\n$x \\leftarrow 1$ \\\\\nfor all $w$'));
+    // Both lines move in by the width of the spaces (those of the fake font are half an em), so
+    // a formula starts where the text of the line below does.
+    expect(indented[1] - plain[1]).toBeCloseTo(lead, 6);
+    expect(indented[2] - plain[2]).toBeCloseTo(lead, 6);
+  });
+
+  it('add to an indent by spaces, before a formula as before text', async () => {
+    const indented = formulas(await layout('$n$ \\\\\n    &nbsp;$x$ \\\\\n    &nbsp;for $w$'));
+    const plain = formulas(await layout('$n$ \\\\\n$x$ \\\\\nfor $w$'));
+    const space = 0.5 * ((28 * 4) / 3 / 96);
+    expect(indented[1] - plain[1]).toBeCloseTo(5 * space, 6);
+    expect(indented[2] - plain[2]).toBeCloseTo(5 * space, 6);
   });
 });

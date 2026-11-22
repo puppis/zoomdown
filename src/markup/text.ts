@@ -815,11 +815,14 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
   if (!visible.length) return new Group();
   // Place parts along each line's baseline at y = 0, then measure extents.
   const lineGroups: Array<Group | null> = [];
+  // Where a line that starts with kept spaces is placed from: where it starts to draw, less their width.
+  const starts: Array<number | null> = [];
   let ascent = 0;
   let descent = 0;
   for (const [number, line] of lines.entries()) {
     if (!line) {
       lineGroups.push(null);
+      starts.push(null);
       continue;
     }
     let cursor = 0;
@@ -839,13 +842,23 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
         members.push(part.piece.mobject);
       }
     }
+    // Its parts that draw: kept spaces alone before a formula are a part with no ink, whose box
+    // stands at the pen and would count their width twice.
+    let start: number | null = null;
+    if (line.lead) {
+      const inked = line.parts.filter((part) => part.kind === 'math' || part.line.runs.some((run) => run.text.trim()));
+      if (inked.length) start = Math.min(...inked.map((part) => (part.kind === 'math' ? part.piece.mobject : part.line).getLeft()[0])) - line.lead;
+    }
     const group = new Group(...members);
     const width = maxWidth - indents[number];
+    let factor = 1;
     if (line.advance > width + 1e-6) {
       // A single unbreakable word can exceed the requested width.
-      group.scale(width / line.advance, { aboutPoint: [0, 0, 0] });
+      factor = width / line.advance;
+      group.scale(factor, { aboutPoint: [0, 0, 0] });
     }
     lineGroups.push(group);
+    starts.push(start === null ? null : factor * start);
   }
   const box = lineBox(ascent, descent);
   const spacing = box.spacing;
@@ -854,8 +867,7 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
   const commonLeft = Math.min(...present.map((group) => group.getLeft()[0]));
   lineGroups.forEach((group, number) => {
     if (!group) return;
-    const line = lines[number] as ShapedLine;
-    const left = preserveIndent ? commonLeft : group.getLeft()[0] - line.lead;
+    const left = preserveIndent ? commonLeft : starts[number] ?? group.getLeft()[0];
     group.shift([indents[number] - left, -number * spacing, 0]);
   });
   const block = new Group(...present) as Group & { markupBaselineFraction: number };
