@@ -14,7 +14,7 @@ local `(0,0)`) and `center` for images, shapes, icons, tables, charts and child 
 
 | Anchors | Available on |
 | --- | --- |
-| `center`, `top`, `bottom`, `left`, `right`, `top-left`, `top-right`, `bottom-left`, `bottom-right` | every element and viewport |
+| `center`, `top`, `bottom`, `left`, `right`, `top-left`, `top-right`, `bottom-left`, `bottom-right` | every element and viewport; an arc's `center` is the center of its circle, the others are on its box |
 | `left-baseline`, `baseline`, `right-baseline` | text, math and listings: the first baseline, at its left end, middle or right end |
 | `origin` | groups (their local origin) |
 

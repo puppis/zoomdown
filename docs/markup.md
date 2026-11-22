@@ -224,7 +224,8 @@ exported screenshots.
 Shapes need an `#id`. Rectangles take `width`, `height` and optional `corner_radius`; ellipses
 `width` and `height`; circles `radius`; dots an optional `radius` (0.08, filled by default);
 polygons at least three `points` (closed, fillable); arcs `radius`, `angle` and optional
-`start_angle` (radians, centered on `x`, `y`); polylines at least two distinct `points`. All accept
+`start_angle` (radians; `x`, `y` are the center of its circle, which its anchor `center` and `at=`
+name too, while its other anchors are on the arc's box); polylines at least two distinct `points`. All accept
 `color` (the layout color by default), `stroke_width` (default 2), `fill_color` and `fill_opacity`
 (0 by default; polylines have no fill), `opacity`, the positioning attributes below, `step`,
 `hide` and `focus_only`. Point-defined shapes without positioning keep their coordinates. Shapes

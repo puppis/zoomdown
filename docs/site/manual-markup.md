@@ -493,7 +493,7 @@ Every shape needs an explicit `#id`. Shapes take the common attributes except `f
 | `ellipse` | `width`, `height` | `fill_color`, `fill_opacity` |
 | `polygon` | `points`, at least three `(x,y)` | `fill_color`, `fill_opacity`; the points are absolute coordinates |
 | `polyline` | `points`, at least two `(x,y)`, consecutive ones distinct | no fill; the points are absolute coordinates |
-| `arc` | `radius`, `angle` (nonzero) | `start_angle` (0), `fill_color`, `fill_opacity`; centered on `x`, `y`, counter-clockwise for a positive angle; its `angle` is the sweep, not a turn |
+| `arc` | `radius`, `angle` (nonzero) | `start_angle` (0), `fill_color`, `fill_opacity`; its circle is centered on `x`, `y` (its anchor `center`, which `at=` uses too; the other anchors are on the arc's box), counter-clockwise for a positive angle; its `angle` is the sweep, not a turn |
 
 Common to all: `color` (the stroke, `layout.color` by default), `stroke_width` (2, in engine
 units: one hundredth of a logical unit), `fill_color` (the stroke color by default),

@@ -278,6 +278,11 @@ export type PartsMobject = Mobject & { markupParts?: Mobject[] };
 export type BodyMobject = Mobject & { markupBody?: Mobject };
 /** A circle, a dot or an ellipse, whose connections end on its outline. */
 export type RoundMobject = Mobject & { markupRound?: boolean };
+/**
+ * An arc, whose anchor `center` is the center of its circle: where that lies from the center of
+ * the arc's box, in widths and heights of the box, so that it follows the arc moved or scaled.
+ */
+export type ArcMobject = Mobject & { markupCircle?: [number, number] };
 
 /**
  * The rectangles a blob encloses for an object: its parts' rectangles, else its own bounding box,
@@ -328,6 +333,8 @@ export function anchorPoint(obj: Mobject, anchor: string): [number, number, numb
   }
   const halfWidth = obj.getWidth() / 2;
   const halfHeight = obj.getHeight() / 2;
+  const circle = (obj as ArcMobject).markupCircle;
+  if (anchor === 'center' && circle) return [center[0] + 2 * halfWidth * circle[0], center[1] + 2 * halfHeight * circle[1], center[2]];
   const x = anchor.includes('left') ? center[0] - halfWidth : anchor.includes('right') ? center[0] + halfWidth : center[0];
   const y = anchor.includes('baseline') ? baselineY(obj)
     : anchor.includes('top') ? center[1] + halfHeight
@@ -954,6 +961,15 @@ export class MarkupRenderer {
       const sketchy = sketchOptions(element, { color, strokeWidth, fillColor, fillOpacity }, element.kind === 'dot' ? 'solid' : undefined);
       if (sketchy) obj = sketchShape(element, shape, sketchy);
       if (element.kind === 'circle' || element.kind === 'dot' || element.kind === 'ellipse') (obj as RoundMobject).markupRound = true;
+      if (element.kind === 'arc') {
+        // An arc is placed, and met, by the center of its circle, which is not its box's.
+        const box = obj.getCenter();
+        const [width, height] = [obj.getWidth(), obj.getHeight()];
+        (obj as ArcMobject).markupCircle = [
+          width > 1e-9 ? (Number(attrs.x ?? 0) - box[0]) / width : 0,
+          height > 1e-9 ? (Number(attrs.y ?? 0) - box[1]) / height : 0,
+        ];
+      }
     } else if (element.kind === 'icon') {
       const strokeWidth = Number(attrs.stroke_width ?? 2);
       const fillColor = attrs.fill_color ? parseColor(attrs.fill_color) : color;
