@@ -99,7 +99,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | `dx`, `dy` | positioned elements | offset after placement |
 | `width`, `height` | elements, children | wrapping width or size; viewport size for children |
 | `flow_top`, `flow_left` | slides | where the flow starts, from the top and left edges (`layout.margin` by default) |
-| `angle` | children, `animate` | rotation in radians |
+| `angle` | elements, groups, children, `animate` | rotation in radians, counterclockwise: an element's about its anchor, a child's about its center, `animate`'s by that much more; an arc's `angle` is its sweep |
 | `class` or `.name` | elements, children | styles |
 
 ## Motion and interaction

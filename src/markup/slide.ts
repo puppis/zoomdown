@@ -28,7 +28,7 @@ import { LatexError, type MacroDefinition } from './latex';
 import { textLines, type TextLines } from './text';
 import { ASTTransformer } from './parser';
 import {
-  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, elementAnchor, placeRelative, type OriginMobject, type PartsMobject,
+  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, elementAnchor, looseOutlines, placeRelative, turnElement, type OriginMobject, type PartsMobject,
 } from './renderer';
 
 /** Slide classes by name, as `[[subslide: Name]]` finds them. */
@@ -209,6 +209,8 @@ export class MarkupSlide extends Slide {
     const elements = new Map<string, ElementSpec>();
     const verticalKeys = new Set([...Object.keys(NEIGHBORS), ...VERTICAL_POSITION, 'at']);
     const pointShapes = ['polyline', 'polygon', 'arc'];
+    // Where an element with outlines it does not draw stood when it was made, so that they follow it.
+    const madeAt = new Map<Mobject, [number, number, number]>();
     for (const [index, item] of items.entries()) {
       if (item instanceof EventSpec || item instanceof ActionSpec || item instanceof NextSpec || item instanceof SkipNextSpec) continue;
       if (item instanceof ElementSpec && (CONNECTIONS.has(item.kind) || ATTACHMENTS.has(item.kind))) continue;
@@ -229,6 +231,7 @@ export class MarkupSlide extends Slide {
         this.elements.set(item.id, obj);
         scope.local.set(item.id, obj);
         elements.set(item.id, item);
+        if (looseOutlines(obj).length) madeAt.set(obj, obj.getCenter() as [number, number, number]);
         if (obj instanceof IframeHost) obj.slide = this;
         if (item.kind === 'image' && 'play' in item.attributes) {
           const plays = item.attributes.play === 'once' ? 1 : 0;
@@ -318,12 +321,32 @@ export class MarkupSlide extends Slide {
       const dy = Number(item.attributes.dy ?? 0);
       if (dx || dy) obj.shift([dx, dy, 0]);
     };
+    // A turn, likewise, about the anchor that landed (the one `at=` names, else the element's own):
+    // the flow keeps the room of the upright element. An arc's angle is its sweep instead.
+    const turn = (item: ElementSpec, obj: Mobject) => {
+      const angle = item.kind === 'arc' ? 0 : Number(item.attributes.angle ?? 0);
+      if (!angle) return;
+      const pivot = ('at' in item.attributes ? parseAt(item.attributes.at, item.line).anchor : null) ?? elementAnchor(item, layout.textAnchor);
+      // The group that turns it stands for the element from now on.
+      const holder = turnElement(obj, angle, anchorPoint(obj, pivot));
+      this.elements.set(item.id, holder);
+      scope.local.set(item.id, holder);
+      SOURCE_OBJECTS.set(holder, this.locate(item.line));
+      if (item.attributes.href) LINKED_OBJECTS.set(holder, item.attributes.href);
+    };
     for (const identifier of positionOrder(placed)) {
       const item = placed.get(identifier) as ElementSpec | IncludeSpec;
       const obj = item instanceof IncludeSpec ? (frames.get(item) as Mobject) : (scope.local.get(identifier) as Mobject);
       if (item instanceof IncludeSpec) placeRelative(item, obj, scope.local, layout.gap);
       else placeRelative(item, obj, scope.local, layout.gap, layout.textAnchor);
       offset(item, obj);
+      const made = madeAt.get(obj);
+      if (made) {
+        const now = obj.getCenter();
+        const delta: [number, number, number] = [now[0] - made[0], now[1] - made[1], 0];
+        if (delta[0] || delta[1]) for (const loose of looseOutlines(obj)) loose.shift(delta);
+      }
+      if (item instanceof ElementSpec) turn(item, obj);
     }
     // Code-authored children are no references, nor is an include whose id an element has; they follow the rest.
     for (const [item, frame] of frames) {
@@ -401,9 +424,11 @@ export class MarkupSlide extends Slide {
       const obj = this.elements.get(change.target) as Mobject;
       // Skipped steps can leave the object in the desired state already.
       if (ctx.mobjects.includes(obj) === (change.action === 'show')) return null;
-      if (change.action === 'show' && this.movies.has(change.target)) {
-        if (obj instanceof RasterImage) obj.showFrame(0);
-        else if (obj instanceof VideoClip) obj.rewind();
+      const movie = change.action === 'show' ? this.movies.get(change.target) : undefined;
+      if (movie) {
+        // The movie's own picture: a turned one is held in the group that turns it.
+        if (movie instanceof VideoPlay) movie.video.rewind();
+        else (movie.mobject as RasterImage).showFrame(0);
         movies.push(change.target);
       }
       const style = change.style ?? 'fade';

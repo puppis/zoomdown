@@ -258,6 +258,7 @@ Text elements take the common attributes:
 | `height` | units | | scale the laid-out block to this height |
 | `anchor` | `center`, `top`, `bottom`, `left`, `right`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `left-baseline`, `baseline`, `right-baseline` | `layout.textAnchor`, left-baseline | the point of the block that `x`, `y`, `at` and the alignments place |
 | `at`, `dx`, `dy`, `buff`, `below`, `above`, `left-of`, `right-of`, `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` | | | relative placement, see [Positioning](#positioning) |
+| `angle` | radians | 0 | turn the placed block counterclockwise about its anchor; see [Turning](#turning) |
 | `color` | color | `layout.color` | the text color; inline spans may override parts |
 | `font` | family | `layout.font` | the typeface (text only; code and formulas have their own) |
 | `font_size` | points | by level | the size |
@@ -474,7 +475,7 @@ Every shape needs an explicit `#id`. Shapes take the common attributes except `f
 | `ellipse` | `width`, `height` | `fill_color`, `fill_opacity` |
 | `polygon` | `points`, at least three `(x,y)` | `fill_color`, `fill_opacity`; the points are absolute coordinates |
 | `polyline` | `points`, at least two `(x,y)`, consecutive ones distinct | no fill; the points are absolute coordinates |
-| `arc` | `radius`, `angle` (nonzero) | `start_angle` (0), `fill_color`, `fill_opacity`; centered on `x`, `y`, counter-clockwise for a positive angle |
+| `arc` | `radius`, `angle` (nonzero) | `start_angle` (0), `fill_color`, `fill_opacity`; centered on `x`, `y`, counter-clockwise for a positive angle; its `angle` is the sweep, not a turn |
 
 Common to all: `color` (the stroke, `layout.color` by default), `stroke_width` (2, in engine
 units: one hundredth of a logical unit), `fill_color` (the stroke color by default),
@@ -661,7 +662,7 @@ or `play` of their own. Relative references stay within a group.
 | `x`, `y` | units | flow | place the group's origin, unless `anchor` names another point |
 | `anchor` | the anchors, or `origin` | `origin` | `origin` is the local (0, 0), where the members' flow starts |
 | `width` | units | the available width | the flow width inside the group |
-| `at`, `dx`, `dy`, `buff`, the relative references, `class`, `opacity`, `step`, `hide`, `enter`, `exit`, `run_time`, `lag`, `focus_only`, `href` | | | as for elements |
+| `at`, `dx`, `dy`, `buff`, the relative references, `angle`, `class`, `opacity`, `step`, `hide`, `enter`, `exit`, `run_time`, `lag`, `focus_only`, `href` | | | as for elements; a group turns about its origin |
 | `tremble`, `tremble_amplitude`, `tremble_rate` | | | shake the group's geometry |
 
 ## Positioning
@@ -725,6 +726,19 @@ or an attachment.
 
 `dx` and `dy` shift the element after every other placement, in units; they require a
 coordinate, an `at` or a relative reference.
+
+### Turning
+
+`angle` turns an element by that many radians, counterclockwise, after every other placement and
+the offsets, about its anchor: the one `anchor=` names, or the one `at=` lands, else the
+element's default (the left end of the first baseline for text, the center for shapes, images,
+icons, tables and charts, the origin for groups). The anchor stays on its point. The flow keeps
+the room of the upright element, as it does for an offset. Anything placed against the element
+afterward sees it as drawn: its anchors are those of the box around it, whose middle is also
+its baseline. Arrows and lines meet its turned sides, or the turned outline of a circle, a dot or
+an ellipse, and `move_along` along a turned shape follows it turned. An arc's `angle` is its
+sweep, not a turn (`start_angle` turns an arc); iframes, connections and attachments take no
+`angle`.
 
 ### Sizing
 

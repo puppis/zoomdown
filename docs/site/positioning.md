@@ -120,6 +120,19 @@ inside parentheses does not split attributes.
 
 - `dx`, `dy` shift the final position of any positioned element. An element placed relative to
   it, or `at=` one of its anchors, sees it shifted.
+- `angle` turns an element by that many radians, counterclockwise, once it is placed and shifted,
+  about its anchor (the one `anchor=` or `at=` names): text about the left end of its first
+  baseline, which stays on its point, shapes and images about their center, groups about their
+  origin. The flow keeps the room of the upright element. Elements placed against it see it as
+  drawn, by the box around it, whose middle is then also its baseline; arrows and lines meet its
+  turned sides, or the turned outline of a circle, an ellipse or a dot. An arc's `angle` is its
+  sweep instead: `start_angle` turns it. Iframes cannot be turned.
+
+```markdown
+[Time]{#axis-label x=-7 y=-3 angle=1.5708}       ← reads upward from (-7, -3)
+[[rectangle: #card x=3 y=0 width=3 height=2 angle=-0.2]]
+[[rectangle: #tab at=top-left:(1,2) width=2 height=1 angle=0.5]]   ← about its top-left corner
+```
 - `width` controls paragraph wrapping, image width and the maximum width of formulas and listings;
   `height` scales the result; `font_size` overrides the layout size.
 - `opacity` (0 to 1) makes any element translucent; fades preserve it.

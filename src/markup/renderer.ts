@@ -203,6 +203,65 @@ export function elementAnchor(item: ElementSpec | IncludeSpec | CodeSlideSpec, t
 
 /** Objects built from a group remember where their local origin sits relative to their center. */
 export type OriginMobject = Mobject & { markupOrigin?: [number, number] };
+/**
+ * An element turned by `angle=`: its box before the turn, as half sizes, the angle, and where the
+ * turned box's center lies from the center of the element's box as drawn.
+ */
+export type TurnedMobject = Mobject & { markupTurn?: { angle: number; half: [number, number]; offset: [number, number] } };
+
+/**
+ * The exact geometry that the members of `obj` stand for and do not draw (a sketchy shape's crisp
+ * outline, a connection's path), which so does not move with it: placing or turning `obj` moves
+ * them too.
+ */
+export function looseOutlines(obj: Mobject): VMobject[] {
+  const family = new Set(obj.getFamily());
+  const loose: VMobject[] = [];
+  for (const member of family) {
+    const outline = (member as OutlineMobject).markupOutline;
+    if (outline && !family.has(outline)) loose.push(outline);
+  }
+  return loose;
+}
+
+/** The box an element is met in: the one it had before `angle=` turned it, turned with it, or its bounding box. */
+export function shapeFrame(obj: Mobject): { center: [number, number, number]; half: [number, number]; angle: number } {
+  const center = obj.getCenter() as [number, number, number];
+  const turn = (obj as TurnedMobject).markupTurn;
+  if (!turn) return { center, half: [obj.getWidth() / 2, obj.getHeight() / 2], angle: 0 };
+  return { center: [center[0] + turn.offset[0], center[1] + turn.offset[1], center[2]], half: turn.half, angle: turn.angle };
+}
+
+/**
+ * Turn a placed element by `angle` radians counterclockwise about `pivot`, held in a group that
+ * does the turning (the engine measures a single object without its own rotation): the holder
+ * stands for the element from then on. Connections meet its turned box (or outline, for a
+ * circle, a dot or an ellipse), a group keeps its origin, and a path follows the turned shape;
+ * anything else measures it by the box around it as drawn, so its baseline anchors are its middle
+ * and its lines no longer count as text.
+ */
+export function turnElement(obj: Mobject, angle: number, pivot: [number, number, number]): Mobject {
+  const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+  const turned = (p: readonly number[]): [number, number] => [
+    pivot[0] + cos * (p[0] - pivot[0]) - sin * (p[1] - pivot[1]),
+    pivot[1] + sin * (p[0] - pivot[0]) + cos * (p[1] - pivot[1]),
+  ];
+  const half: [number, number] = [obj.getWidth() / 2, obj.getHeight() / 2];
+  const center = turned(obj.getCenter());
+  const origin = (obj as OriginMobject).markupOrigin ? turned(anchorPoint(obj, 'origin')) : null;
+  const holder = new Group(obj) as Group & TurnedMobject & OriginMobject & OutlineMobject & RoundMobject;
+  holder.rotate(angle, { aboutPoint: pivot });
+  // The exact geometry its sketchy shapes and connections stand for turns with it; a path follows
+  // the element's own, or the shape itself.
+  for (const loose of looseOutlines(obj)) loose.rotate(angle, { aboutPoint: pivot });
+  const path = (obj as OutlineMobject).markupOutline ?? (obj instanceof VMobject ? obj : undefined);
+  if (path) holder.markupOutline = path;
+  if ((obj as RoundMobject).markupRound) holder.markupRound = true;
+  const now = holder.getCenter();
+  holder.markupTurn = { angle, half, offset: [center[0] - now[0], center[1] - now[1]] };
+  if (origin) holder.markupOrigin = [origin[0] - now[0], origin[1] - now[1]];
+  return holder;
+}
 
 /** Composite objects name the parts a blob should flow around separately (group members, an icon and its label). */
 export type PartsMobject = Mobject & { markupParts?: Mobject[] };
@@ -353,23 +412,26 @@ export function placeRelative(
 }
 
 /** What a renderer is made with: the layout, the document's base path, macros, preloaded assets, and the deck's library folders and modules. */
-/** The point where a ray from the center of `obj` along `direction` leaves its bounding box. */
+/** The point where a ray from the center of `obj` along `direction` leaves its box, turned with it by `angle=`. */
 export function boundaryPoint(obj: Mobject, direction: [number, number, number]): [number, number, number] {
-  const center = obj.getCenter();
+  const { center, half, angle } = shapeFrame(obj);
+  // The direction in the box's own frame, and the way back.
+  const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+  const d = angle ? [cos * direction[0] + sin * direction[1], -sin * direction[0] + cos * direction[1]] : direction;
+  const point = (t: number): [number, number, number] => {
+    const [x, y] = [d[0] * t, d[1] * t];
+    return angle ? [center[0] + cos * x - sin * y, center[1] + sin * x + cos * y, center[2]] : [center[0] + x, center[1] + y, center[2]];
+  };
   // A circle, a dot or an ellipse is met on its outline, not on the corner of its box.
   if ((obj as RoundMobject).markupRound) {
-    const [rx, ry] = [obj.getWidth() / 2, obj.getHeight() / 2];
-    const reach = Math.hypot(rx > 0 ? direction[0] / rx : 0, ry > 0 ? direction[1] / ry : 0);
-    if (reach < 1e-12) return [center[0], center[1], center[2]];
-    return [center[0] + direction[0] / reach, center[1] + direction[1] / reach, center[2]];
+    const reach = Math.hypot(half[0] > 0 ? d[0] / half[0] : 0, half[1] > 0 ? d[1] / half[1] : 0);
+    return reach < 1e-12 ? point(0) : point(1 / reach);
   }
-  const half = [obj.getWidth() / 2, obj.getHeight() / 2];
   let t = Infinity;
   for (const axis of [0, 1] as const) {
-    if (Math.abs(direction[axis]) > 1e-9 && half[axis] > 0) t = Math.min(t, half[axis] / Math.abs(direction[axis]));
+    if (Math.abs(d[axis]) > 1e-9 && half[axis] > 0) t = Math.min(t, half[axis] / Math.abs(d[axis]));
   }
-  if (!Number.isFinite(t)) return [center[0], center[1], center[2]];
-  return [center[0] + direction[0] * t, center[1] + direction[1] * t, center[2]];
+  return Number.isFinite(t) ? point(t) : point(0);
 }
 
 export interface MarkupRendererOptions {
@@ -1179,7 +1241,7 @@ export class MarkupRenderer {
     const at = (obj: Mobject | null, side: typeof start): [number, number, number] => {
       if (!obj) return side as [number, number, number];
       const anchor = anchorOf(side);
-      return anchor ? anchorPoint(obj, anchor) : obj.getCenter();
+      return anchor ? anchorPoint(obj, anchor) : shapeFrame(obj).center;
     };
     let a = at(source, start);
     let b = at(target, end);
@@ -1307,11 +1369,12 @@ export function endGaps(element: ElementSpec, length: number): [number, number] 
   return gaps;
 }
 
-/** Whether `p` lies inside `obj`: in the outline of a circle, a dot or an ellipse, in the box of anything else. */
+/** Whether `p` lies inside `obj`: in the outline of a circle, a dot or an ellipse, in the box of anything else, turned with it by `angle=`. */
 export function insideShape(obj: Mobject, p: Vec): boolean {
-  const center = obj.getCenter();
-  const [rx, ry] = [obj.getWidth() / 2, obj.getHeight() / 2];
-  const [dx, dy] = [p[0] - center[0], p[1] - center[1]];
+  const { center, half: [rx, ry], angle } = shapeFrame(obj);
+  const [ox, oy] = [p[0] - center[0], p[1] - center[1]];
+  const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+  const [dx, dy] = [cos * ox + sin * oy, -sin * ox + cos * oy];
   if ((obj as RoundMobject).markupRound) return rx > 0 && ry > 0 && (dx / rx) ** 2 + (dy / ry) ** 2 < 1;
   return Math.abs(dx) < rx && Math.abs(dy) < ry;
 }

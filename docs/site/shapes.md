@@ -28,7 +28,7 @@ the placement attributes of [Positioning](positioning.html), `step`, `hide` and 
 | `circle` | `radius` | |
 | `dot` | | `radius` (0.08; filled by default) |
 | `polygon` | `points` (three or more) | |
-| `arc` | `radius`, `angle` | `start_angle` (radians; `x`, `y` are the arc's center) |
+| `arc` | `radius`, `angle` | `start_angle` (radians; `x`, `y` are the arc's center; `angle` is the sweep) |
 | `polyline` | `points` (two or more) | |
 
 Point-defined shapes (`polygon`, `polyline`, `arc`) keep their coordinates unless they are

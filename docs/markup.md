@@ -377,7 +377,10 @@ without coordinates flow downward from the top-left margin (or from `flow_top` a
 the slide); text with only `x` keeps flowing at
 that edge, while an explicit `y` or a vertical constraint leaves the flow; any other element, or
 text anchored at its center, defaults an omitted axis to zero. `dx` and `dy` shift the final
-position of any positioned element. `width` controls wrapping, image width and the maximum formula
+position of any positioned element. `angle` then turns it by that many radians, counterclockwise,
+about its anchor (the one `anchor=` or `at=` names, else the default above): the flow keeps the
+room of the upright element, later references see the box around it as drawn, and arrows and
+lines meet its turned sides. An arc's `angle` is its sweep, not a turn; iframes take no `angle`. `width` controls wrapping, image width and the maximum formula
 or listing width; `height` scales the result; `font_size` overrides the layout size; `opacity` (0
 to 1) makes any element translucent.
 

@@ -262,12 +262,12 @@ export const LAYOUT = new Set([...GEOMETRY, ...POSITION_REFERENCES, 'buff', 'dx'
 /** Timing of an element's own fade-in and fade-out, in seconds. */
 export const TIMING_ATTRS = new Set(['run_time', 'lag']);
 export const ELEMENT_ATTRS = new Set([
-  'id', 'x', 'y', 'width', 'height', 'step', 'hide', 'color', 'font_size', 'font', 'focus_only', 'opacity', 'anchor', 'dx', 'dy', 'at', 'class',
+  'id', 'x', 'y', 'width', 'height', 'angle', 'step', 'hide', 'color', 'font_size', 'font', 'focus_only', 'opacity', 'anchor', 'dx', 'dy', 'at', 'class',
   'enter', 'exit', 'href', ...POSITION_REFERENCES, 'buff', ...TIMING_ATTRS,
 ]);
 /** Attributes of a `::: {.group}` container. */
 export const GROUP_ATTRS = new Set([
-  'id', 'x', 'y', 'width', 'step', 'hide', 'opacity', 'anchor', 'dx', 'dy', 'at', 'class', 'focus_only', 'enter', 'exit', 'href',
+  'id', 'x', 'y', 'width', 'angle', 'step', 'hide', 'opacity', 'anchor', 'dx', 'dy', 'at', 'class', 'focus_only', 'enter', 'exit', 'href',
   ...POSITION_REFERENCES, 'buff', ...TIMING_ATTRS,
 ]);
 /** Anchor points: bounding-box center, edges and corners, plus the first baseline for text-like elements. */
