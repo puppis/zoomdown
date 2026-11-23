@@ -32,10 +32,12 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       # The macOS runner has an Apple silicon processor, and the app ships native packages for one
       # processor only (the bundlers Vite serves decks with, Rollup and esbuild, and the canvas of
-      # the PDF reader): each Mac app is packaged from dependencies installed for its own.
+      # the PDF reader): each Mac app is packaged from dependencies installed for its own. Each
+      # target names its architecture, since the arch lists of the build configuration would
+      # otherwise package both apps from either install.
       - name: Build the app for Apple silicon Macs
         if: runner.os == 'macOS'
-        run: npx electron-builder --mac --arm64 --publish never
+        run: npx electron-builder --mac dmg:arm64 zip:arm64 --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - name: Install the dependencies for Intel Macs
@@ -43,7 +45,7 @@ jobs:
         run: npx --yes npm@11 ci --cpu=x64 --os=darwin --ignore-scripts
       - name: Build the app for Intel Macs
         if: runner.os == 'macOS'
-        run: npx electron-builder --mac --x64 --publish never
+        run: npx electron-builder --mac dmg:x64 zip:x64 --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - name: Check that each Mac app holds the native packages of its processor
