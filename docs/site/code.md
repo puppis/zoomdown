@@ -29,7 +29,8 @@ A fenced block (`` ``` `` or `~~~`) is a verbatim listing. Its info string names
 optionally followed by the usual `{…}` attributes: `#id`, `x`/`y` (left edge and first
 baseline, like prose), `width` (the block shrinks uniformly if a line is wider), `height`,
 `font_size` (default `layout.codeSize`, 80 % of the text size), `color`, `anchor`, `step`/`hide`,
-`focus_only`, `.class` and the relative constraints. Lines never wrap and tabs become four spaces.
+`focus_only`, `.class` and the relative constraints, and `math` (see [Formulas in
+pseudocode](#formulas-in-pseudocode)). Lines never wrap and tabs become four spaces.
 A `::: {.element …}` container around the fence works as for other blocks.
 
 ## Languages
@@ -73,5 +74,31 @@ Keywords take the keyword color and types the type color; `//` starts a comment.
 of your own algorithms (`send`, `receive`, `parent`) to the lists. A fence finds the profile by
 its file name, `pseudo` here. Symbols such as `≠` show as they are; one the code font lacks is
 drawn in another face.
+
+## Formulas in pseudocode
+
+A listing is verbatim, so `$L_i$` shows as typed, unless its `$…$` are formulas: a profile with
+`"math": true` typesets them in every fence of its language, and `math=true` on a fence does it
+for that listing alone, in any language (`math=false` turns a profile's off again):
+
+````zoomdown {height=4}
+::: slide {#pseudo-math width=16 height=4}
+
+```text {x=-7 y=1.2 font_size=22 math=true}
+upon receiving $\langle \mathit{wave}, m \rangle$ from $q$ do
+  if $\mathit{parent}_p = \bot$ then          // first wave: $O(|E|)$ messages
+    $\mathit{parent}_p \gets q$
+    for each $r \in N_p \setminus \{q\}$ do send $m$ to $r$
+  pay \$5 to $L_i$
+```
+
+:::
+````
+
+A formula is typeset as an inline formula of the listing's size, with the deck's `macros`, on the
+line's baseline between the runs of code, which keep their monospace columns before it and
+continue after it. It takes the color of the code it starts in: the text color, or the comment
+color in a comment. `\$` is a dollar, and a `$` left open on its line is an error. The lines keep
+one pitch, the font's, or a taller formula's (a fraction spreads every line of its listing).
 
 > **Tip** To show markup that itself contains fences, open the outer block with four backticks.

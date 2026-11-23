@@ -185,8 +185,9 @@ embed the file, so data stays out of the slides and one chart module serves many
 
 A language profile is a JSON file with the lists the tokenizer uses: `keywords`, `types`,
 `lineComment`, `blockComment` (pairs), `strings`, `tripleStrings`, the flags `commands` (TeX
-`\name`), `variables` (`$name`), `flags` (`--name`) and `keys` (`"name":`), and `mode`
-(`markup` or `tags`) for line-oriented syntaxes.
+`\name`), `variables` (`$name`), `flags` (`--name`) and `keys` (`"name":`), `math` (`$…$` is
+a formula, typeset in the listing, as for pseudocode), and `mode` (`markup` or `tags`) for
+line-oriented syntaxes.
 `aliases` adds other fence names for the same profile. Any fence name the player does not know
 is looked for as `languages/<name>.json`, once per deck.
 

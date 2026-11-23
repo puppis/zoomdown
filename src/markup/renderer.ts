@@ -16,7 +16,7 @@ import { ICON_KINDS } from './ast';
 import { effectFromModule, type EffectModule, type EffectOptions } from '../animations';
 import { chartFromModule, chartDataFromJson, CHART_TYPES, type ChartModule } from '../charts';
 import { directiveFromModule, type DirectiveModule, type DirectiveOptions } from '../directives';
-import { knownLanguage, registerLanguage, type Language } from './tokens';
+import { knownLanguage, languageMath, registerLanguage, type Language } from './tokens';
 import { DEFAULT_CODE_FONT, DEFAULT_HANDWRITING_FONT } from '../fonts';
 import type { CodeTheme } from './code';
 import type { Animation } from 'manim-web';
@@ -36,7 +36,7 @@ import {
 } from './ast';
 import { MarkupParser } from './parser';
 import { MONOSPACE, PX_PER_WORLD_BASE, StyledLine, baselineY, layoutParagraph, markLines, measureRun, textLines, textResolutionScale, type MathPiece } from './text';
-import { layoutCode } from './code';
+import { UnclosedFormula, codeFormulas, layoutCode } from './code';
 import { DEFAULT_TEXT_FONT } from '../fonts';
 import {
   LatexError, applyLatexColors, compileMacros, edgeSpaces, emptyEdgeGroups, expandMacros, latexErrorOf, plainMacros, preprocessLatex, ruleGlyphs, type Macro, type MacroDefinition, type RuledGlyph,
@@ -1240,7 +1240,11 @@ export class MarkupRenderer {
         ? await this.listItem(element.spans, element.list.marker, size, width, color, attrs.font, lineHeight)
         : await this.text(element.spans, size, width, color, attrs.font, lineHeight);
     } else if (element.kind === 'code') {
-      obj = this.code(element.source, attrs.lang ?? '', size, width, color, await this.prepareCode(attrs.lang ?? ''));
+      const lang = attrs.lang ?? '';
+      const theme = await this.prepareCode(lang);
+      // A profile's `math` typesets its fences' formulas, unless a fence says otherwise.
+      const math = 'math' in attrs ? attrs.math === 'true' : languageMath(lang);
+      obj = await this.code(element.source, lang, size, width, color, theme, math, element.line);
     } else {
       throw new MarkupError(`Unsupported rendered element kind ${JSON.stringify(element.kind)}`, element.line);
     }
@@ -1381,11 +1385,25 @@ export class MarkupRenderer {
     return item;
   }
 
-  /** Lay out a verbatim listing; it shrinks uniformly when wider than `maxWidth`. */
-  code(source: string, language: string, fontSize: number, maxWidth: number, defaultColor: string, theme?: CodeTheme): Mobject {
-    return layoutCode(source, language, {
-      fontSize, maxWidth, defaultColor, lineGap: this.layout.lineGap, fontFamily: this.layout.codeFontFamily, ...(theme ? { theme } : {}),
-    });
+  /**
+   * Lay out a verbatim listing; it shrinks uniformly when wider than `maxWidth`. With `math`, its
+   * `$…$` are formulas at the listing's size, typeset first; `line` is the fence's, for errors.
+   */
+  async code(source: string, language: string, fontSize: number, maxWidth: number, defaultColor: string, theme?: CodeTheme, math = false, line: number | null = null): Promise<Mobject> {
+    const options = { fontSize, maxWidth, defaultColor, lineGap: this.layout.lineGap, fontFamily: this.layout.codeFontFamily, ...(theme ? { theme } : {}) };
+    if (!math) return layoutCode(source, language, options);
+    const key = (latex: string, color: string) => `${color}\u0000${latex}`;
+    const pieces = new Map<string, MathPiece>();
+    try {
+      await Promise.all(codeFormulas(source, language, options).map(async ({ latex, color }) => {
+        pieces.set(key(latex, color), await this.mathPiece(latex, color, fontSize, this.layout.fontFamily));
+      }));
+    } catch (error) {
+      // The fence's line is the one before the listing's first.
+      if (error instanceof UnclosedFormula) throw new MarkupError(error.message, line === null ? null : line + 1 + error.lineIndex);
+      throw error;
+    }
+    return layoutCode(source, language, { ...options, formula: (latex, color) => pieces.get(key(latex, color)) as MathPiece });
   }
 
   /** What a listing needs before it is laid out: the code face, the language's profile, the deck's code theme. */

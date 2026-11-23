@@ -402,6 +402,12 @@ and first baseline, like prose), `width` (the block shrinks uniformly if a line 
 `step`/`hide`, `focus_only` and relative placement. Lines never wrap, tabs become four spaces, and
 a `::: {.element …}` container around the fence works as for other blocks.
 
+A listing's `$…$` are formulas when its language profile has `"math": true` (pseudocode) or the
+fence has `math=true`; `math=false` keeps them code. A formula is typeset at the listing's size on
+the line's baseline, between runs of code that keep their columns, in the color of the code it
+starts in (a comment's in a comment); `\$` is a dollar, and a `$` left open on its line is an
+error.
+
 Tokens are colored for `python`, `javascript`/`typescript`/`jsx`/`tsx`, C-like languages (`c`,
 `cpp`, `java`, `cs`, `rust`, `go`, `kotlin`, `swift`, …), `bash`/`sh`, `json`, `latex`/`tex`,
 `html`/`xml`/`svg` and `markdown` (this dialect: containers, directives, attributes, math, code

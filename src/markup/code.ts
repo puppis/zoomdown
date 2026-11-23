@@ -8,8 +8,8 @@
  * `markupBaselineFraction`, like prose paragraphs.
  */
 import { Group, type Mobject } from 'manim-web';
-import { MONOSPACE, StyledLine, markLines, type TextRun } from './text';
-import { tokenizeCode, type TokenClass } from './tokens';
+import { MONOSPACE, StyledLine, markLines, type MathPiece, type TextRun } from './text';
+import { tokenizeCode, type CodeToken, type TokenClass } from './tokens';
 
 export { tokenizeCode, languageFor } from './tokens';
 export type { TokenClass, CodeToken } from './tokens';
@@ -45,25 +45,155 @@ export interface CodeLayoutOptions {
   /** CSS font family; defaults to the platform monospace stack. */
   fontFamily?: string;
   theme?: CodeTheme | null;
+  /**
+   * The typeset formula of a `$…$` of the listing in a color, as `codeFormulas` lists them. When it
+   * is given, the listing's `$…$` are formulas and `\$` is a dollar; otherwise every `$` is code.
+   */
+  formula?: (latex: string, color: string) => MathPiece;
 }
 
-/** Stack highlighted monospace lines; the block scales down if wider than `maxWidth`. */
-export function layoutCode(source: string, language: string, options: CodeLayoutOptions): Mobject {
-  const { fontSize, maxWidth, defaultColor, lineGap } = options;
-  const theme = options.theme === undefined ? codeThemeFor(defaultColor) : options.theme ?? {};
-  const family = options.fontFamily || MONOSPACE;
-  const lines = tokenizeCode(source, language).map((tokens) => {
+/** A `$` in a listing with formulas that its line does not close; `lineIndex` counts from 0. */
+export class UnclosedFormula extends Error {
+  constructor(readonly lineIndex: number) {
+    super('A $ opens a formula that its line does not close: write \\$ for a dollar');
+    this.name = 'UnclosedFormula';
+  }
+}
+
+/** A piece of a line of a listing: a run of code, or a formula in a color. */
+type CodePart = { run: TextRun } | { latex: string; color: string };
+
+function themeOf(options: Pick<CodeLayoutOptions, 'defaultColor' | 'theme'>): CodeTheme {
+  return options.theme === undefined ? codeThemeFor(options.defaultColor) : options.theme ?? {};
+}
+
+/**
+ * The lines of a listing as runs of code in the theme's colors, null for a blank one. With `math`,
+ * a `$…$` is a formula, in the color of the code its first `$` belongs to (a comment's in a
+ * comment), and `\$` is a dollar; an empty `$$` stays as it is.
+ */
+function codeParts(source: string, language: string, defaultColor: string, theme: CodeTheme, math: boolean): Array<CodePart[] | null> {
+  return tokenizeCode(source, language).map((tokens, lineIndex) => {
     if (!tokens.some((token) => token.text.trim())) return null;
-    const runs: TextRun[] = tokens.map((token) => ({
-      text: token.text, bold: Boolean(token.bold), italic: token.cls === 'comment', color: theme[token.cls] ?? defaultColor, mono: false,
-    }));
-    return new StyledLine({ runs, fontSize, fontFamily: family, baseColor: defaultColor });
+    const runOf = (text: string, token: CodeToken): TextRun => ({
+      text, bold: Boolean(token.bold), italic: token.cls === 'comment', color: theme[token.cls] ?? defaultColor, mono: false,
+    });
+    if (!math || !tokens.some((token) => token.text.includes('$'))) return tokens.map((token) => ({ run: runOf(token.text, token) }));
+    // The line as one string, each character's token remembered: a `$…$` may span tokens.
+    const line = tokens.map((token) => token.text).join('');
+    const owner = tokens.flatMap((token, index) => Array.from({ length: token.text.length }, () => index));
+    const parts: CodePart[] = [];
+    let pending = '';
+    let pendingToken = -1;
+    const flush = () => {
+      if (pending) parts.push({ run: runOf(pending, tokens[pendingToken]) });
+      pending = '';
+    };
+    const put = (text: string, token: number) => {
+      if (token !== pendingToken) {
+        flush();
+        pendingToken = token;
+      }
+      pending += text;
+    };
+    let i = 0;
+    while (i < line.length) {
+      if (line[i] === '\\' && line[i + 1] === '$') {
+        put('$', owner[i]);
+        i += 2;
+        continue;
+      }
+      if (line[i] !== '$') {
+        put(line[i], owner[i]);
+        i += 1;
+        continue;
+      }
+      let end = i + 1;
+      while (end < line.length && line[end] !== '$') end += line[end] === '\\' ? 2 : 1;
+      if (end >= line.length) throw new UnclosedFormula(lineIndex);
+      if (end === i + 1) put('$$', owner[i]);
+      else {
+        flush();
+        pendingToken = -1;
+        parts.push({ latex: line.slice(i + 1, end), color: theme[tokens[owner[i]].cls] ?? defaultColor });
+      }
+      i = end + 1;
+    }
+    flush();
+    return parts;
   });
-  const present = lines.filter((line): line is StyledLine => line !== null);
+}
+
+/** The formulas `layoutCode` asks `formula` for when a listing's `$…$` are typeset, each once. */
+export function codeFormulas(source: string, language: string, options: Pick<CodeLayoutOptions, 'defaultColor' | 'theme'>): Array<{ latex: string; color: string }> {
+  const seen = new Map<string, { latex: string; color: string }>();
+  for (const parts of codeParts(source, language, options.defaultColor, themeOf(options), true)) {
+    for (const part of parts ?? []) if ('latex' in part) seen.set(`${part.color}\u0000${part.latex}`, part);
+  }
+  return [...seen.values()];
+}
+
+/** A laid-out line of a listing: what it draws, its pen advance, its reach and how to place it on a baseline. */
+interface CodeLine {
+  mobject: Mobject;
+  advance: number;
+  ascent: number;
+  descent: number;
+  place: (y: number) => void;
+}
+
+/**
+ * Stack highlighted monospace lines; the block scales down if wider than `maxWidth`. A line with
+ * formulas sets them on its baseline between its runs of code; a line is as tall as its font, or
+ * as a formula that reaches further, and the lines keep one pitch.
+ */
+export function layoutCode(source: string, language: string, options: CodeLayoutOptions): Mobject {
+  const { fontSize, maxWidth, defaultColor, lineGap, formula } = options;
+  const family = options.fontFamily || MONOSPACE;
+  const lines = codeParts(source, language, defaultColor, themeOf(options), Boolean(formula)).map((parts): CodeLine | null => {
+    if (!parts) return null;
+    if (parts.every((part) => 'run' in part)) {
+      const line = new StyledLine({ runs: parts.map((part) => (part as { run: TextRun }).run), fontSize, fontFamily: family, baseColor: defaultColor });
+      return { mobject: line, advance: line.advance, ascent: line.fontAscent, descent: line.fontDescent, place: (y) => line.placeOrigin(0, y) };
+    }
+    const members: Mobject[] = [];
+    let advance = 0;
+    let ascent = 0;
+    let descent = 0;
+    let runs: TextRun[] = [];
+    const endRuns = () => {
+      if (!runs.length) return;
+      const line = new StyledLine({ runs, fontSize, fontFamily: family, baseColor: defaultColor });
+      line.placeOrigin(advance, 0);
+      advance += line.advance;
+      ascent = Math.max(ascent, line.fontAscent);
+      descent = Math.max(descent, line.fontDescent);
+      members.push(line);
+      runs = [];
+    };
+    for (const part of parts) {
+      if ('run' in part) {
+        runs.push(part.run);
+        continue;
+      }
+      endRuns();
+      const piece = (formula as NonNullable<typeof formula>)(part.latex, part.color);
+      const mobject = piece.mobject.copy();
+      mobject.shift([advance, 0, 0]);
+      advance += piece.advance;
+      ascent = Math.max(ascent, piece.ascent);
+      descent = Math.max(descent, piece.descent);
+      members.push(mobject);
+    }
+    endRuns();
+    const group = new Group(...members);
+    return { mobject: group, advance, ascent, descent, place: (y) => group.shift([0, y, 0]) };
+  });
+  const present = lines.filter((line): line is CodeLine => line !== null);
   if (!present.length) return new Group();
-  const pitch = Math.max(...present.map((line) => line.fontAscent + line.fontDescent)) + lineGap / 2;
-  lines.forEach((line, index) => line?.placeOrigin(0, -index * pitch));
-  const block = new Group(...present) as Group & { markupBaselineFraction: number };
+  const pitch = Math.max(...present.map((line) => line.ascent + line.descent)) + lineGap / 2;
+  lines.forEach((line, index) => line?.place(-index * pitch));
+  const block = new Group(...present.map((line) => line.mobject)) as Group & { markupBaselineFraction: number };
   const width = Math.max(...present.map((line) => line.advance));
   if (width > maxWidth + 1e-6) block.scale(maxWidth / width, { aboutPoint: [0, 0, 0] });
   const height = block.getHeight();
@@ -72,7 +202,7 @@ export function layoutCode(source: string, language: string, options: CodeLayout
   const lastLine = lines.reduce((last, line, index) => (line ? index : last), 0);
   markLines(block, {
     first: 0, last: -lastLine * pitch * scale,
-    ascent: Math.max(...present.map((line) => line.fontAscent)) * scale, descent: Math.max(...present.map((line) => line.fontDescent)) * scale,
+    ascent: Math.max(...present.map((line) => line.ascent)) * scale, descent: Math.max(...present.map((line) => line.descent)) * scale,
     interline: pitch * scale,
   });
   block.center();

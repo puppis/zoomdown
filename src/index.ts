@@ -62,7 +62,7 @@ export type { LayoutConfigOptions, MarkupRendererOptions } from './markup/render
 export { MarkupSlide, SlideBuilder } from './markup/slide';
 export type { SlideNamespace, SlideBuilderOptions } from './markup/slide';
 export { StyledLine, layoutParagraph, inlineWords, baselineY } from './markup/text';
-export { layoutCode, tokenizeCode, languageFor, codeThemeFor, DARK_CODE_THEME, LIGHT_CODE_THEME } from './markup/code';
+export { layoutCode, codeFormulas, tokenizeCode, languageFor, codeThemeFor, DARK_CODE_THEME, LIGHT_CODE_THEME } from './markup/code';
 export { registerLanguage, knownLanguage } from './markup/tokens';
 export type { Language } from './markup/tokens';
 export { PropertyAnimation, Tremble, makeEffect, effectFromModule, enterAnimation, exitAnimation, RATE_FUNCTIONS, EFFECT_NAMES as EFFECTS } from './animations';

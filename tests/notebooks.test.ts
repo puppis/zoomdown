@@ -19,8 +19,9 @@ function decks(): Array<{ where: string; source: string }> {
       });
     } else if (file.endsWith('.md')) {
       const text = readFileSync(join(site, file), 'utf8');
-      for (const match of text.matchAll(/```zoomdown([^\n]*)\n([\s\S]*?)```/g)) {
-        if (!/\bsrc=/.test(match[1])) found.push({ where: `${file} fence at ${text.slice(0, match.index).split('\n').length}`, source: match[2] });
+      // A fence closes on a line of as many backticks, so that a deck can hold listings in a four-backtick one.
+      for (const match of text.matchAll(/^(`{3,})zoomdown([^\n]*)\n([\s\S]*?)^\1[ \t]*$/gm)) {
+        if (!/\bsrc=/.test(match[2])) found.push({ where: `${file} fence at ${text.slice(0, match.index).split('\n').length}`, source: match[3] });
       }
     }
   }

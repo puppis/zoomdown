@@ -889,7 +889,10 @@ export class ASTTransformer {
       if (item.kind === 'image') {
         allowed.add('play');
         if (VIDEO_EXTENSIONS.test(item.source)) allowed.add('muted');
-      } else if (item.kind === 'code') allowed.add('lang');
+      } else if (item.kind === 'code') {
+        allowed.add('lang');
+        allowed.add('math');
+      }
     }
     if (allowed && VECTOR_KINDS.has(item.kind)) for (const key of TREMBLE_ATTRS) allowed.add(key);
     return allowed;
@@ -1043,6 +1046,7 @@ export class ASTTransformer {
       }
     }
     if ('muted' in item.attributes && !['true', 'false'].includes(item.attributes.muted)) throw new MarkupError('muted must be true or false', item.line);
+    if (item.kind === 'code' && 'math' in item.attributes && !['true', 'false'].includes(item.attributes.math)) throw new MarkupError('math must be true or false', item.line);
     if (scope) {
       for (const key of ['step', 'hide', 'focus_only', 'play']) {
         if (key in item.attributes) throw new MarkupError(`Group members cannot use ${key}; apply it to the group`, item.line);

@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import type { Mobject } from 'manim-web';
 import { MarkupParser } from '../src/markup/parser';
 import { ElementSpec, MarkupError } from '../src/markup/ast';
-import { codeThemeFor, DARK_CODE_THEME, LIGHT_CODE_THEME, languageFor, tokenizeCode } from '../src/markup/code';
+import { UnclosedFormula, codeFormulas, codeThemeFor, DARK_CODE_THEME, LIGHT_CODE_THEME, languageFor, tokenizeCode } from '../src/markup/code';
+import { languageMath, registerLanguage } from '../src/markup/tokens';
+import { StyledLine, textLines } from '../src/markup/text';
+import { CANVAS_CALLS, element, installFakeCanvas, slide } from './helpers/slides';
 
 const classes = (line: { text: string; cls: string }[]) => line.filter((t) => t.text.trim()).map((t) => `${t.cls}:${t.text.trim()}`);
 
@@ -73,5 +77,88 @@ describe('tokenizeCode', () => {
   it('chooses a theme from the text color', () => {
     expect(codeThemeFor('#FFFFFF')).toBe(DARK_CODE_THEME);
     expect(codeThemeFor('#000000')).toBe(LIGHT_CODE_THEME);
+  });
+});
+
+describe('formulas in a listing', () => {
+  beforeAll(() => {
+    installFakeCanvas();
+    registerLanguage('pseudo-math', { keywords: ['while', 'do', 'in'], lineComment: ['//'], math: true });
+  });
+  beforeEach(() => {
+    CANVAS_CALLS.length = 0;
+  });
+  const options = { defaultColor: '#000000', theme: LIGHT_CODE_THEME };
+  /** The text a listing draws, line by line pieces in the order drawn. */
+  const drawnText = () => CANVAS_CALLS.filter((call) => call.method === 'fillText').map((call) => call.args[0] as string);
+
+  it('are on in a profile with math and off elsewhere', () => {
+    expect(languageMath('pseudo-math')).toBe(true);
+    expect(languageMath('python')).toBe(false);
+    expect(languageMath('')).toBe(false);
+  });
+
+  it('are each $…$ of a line, in the color of the code it starts in, a comment\'s in a comment', () => {
+    const source = 'while $i < n$ do  // $O(n)$ steps\n  pay \\$5 and $$ more\n  x := $\\$y$ and again $i < n$';
+    expect(codeFormulas(source, 'pseudo-math', options)).toEqual([
+      { latex: 'i < n', color: '#000000' },
+      { latex: 'O(n)', color: LIGHT_CODE_THEME.comment },
+      { latex: '\\$y', color: '#000000' },
+    ]);
+  });
+
+  it('need their $ closed on the line', () => {
+    expect(() => codeFormulas('x := 1\nx := $a + 1', 'pseudo-math', options)).toThrow(UnclosedFormula);
+    try {
+      codeFormulas('x := 1\nx := $a + 1', 'pseudo-math', options);
+    } catch (error) {
+      expect((error as UnclosedFormula).lineIndex).toBe(1);
+    }
+  });
+
+  it('take math=true or math=false on a fence', () => {
+    const parse = (info: string) => new MarkupParser().parse(`::: slide {#a}\n\`\`\`${info}\nx\n\`\`\`\n:::`);
+    expect(() => parse('python {math=true}')).not.toThrow();
+    expect(() => parse('python {math=maybe}')).toThrow(/math must be true or false/);
+  });
+
+  it('are typeset between the runs of code, and a dollar escaped is one', async () => {
+    await slide('', '```pseudo-math {#p}\nwhile $i < n$ do\n  pay \\$5\n```');
+    const drawn = drawnText();
+    expect(drawn).toContain('while');
+    expect(drawn).toContain('do');
+    expect(drawn.some((text) => text.includes('$5'))).toBe(true);
+    expect(drawn.some((text) => text.includes('i < n') || text.includes('$i'))).toBe(false);
+  });
+
+  it('set the code after a formula past it', async () => {
+    const s = await slide('', '```pseudo-math {#p}\nwhile $i < n$ do\n```');
+    const line = (element(s, 'p') as Mobject).children[0] as Mobject;
+    const [before, formula, after] = line.children as [StyledLine, Mobject, StyledLine];
+    expect(before).toBeInstanceOf(StyledLine);
+    expect(after).toBeInstanceOf(StyledLine);
+    // Every character is half an em wide in the fake font, and a line's canvas has two pixels of padding.
+    const call = CANVAS_CALLS.find((c) => c.method === 'fillText' && c.args[0] === 'while');
+    const em = Number(/(\d+(?:\.\d+)?)px/.exec(call?.font ?? '')?.[1]) / (96 * 2);
+    const padding = 2 / (96 * 2);
+    expect(formula.getLeft()[0] - line.getLeft()[0]).toBeCloseTo('while '.length * 0.5 * em + padding, 2);
+    expect(line.getRight()[0] - formula.getRight()[0]).toBeCloseTo(' do'.length * 0.5 * em + padding, 2);
+  });
+
+  it('keep the pitch of the lines when they fit the font', async () => {
+    const pitch = async (code: string) => textLines(element(await slide('', `\`\`\`pseudo-math {#p}\n${code}\n\`\`\``), 'p'))?.interline;
+    expect(await pitch('x := $x$\nz := 1')).toBeCloseTo(await pitch('x := x\nz := 1') as number, 6);
+  });
+
+  it('stay code with math=false, and come with math=true in any language', async () => {
+    await slide('', '```pseudo-math {#p math=false}\nwhile $i < n$ do\n```');
+    expect(drawnText().some((text) => text.includes('$i'))).toBe(true);
+    CANVAS_CALLS.length = 0;
+    await slide('', '```python {#p math=true}\nfor i in range($n$):\n```');
+    expect(drawnText().some((text) => text.includes('$'))).toBe(false);
+  });
+
+  it('report a $ left open with the line of the listing it is on', async () => {
+    await expect(slide('', '```pseudo-math {#p}\nx := 1\nx := $a + 1\n```')).rejects.toThrow(/Line 4: A \$ opens a formula/);
   });
 });

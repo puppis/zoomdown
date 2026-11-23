@@ -388,7 +388,10 @@ lines never wrap, `width` scales the block down to fit. The languages built in a
 `zsh`, `shell`, `console`, `fish`), `json` (`json5`, `jsonc`), `latex` (`tex`), `html`
 (`xml`, `svg`, `xhtml`), `markdown` (`md`, `slides`, `zs`, this dialect) and plain `text`; any
 other name is looked for as `languages/<name>.json` and shown plain when absent. Token colors
-follow the text color, or `layout.codeTheme`. A fence named `chart` is a chart, not a listing;
+follow the text color, or `layout.codeTheme`. A language profile with `"math": true`, or
+`math=true` on a fence, typesets the listing's `$…$` as formulas on its lines (`\$` is a dollar,
+and `math=false` keeps them code); see [Formulas in pseudocode](code.html#formulas-in-pseudocode).
+A fence named `chart` is a chart, not a listing;
 `zoomdown` fences exist only in this documentation.
 
 ### Tables

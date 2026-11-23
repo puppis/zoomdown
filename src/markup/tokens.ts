@@ -31,6 +31,8 @@ export interface Language {
   keys?: boolean;
   /** Special line-oriented tokenizers. */
   mode?: 'markup' | 'tags';
+  /** `$…$` is a formula, typeset in the listing (pseudocode); `\$` is a dollar. */
+  math?: boolean;
 }
 
 const C_LIKE_KEYWORDS = [
@@ -122,6 +124,11 @@ export function registerLanguage(name: string, profile: Language & { aliases?: s
 export function languageFor(name: string): string {
   const key = name.trim().toLowerCase();
   return ALIASES[key] ?? (key in LANGUAGES ? key : 'text');
+}
+
+/** Whether a fence language's profile typesets `$…$` as formulas. */
+export function languageMath(name: string): boolean {
+  return LANGUAGES[languageFor(name)].math === true;
 }
 
 const IDENT_START = /[A-Za-z_$]/;
