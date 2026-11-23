@@ -58,8 +58,8 @@ for that and its padding widens. With small, flat cells:
 | `stroke_width` | 1.5 | width of every rule |
 | `row_rule_color`, `row_rule_width` | `border_color`, `stroke_width` | the horizontal rules: between rows, and the top and bottom of the frame |
 | `col_rule_color`, `col_rule_width` | `border_color`, `stroke_width` | the vertical rules: between columns, and the sides of the frame |
-| `header_col_rules` | `false` | whether the rules between columns cross the header row |
-| `header_col_rule_color`, `header_col_rule_width` | `col_rule_color`, `col_rule_width` | the rules between columns in the header row |
+| `header_col_rules` | `false` | whether the vertical rules, the sides of the frame included, cross the header row |
+| `header_col_rule_color`, `header_col_rule_width` | `col_rule_color`, `col_rule_width` | the vertical rules in the header row, the sides included |
 | `header` | `true` | whether the first row is a header (shaded; `false` treats it as a body row) |
 | `header_color`, `header_opacity` | the rule color, 0.12 | background of the header row |
 | `stripe_opacity` | 0 | background of every second body row, in the rule color |
@@ -78,8 +78,8 @@ attributes override them for one direction, so rows and columns may differ in co
 that direction, the sides of the frame included. Where they cross, the row rules lie over the
 column rules.
 
-The rules between columns start under the header row, while the sides of the frame run whole.
-`header_col_rules=true` carries them through the header, and `header_col_rule_color` and
+The vertical rules start under the header row, the sides of the frame as the rules between
+columns. `header_col_rules=true` carries them through the header, and `header_col_rule_color` and
 `header_col_rule_width` give them a style of their own there:
 `header_col_rules=true header_col_rule_color=WHITE header_col_rule_width=1`. Without a header
 (`header=false`) they run whole.

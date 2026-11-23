@@ -61,9 +61,9 @@ export interface TableOptions {
   /** Color and width of the vertical rules, between columns and at the sides; the shared ones by default. */
   colRuleColor?: string;
   colRuleWidth?: number;
-  /** Whether the rules between columns cross the header row; false by default, so that they start below it. */
+  /** Whether the vertical rules, the sides of the frame included, cross the header row; false by default, so that they start below it. */
   headerColRules?: boolean;
-  /** Color and width of the rules between columns in the header row; the column rules' by default. */
+  /** Color and width of the vertical rules in the header row, the sides included; the column rules' by default. */
   headerColRuleColor?: string;
   headerColRuleWidth?: number;
   /** Background of the whole table. */
@@ -209,8 +209,8 @@ export async function buildTable(rows: InlineSpan[][][], options: TableOptions, 
   const rowWidth = options.rowRuleWidth ?? strokeWidth;
   const colColor = options.colRuleColor ?? borderColor;
   const colWidth = options.colRuleWidth ?? strokeWidth;
-  // The rules between columns start below the header row unless asked to cross it, in a style of
-  // their own there; the sides of the frame run whole.
+  // The vertical rules, the sides of the frame as those between columns, start below the header
+  // row unless asked to cross it, in a style of their own there.
   const crossing = header && (options.headerColRules ?? false);
   const headerColor = options.headerColRuleColor ?? colColor;
   const headerWidth = options.headerColRuleWidth ?? colWidth;
@@ -219,11 +219,8 @@ export async function buildTable(rows: InlineSpan[][][], options: TableOptions, 
   if (rules !== 'none') {
     // Column rules first, so that where they cross, the row rules lie on top.
     for (let j = 0; j <= columns; j += 1) {
-      if (j === 0 || j === columns) {
-        if (colWidth > 0) members.push(rule([xs[j], 0], [xs[j], -height], colColor, colWidth, sketchy));
-        continue;
-      }
-      if (!vertical) continue;
+      // The sides belong to the frame, drawn whatever `rules` asks for between columns.
+      if (!vertical && j > 0 && j < columns) continue;
       if (restyled && headerWidth > 0) members.push(rule([xs[j], 0], [xs[j], ys[1]], headerColor, headerWidth, sketchy));
       if (colWidth > 0 && bodyTop > -height) members.push(rule([xs[j], bodyTop], [xs[j], -height], colColor, colWidth, sketchy));
     }
