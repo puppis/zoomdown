@@ -15,7 +15,7 @@ description: Thirty-nine diagram symbols built from geometry (people, machines, 
 ```
 
 `[[icon: name #id …]]` draws one of the symbols that architecture and data-flow diagrams keep
-needing. Every icon is built from geometry (a few closed outlines and strokes inside a square
+needing; like a shape, it needs an `#id` only to be referred to. Every icon is built from geometry (a few closed outlines and strokes inside a square
 box), so it is an ordinary vector element: it is placed by its center or by an `anchor`, it
 works as an endpoint of arrows and lines and as a target of braces, [boxes and blobs](enclosures.html),
 it fades in and out with `step` and `hide`, and it [animates](animations.html) like a shape.

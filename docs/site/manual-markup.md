@@ -831,11 +831,13 @@ anchors after it: `left-aligned:#LAST.text`, `at=top-left:#item.text.bottom-left
 ```markdown
 [Label]{#l at=center:#box.top}      my center on the top of #box
 [Label]{#l at=#box}                 my anchor on the center of #box
-[[dot: #d at=(3,-2)]]               my anchor on a point
+[Label]{#t at=(3,-2)}               my center on a point
 ```
 
-`at=[anchor:]#id[.text][.anchor]` or `at=[anchor:](x,y)` lands an anchor of the element (its default
-anchor when omitted) on an anchor of another element (its center when omitted) or on a point.
+`at=[anchor:]#id[.text][.anchor]` or `at=[anchor:](x,y)` lands an anchor of the element on an
+anchor of another element (its center when omitted) or on a point. The element's anchor is the
+prefix, else `anchor=`, else, on a point, its center (`at=(3,-2)` is `x=3 y=-2 anchor=center`),
+and on an element its default anchor.
 `at` replaces `x`, `y`, `buff` and the relative references, and may not reference a connection
 or an attachment.
 

@@ -31,7 +31,7 @@ import { VideoClip } from '../video';
 import { IframeHost } from './iframe';
 import {
   ALIGNMENTS, BRACE_SIDES, CONNECTIONS, GROUP_ANCHORS, NEIGHBORS, POSITION_REFERENCES, SHAPES, TEXT_ANCHORS, TEXT_LIKE, VIDEO_EXTENSIONS,
-  ElementSpec, CodeSlideSpec, GroupSpec, IncludeSpec, InlineSpan, MarkupError, TableSpec, attachmentReferences, attachmentTargets, connectionEnd, endpoint, gradientColor, numberValue, parseAt, parseColor, textReference,
+  ElementSpec, CodeSlideSpec, GroupSpec, IncludeSpec, InlineSpan, MarkupError, TableSpec, type AtExpression, attachmentReferences, attachmentTargets, connectionEnd, endpoint, gradientColor, numberValue, parseAt, parseColor, textReference,
   polylinePoints, span,
 } from './ast';
 import { MarkupParser } from './parser';
@@ -399,6 +399,16 @@ export function anchorPoint(obj: Mobject, anchor: string): [number, number, numb
   return [x, y, center[2]];
 }
 
+/**
+ * The anchor of an element that `at=` lands: the one it names; on a point, the element's center
+ * unless `anchor=` names another; on an element, the element's own anchor.
+ */
+export function atAnchor(item: ElementSpec | IncludeSpec | CodeSlideSpec, at: AtExpression, textAnchor = 'left-baseline'): string {
+  if (at.anchor) return at.anchor;
+  if ('point' in at.target && !item.attributes.anchor) return 'center';
+  return elementAnchor(item, textAnchor);
+}
+
 /** Return an item's anchor point from current geometry, including uniform text scaling. */
 export function positionAnchor(item: ElementSpec | IncludeSpec | CodeSlideSpec, obj: Mobject, textAnchor = 'left-baseline'): [number, number, number] {
   return anchorPoint(obj, elementAnchor(item, textAnchor));
@@ -429,7 +439,7 @@ export function placeRelative(
     const target = reference === null
       ? (at.target as { point: [number, number, number] }).point
       : anchorPoint(reference, (at.target as { anchor: string | null }).anchor ?? (textLines(reference) ? 'baseline' : 'center'));
-    const mine = anchorPoint(obj, at.anchor ?? elementAnchor(item, textAnchor));
+    const mine = anchorPoint(obj, atAnchor(item, at, textAnchor));
     obj.shift([target[0] - mine[0], target[1] - mine[1], 0]);
     return;
   }

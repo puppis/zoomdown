@@ -675,11 +675,11 @@ export class MarkupParser {
           items.push(new ElementSpec(attrs.id ?? `${prefix}element-${items.length + 1}`, kind, [], attrs, '', line));
         } else if (kind === 'icon' || kind === 'artwork') {
           // A built-in icon by name, or an artwork of the deck's own, found in its artworks folders at build time.
-          const match = /^([A-Za-z_][\w.-]*)\s+(.*)$/s.exec(value.trim());
-          if (!match) throw new MarkupError(`Expected [[${kind}: name #id ...]]`, line);
-          const attrs = parseAttributes(match[2], line, { commas: true });
-          if (!('id' in attrs)) throw new MarkupError(`${kind === 'icon' ? 'Icons' : 'Artworks'} require an explicit #id`, line);
-          items.push(new ElementSpec(attrs.id, 'icon', [], attrs, match[1], line));
+          // It needs an id only to be referenced, as a shape.
+          const match = /^([A-Za-z_][\w.-]*)(?:\s+(.*))?$/s.exec(value.trim());
+          if (!match) throw new MarkupError(`Expected [[${kind}: name ...]]`, line);
+          const attrs = parseAttributes(match[2] ?? '', line, { commas: true });
+          items.push(new ElementSpec(attrs.id ?? `${prefix}element-${items.length + 1}`, 'icon', [], attrs, match[1], line));
         } else if (kind === 'pdf') {
           // A PDF placed inside the slide: its pages become children, visited with cuts between them.
           const match = /^(\S+)\s+(.*)$/s.exec(value.trim());

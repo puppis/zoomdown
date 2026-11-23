@@ -49,12 +49,16 @@ describe('the anchor of a group', () => {
 
   it('puts the origin where at= or a coordinate says', () => {
     const at = members();
-    placeRelative(group('at=(3,-1)'), at, new Map(), 0.3);
+    placeRelative(group('at=origin:(3,-1)'), at, new Map(), 0.3);
     near(anchorPoint(at, 'origin'), 3, -1);
     near(at.getCenter(), 5, 0);
+    // At a point without an anchor, the center; anchor= names another.
     const centered = members();
-    placeRelative(group('at=(3,-1) anchor=center'), centered, new Map(), 0.3);
+    placeRelative(group('at=(3,-1)'), centered, new Map(), 0.3);
     near(centered.getCenter(), 3, -1);
+    const anchored = members();
+    placeRelative(group('at=(3,-1) anchor=origin'), anchored, new Map(), 0.3);
+    near(anchorPoint(anchored, 'origin'), 3, -1);
     // Below a reference, with x moving the origin, not the center, to the given abscissa.
     const reference = new Rectangle({ width: 1, height: 1 });
     const below = members();

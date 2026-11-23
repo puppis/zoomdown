@@ -28,7 +28,7 @@ import { LatexError, type MacroDefinition } from './latex';
 import { StyledLine, textLines, type TextLines } from './text';
 import { ASTTransformer } from './parser';
 import {
-  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, elementAnchor, looseOutlines, placeRelative, referenced, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject,
+  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, atAnchor, elementAnchor, looseOutlines, placeRelative, referenced, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject,
 } from './renderer';
 
 /** Slide classes by name, as `[[subslide: Name]]` finds them. */
@@ -73,7 +73,9 @@ const LEFT_ANCHORS = new Set(['left', 'top-left', 'bottom-left', 'left-baseline'
 
 /** Whether an element is placed by an anchor of its own off its left side, named by anchor= or at=: it stands aside. */
 function placedAside(item: ElementSpec | IncludeSpec | CodeSlideSpec): boolean {
-  const named = ('at' in item.attributes ? parseAt(item.attributes.at, item.line).anchor : null) ?? item.attributes.anchor;
+  const at = 'at' in item.attributes ? parseAt(item.attributes.at, item.line) : null;
+  // At a point without an anchor of its own, an element stands by its center.
+  const named = at ? at.anchor ?? ('point' in at.target && !item.attributes.anchor ? 'center' : item.attributes.anchor) : item.attributes.anchor;
   return named !== undefined && named !== null && !LEFT_ANCHORS.has(named);
 }
 
@@ -399,7 +401,7 @@ export class MarkupSlide extends Slide {
     const turn = (item: ElementSpec, obj: Mobject) => {
       const angle = item.kind === 'arc' ? 0 : Number(item.attributes.angle ?? 0);
       if (!angle) return;
-      const pivot = ('at' in item.attributes ? parseAt(item.attributes.at, item.line).anchor : null) ?? elementAnchor(item, layout.textAnchor);
+      const pivot = 'at' in item.attributes ? atAnchor(item, parseAt(item.attributes.at, item.line), layout.textAnchor) : elementAnchor(item, layout.textAnchor);
       // The group that turns it stands for the element from now on.
       const holder = turnElement(obj, angle, anchorPoint(obj, pivot));
       this.elements.set(item.id, holder);
@@ -646,7 +648,8 @@ export class MarkupSlide extends Slide {
       const point = 'point' in at.target
         ? at.target.point
         : anchorPoint(referenced(new Map([[at.target.id, this._actionTarget(at.target.id)]]), at.target), at.target.anchor ?? 'center');
-      const mine = anchorPoint(obj, at.anchor ?? anchor);
+      // At a point without an anchor of its own, the element's center.
+      const mine = anchorPoint(obj, at.anchor ?? ('point' in at.target && !props.anchor ? 'center' : anchor));
       shift = [point[0] - mine[0], point[1] - mine[1]];
     } else if ('x' in props || 'y' in props) {
       const mine = anchorPoint(obj, anchor);

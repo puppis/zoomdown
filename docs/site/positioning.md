@@ -212,7 +212,9 @@ should not end in `.text`.
 ```
 
 `at=[anchor:]#id[.text][.anchor]` or `at=[anchor:](x,y)` puts one anchor of the element (the prefix,
-or `anchor=`, or its default) on an anchor of another element or on a literal point. Without
+or `anchor=`, or, on a literal point, its center, or on an element its default anchor) on an anchor
+of another element or on a literal point: `at=(3,-2)` centers the element there, as
+`x=3 y=-2 anchor=center` does. Without
 an anchor, a text is aimed at on the middle of its first baseline (`baseline`), anything else
 at its `center`. It replaces `x`, `y` and the relative constraints, combines with `dx`/`dy`, and
 follows the same reference rules. Inside directives, keep `(x,y)` tuples together; the comma

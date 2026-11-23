@@ -121,8 +121,9 @@ describe('markup for icons, enclosures and tremble', () => {
     const artwork = parse('[[artwork: traffic-light #t x=0 y=0 size=2]]');
     expect((artwork.slides[0].items[0] as ElementSpec).kind).toBe('icon');
     expect((artwork.slides[0].items[0] as ElementSpec).source).toBe('traffic-light');
-    expect(() => parse('[[artwork: rocket x=0]]')).toThrow(/require an explicit #id/);
-    expect(() => parse('[[icon: user x=0 y=0]]')).toThrow(/explicit #id/);
+    // An id only to be referenced, as a shape: the slide names it otherwise.
+    expect((parse('[[artwork: rocket x=0]]').slides[0].items[0] as ElementSpec).id).toBe('element-1');
+    expect((parse('[[icon: user]]').slides[0].items[0] as ElementSpec).source).toBe('user');
     expect(() => parse('[[icon: user #u label="a" label_side=inside]]')).toThrow(/label_side must be/);
     expect(() => parse('[[icon: user #u label_side=above]]')).toThrow(/requires a label/);
     expect(() => parse('[[icon: user #u width=2]]')).toThrow(/Unknown attributes: width/);

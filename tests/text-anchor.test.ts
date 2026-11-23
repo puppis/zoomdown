@@ -20,10 +20,11 @@ describe('layout.textAnchor: top-left', () => {
     near(anchorPoint(element(built, 'm'), 'top-left'), -6, -2);
   });
 
-  it('is the corner at= puts on a point, unless at= names another', async () => {
-    const built = await slide('', '[here]{#a at=(2,1)}\n\n[there]{#b at=center:(2,-1)}', TOP);
-    near(anchorPoint(element(built, 'a'), 'top-left'), 2, 1);
-    near(element(built, 'b').getCenter(), 2, -1);
+  it('leaves at= a point centering a text, unless at= or anchor= name another point', async () => {
+    const built = await slide('', '[here]{#a at=(2,1)}\n\n[there]{#b at=bottom-left:(2,-1)}\n\n[corner]{#c at=(-2,-1) anchor=top-left}', TOP);
+    near(element(built, 'a').getCenter(), 2, 1);
+    near(anchorPoint(element(built, 'b'), 'bottom-left'), 2, -1);
+    near(anchorPoint(element(built, 'c'), 'top-left'), -2, -1);
   });
 
   it('keeps a text that sets one axis on the flow for the other, by its top on y', async () => {
