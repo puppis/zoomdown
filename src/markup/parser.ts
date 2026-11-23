@@ -18,7 +18,7 @@ import {
   ActionSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
   type CellAlignment,
   type ListItem,
-  NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
+  NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, roleStyledKeys, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
   RELATIVE_STEP, type StepMode,
   elementStep, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, span, stepValue, textReference,
 } from './ast';
@@ -406,6 +406,7 @@ export class MarkupParser {
     }
     const verdict = new ElementSpec(`${target}-verdict`, 'text', content, {}, '', line);
     verdict.verdictOf = target;
+    verdict.role = 'verdict';
     items.push(verdict);
   }
 
@@ -455,6 +456,187 @@ export class MarkupParser {
       }
     });
     return members;
+  }
+
+  /**
+   * The end of a line of a timeline or a graph: an optional `"label"`, bare words (style names, or
+   * a node's shape first), and `{attributes}` last.
+   */
+  private static _tail(rest: string, line: number): { label: string | null; words: string[]; attrs: Attributes } {
+    let text = rest.trim();
+    let attrs: Attributes = {};
+    let quoted = false;
+    for (let i = 0; i < text.length; i += 1) {
+      if (text[i] === '\\') i += 1;
+      else if (text[i] === '"') quoted = !quoted;
+      else if (text[i] === '{' && !quoted) {
+        attrs = parseAttributes(text.slice(i), line);
+        text = text.slice(0, i).trim();
+        break;
+      }
+    }
+    let label: string | null = null;
+    const found = /"((?:[^"\\]|\\.)*)"/.exec(text);
+    if (found) {
+      label = found[1].replace(/\\"/g, '"');
+      text = `${text.slice(0, found.index)} ${text.slice(found.index + found[0].length)}`.trim();
+    }
+    const words = text ? text.split(/\s+/) : [];
+    for (const word of words) {
+      if (!/^[A-Za-z_][\w-]*$/.test(word)) throw new MarkupError(`Unexpected ${JSON.stringify(word)}: a line ends with a "label", style names and {attributes}`, line);
+    }
+    return { label, words, attrs };
+  }
+
+  /**
+   * The attributes of an element a timeline or a graph makes: its own, with its style names, and
+   * the block's `step` and `hide` when it has none of its own. With sequential steps a block's
+   * `step` goes to its first element alone, the others following it.
+   */
+  private _drawn(own: Attributes, words: string[], block: Attributes, first: boolean): Attributes {
+    const attrs = { ...own };
+    if (words.length) attrs.class = [attrs.class, ...words].filter(Boolean).join(' ');
+    if ('step' in block && !('step' in attrs) && (first || this._steps !== 'sequential')) attrs.step = block.step;
+    if ('hide' in block && !('hide' in attrs)) attrs.hide = block.hide;
+    return attrs;
+  }
+
+  /** What a drawing block (a timeline, a graph) checks of its own attributes. */
+  private static _drawingAttrs(attrs: Attributes, allowed: string[], what: string, line: number): void {
+    for (const key of Object.keys(attrs)) {
+      if (!allowed.includes(key)) throw new MarkupError(`A ${what} takes ${allowed.join(', ')}, not ${key}=`, line);
+    }
+    if (attrs.hide === '+') throw new MarkupError(`hide=+ counts from an element's own step: give the ${what} hide=N`, line);
+    if ('id' in attrs && !IDENTIFIER.test(attrs.id)) throw new MarkupError(`Invalid ${what} ID ${JSON.stringify(attrs.id)}`, line);
+  }
+
+  /** A line of a drawing block that is none of its own kinds: any element, parsed as in the slide, its ids under the block's. */
+  private _drawnLine(text: string, at: number, base: string, items: SlideItem[]): void {
+    items.push(...this._body([text], at, `${base}.`));
+  }
+
+  /**
+   * A space-time diagram, `::: timeline {processes="p q" length=10}`: a horizontal lifeline for
+   * each process, time flowing to the right from `x`, `y` (the top one) over `width` units for
+   * `length` units of time, `spacing` apart, its name at its left (`$p$`, unless a line `p: name`
+   * says otherwise); then, line by line, messages (`p@1 -> q@3 "m1"`, `--` for a line), events
+   * (`q@2 "label"`, a dot) and any element, in which `p@t` is the point of process `p` at time `t`.
+   */
+  private _timeline(body: string[], line: number, attrs: Attributes, prefix: string): SlideItem[] {
+    MarkupParser._drawingAttrs(attrs, ['id', 'processes', 'length', 'width', 'spacing', 'x', 'y', 'step', 'hide'], 'timeline', line);
+    const processes = (attrs.processes ?? '').trim().split(/\s+/).filter(Boolean);
+    if (!processes.length) throw new MarkupError('A timeline needs its processes: processes="p q …"', line);
+    for (const [i, name] of processes.entries()) {
+      if (!/^[A-Za-z_]\w*$/.test(name)) throw new MarkupError(`A process is named by letters, digits and _, not ${JSON.stringify(name)}`, line);
+      if (processes.indexOf(name) !== i) throw new MarkupError(`Process ${name} is named twice`, line);
+    }
+    const length = numberValue(attrs, 'length', line);
+    const width = numberValue(attrs, 'width', line);
+    if (length === null && width === null) throw new MarkupError('A timeline needs its length (in units of time) or its width', line);
+    const span = (length ?? width) as number;
+    const extent = (width ?? length) as number;
+    if (!(span > 0 && extent > 0)) throw new MarkupError("A timeline's length and width must be positive", line);
+    const x0 = numberValue(attrs, 'x', line, 0) as number;
+    const y0 = numberValue(attrs, 'y', line, 0) as number;
+    const spacing = numberValue(attrs, 'spacing', line, 1) as number;
+    const number = (value: number) => String(Number(value.toFixed(9)));
+    const point = (process: string, time: number) => `(${number(x0 + (time * extent) / span)},${number(y0 - processes.indexOf(process) * spacing)})`;
+    const base = `${prefix}${attrs.id ?? `timeline-${line}`}`;
+    const who = `(${processes.join('|')})`;
+    const time = '(-?\\d+(?:\\.\\d+)?)';
+    const naming = new RegExp(`^\\s*${who}\\s*:\\s*(.+)$`);
+    const message = new RegExp(`^\\s*${who}@${time}\\s*(->|--)\\s*${who}@${time}(?![\\w.@])(.*)$`);
+    const event = new RegExp(`^\\s*${who}@${time}(?![\\w.@])(.*)$`);
+    const anywhere = new RegExp(`(?<![\\w.@])${who}@${time}(?![\\w.@])`, 'g');
+    const names = new Map<string, string>();
+    for (const text of body) {
+      const named = naming.exec(text);
+      if (named) names.set(named[1], named[2].trim());
+    }
+    const items: SlideItem[] = [];
+    const make = (id: string, kind: string, spans: InlineSpan[], own: Attributes, role: string, at: number) => {
+      const element = new ElementSpec(own.id ?? id, kind, spans, own, '', at);
+      element.role = role;
+      items.push(element);
+    };
+    for (const process of processes) {
+      const y = number(y0 - processes.indexOf(process) * spacing);
+      make(`${base}-${process}`, 'line', [], this._drawn({ from: point(process, 0), to: point(process, span) }, [], attrs, !items.length), 'lifeline', line);
+      const name = this.parseInlineSpans(names.get(process) ?? `$${process}$`, line);
+      make(`${base}-${process}-name`, 'text', name, this._drawn({ at: `right:(${number(x0 - 0.2)},${y})` }, [], attrs, false), 'process', line);
+    }
+    body.forEach((text, k) => {
+      const at = line + 1 + k;
+      if (!text.trim() || naming.test(text)) return;
+      const id = `${base}-${k + 1}`;
+      const sent = message.exec(text);
+      if (sent) {
+        const tail = MarkupParser._tail(sent[6], at);
+        const own: Attributes = { ...tail.attrs, from: point(sent[1], Number(sent[2])), to: point(sent[4], Number(sent[5])) };
+        if (tail.label !== null) own.label = tail.label;
+        make(id, sent[3] === '->' ? 'arrow' : 'line', [], this._drawn(own, tail.words, attrs, !items.length), 'message', at);
+        return;
+      }
+      const happened = event.exec(text);
+      if (happened) {
+        const tail = MarkupParser._tail(happened[3], at);
+        const [x, y] = point(happened[1], Number(happened[2])).slice(1, -1).split(',');
+        const own: Attributes = { ...tail.attrs, x, y };
+        if (tail.label !== null) own.sublabel = tail.label;
+        make(id, 'dot', [], this._drawn(own, tail.words, attrs, !items.length), 'event', at);
+        return;
+      }
+      this._drawnLine(text.replace(anywhere, (_, process: string, moment: string) => point(process, Number(moment))), at, id, items);
+    });
+    return items;
+  }
+
+  /**
+   * A graph, `::: graph {x y scale}`: line by line, nodes (`A (x,y)`, a circle unless a shape
+   * follows, `"label"` written in it, or its name with `labels=true`), edges (`A -> B "3"`, `--`
+   * for a line) and any element. A node's position is `x`, `y` plus `scale` times its own; its name
+   * is its id, which edges and any element may name.
+   */
+  private _graph(body: string[], line: number, attrs: Attributes, prefix: string): SlideItem[] {
+    MarkupParser._drawingAttrs(attrs, ['id', 'x', 'y', 'scale', 'labels', 'step', 'hide'], 'graph', line);
+    if ('labels' in attrs && !['true', 'false'].includes(attrs.labels)) throw new MarkupError('labels must be true or false', line);
+    const x0 = numberValue(attrs, 'x', line, 0) as number;
+    const y0 = numberValue(attrs, 'y', line, 0) as number;
+    const scale = numberValue(attrs, 'scale', line, 1) as number;
+    const number = (value: number) => String(Number(value.toFixed(9)));
+    const base = `${prefix}${attrs.id ?? `graph-${line}`}`;
+    const node = /^\s*([A-Za-z_][\w-]*)\s*\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)(.*)$/;
+    const edge = /^\s*([A-Za-z_][\w-]*)\s*(->|--)\s*([A-Za-z_][\w-]*)(?![\w.(])(.*)$/;
+    const items: SlideItem[] = [];
+    const make = (id: string, kind: string, own: Attributes, role: string, at: number) => {
+      const element = new ElementSpec(own.id ?? id, kind, [], own, '', at);
+      element.role = role;
+      items.push(element);
+    };
+    body.forEach((text, k) => {
+      const at = line + 1 + k;
+      if (!text.trim()) return;
+      const placed = node.exec(text);
+      if (placed) {
+        const tail = MarkupParser._tail(placed[4], at);
+        const kind = ['circle', 'rectangle', 'ellipse', 'dot'].includes(tail.words[0]) ? (tail.words.shift() as string) : 'circle';
+        const own: Attributes = { ...tail.attrs, x: number(x0 + scale * Number(placed[2])), y: number(y0 + scale * Number(placed[3])) };
+        const label = tail.label ?? (attrs.labels === 'true' ? placed[1] : null);
+        if (label !== null && label !== '') own.label = label;
+        make(placed[1], kind, this._drawn(own, tail.words, attrs, !items.length), 'node', at);
+        return;
+      }
+      const joined = edge.exec(text);
+      if (joined) {
+        const tail = MarkupParser._tail(joined[4], at);
+        const own: Attributes = { ...tail.attrs, from: `#${joined[1]}`, to: `#${joined[3]}` };
+        if (tail.label !== null) own.label = tail.label;
+        make(`${base}-${k + 1}`, joined[2] === '->' ? 'arrow' : 'line', this._drawn(own, tail.words, attrs, !items.length), 'edge', at);
+        return;
+      }
+      this._drawnLine(text, at, `${base}-${k + 1}`, items);
+    });
+    return items;
   }
 
   private _body(lines: string[], firstLine: number, prefix = ''): SlideItem[] {
@@ -578,6 +760,15 @@ export class MarkupParser {
       }
       const container = CONTAINER.exec(lines[index]);
       if (container) {
+        const drawing = /^(timeline|graph)(?:\s+(\{.*\}))?\s*$/.exec(container[1]);
+        if (drawing) {
+          const end = MarkupParser._containerEnd(lines, index);
+          const attrs = drawing[2] ? parseAttributes(drawing[2], line) : {};
+          const inside = lines.slice(index + 1, end);
+          items.push(...(drawing[1] === 'timeline' ? this._timeline(inside, line, attrs, prefix) : this._graph(inside, line, attrs, prefix)));
+          index = end + 1;
+          continue;
+        }
         const tiles = /^tiles(?:\s+(\{.*\}))?\s*$/.exec(container[1]);
         if (tiles) {
           const end = MarkupParser._containerEnd(lines, index);
@@ -586,7 +777,7 @@ export class MarkupParser {
           continue;
         }
         const kind = /^\{\s*\.(element|group)(?:\s|\})/.exec(container[1])?.[1];
-        if (!kind) throw new MarkupError('Only ::: {.element ...}, ::: {.group ...} and ::: tiles containers are supported inside slides', line);
+        if (!kind) throw new MarkupError('Only ::: {.element ...}, ::: {.group ...}, ::: tiles, ::: timeline and ::: graph containers are supported inside slides', line);
         const attrs = parseAttributes(container[1], line);
         const end = MarkupParser._containerEnd(lines, index);
         if (kind === 'group') {
@@ -855,6 +1046,17 @@ export class ASTTransformer {
             applyStyles(item, styles);
             if (item.id === 'LAST') throw new MarkupError(RESERVED_LAST, item.line);
             resolveLast(item, last, where);
+            // What a block made (a node, a message, a verdict) takes from the styles of its roles only
+            // what its kind takes: a node style for circles sets no radius on a rectangle.
+            if (item.role !== null) {
+              const takes = ASTTransformer.allowedAttributes(item);
+              if (takes) for (const key of roleStyledKeys(item)) if (!takes.has(key)) delete item.attributes[key];
+            }
+            // A node of a graph is as large as its style says, or of a default size.
+            if (item.role === 'node') {
+              const sizes: Record<string, Attributes> = { circle: { radius: '0.3' }, rectangle: { width: '0.6', height: '0.6' }, ellipse: { width: '0.8', height: '0.5' } };
+              for (const [key, value] of Object.entries(sizes[item.kind] ?? {})) if (!(key in item.attributes)) item.attributes[key] = value;
+            }
             // A verdict hangs under its tile, unless its style places it.
             if (item.verdictOf !== null && !Object.keys(item.attributes).some((key) => key === 'x' || key === 'y' || key === 'at' || POSITION_REFERENCES.has(key))) {
               item.attributes.below = `#${item.verdictOf}`;

@@ -227,3 +227,69 @@ in [Boxes and blobs](enclosures.html). All attachments accept `step`, `hide`, `o
 timing, may attach to a [group](groups.html) or an [icon](icons.html), and, like connections,
 are created after layout. Shapes, icons, connections and attachments can also vibrate over a
 range of steps with [`tremble=`](animations.html#tremble).
+
+## Space-time diagrams
+
+A `::: timeline` block draws a space-time diagram from its events, written as data: a horizontal
+lifeline for each process, time flowing to the right, the process's name at its left; then, line
+by line, what happens on them.
+
+```markdown
+::: timeline {#run processes="p q r" x=-5.5 y=1.5 width=11 length=11 spacing=1.3}
+r: $r$ (the initiator)
+p@0.4 -> q@0.6
+p@0.4 "(1,0,0)"
+[$\times$]{.snap at=center:q@1.1 step=+}
+p@2 -> q@4 "$m_2$" {color=#c0392b}
+r@5 -> p@6.5 marker
+[[line: q@1.1 -> q@4, .recording]]
+:::
+```
+
+| Line | Draws |
+| --- | --- |
+| `p@1 -> q@3 "m1"` | a message: an arrow from process `p` at time 1 to `q` at time 3, labeled; `--` draws a line |
+| `q@2 "label"` | an event: a dot on `q` at time 2, its label (optional) as the dot's sublabel |
+| `p: name` | the name shown for `p` (inline text); `$p$` by default |
+| anything else | any element, in which `p@t` is the point of `p` at time `t` (`at=center:q@1.1`, `[[line: p@0 -> p@2]]`) |
+
+A message or an event line ends with an optional `"label"`, style names written bare
+(`marker`, `snap`: the same as `{.marker}`) and `{attributes}` (`{color=RED step=+}`). The block
+takes `processes` (names of letters, digits and `_`), `length` (the time the lifelines span) and
+`width` (their length in units; either one alone gives both), `spacing` (1) between lifelines,
+`x`, `y` (the left end of the top lifeline, time 0), `#id`, and `step` and `hide` for every part
+without its own (with [sequential steps](fragments.html#steps-that-follow-the-source), `step` goes
+to the first part, and the others follow it as usual). Its parts are elements of the slide: the
+lifelines `#id-p`, the names `#id-p-name` and the line `k` of the block `#id-k`, so each appears at
+its own click. They take the deck's styles `lifeline`, `process`, `message` and `event` after
+those of their kind, each only what its kind takes. In a [group](groups.html) the diagram is part of the group.
+
+## Graphs
+
+A `::: graph` block places nodes by coordinates and joins them by name: networks, state machines,
+Petri nets.
+
+```markdown
+::: graph {#net x=-4 y=-3.2 scale=1.75}
+p1 (0,0) place
+t1 (1,0) rectangle transition
+p2 (2,0) place
+p1 -> t1
+t1 -> p2
+p2 -> p1 "back" {bend=-40}
+[[dot: at=center:#p1 radius=0.09]]
+:::
+```
+
+| Line | Draws |
+| --- | --- |
+| `A (x,y)` | a node `#A`, a circle at `x`, `y` (scaled by `scale` from the block's `x`, `y`); `rectangle`, `ellipse` or `dot` after the coordinates changes its shape |
+| `A (x,y) "label"` | the same, its [label](#labels) inside |
+| `A -> B "3"` | an edge: an arrow from `#A` to `#B`, labeled; `--` draws a line |
+| anything else | any element, which may name the nodes |
+
+Lines end as in a timeline: a `"label"`, style names written bare, `{attributes}`. A node is
+`radius=0.3` (a rectangle 0.6 square, an ellipse 0.8 by 0.5) unless its attributes or styles size
+it. With `labels=true` every node without a label of its own is labeled by its name. Nodes and
+edges take the deck's styles `node` and `edge` after those of their kind, each only what its kind
+takes, and the block's `step` and `hide` as a timeline's parts do.

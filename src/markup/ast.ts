@@ -83,6 +83,12 @@ export class ElementSpec {
   /** The slide whose tile this text is the verdict of (`verdict=` on an include), or null. */
   verdictOf: string | null = null;
 
+  /**
+   * The style an element made by a block takes after those of its kind (`verdict`, `lifeline`,
+   * `process`, `message`, `event`, `node`, `edge`), when the deck defines it; null for an element written as such.
+   */
+  role: string | null = null;
+
   /** Explicit local coordinates, interpreted using the element's anchor. */
   get position(): [number, number, number] | null {
     if (!('x' in this.attributes) && !('y' in this.attributes)) return null;
@@ -436,7 +442,12 @@ export function normalizeStyles(styles: Record<string, string | Record<string, u
 /** The style roles an item receives automatically, most generic first. */
 export function styleRoles(item: ElementSpec | IncludeSpec | CodeSlideSpec): string[] {
   if (!(item instanceof ElementSpec)) return ['include'];
-  if (item.kind === 'text') return item.level ? ['heading', `h${item.level}`] : item.verdictOf ? ['body', 'verdict'] : ['body'];
+  return item.role ? [...kindRoles(item), item.role] : kindRoles(item);
+}
+
+/** The style roles of an element by its kind. */
+function kindRoles(item: ElementSpec): string[] {
+  if (item.kind === 'text') return item.level ? ['heading', `h${item.level}`] : ['body'];
   if (SHAPES.has(item.kind)) return ['shape', item.kind];
   if (item.kind === 'icon') return ['shape', 'icon', `icon-${item.source}`];
   if (CONNECTIONS.has(item.kind)) return ['connection', item.kind];

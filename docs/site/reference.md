@@ -26,6 +26,8 @@ This page is the short reference, one line per construct. [The markup language, 
 | `::: {.element attrs} … :::` | attributes for one paragraph, heading, image, formula, table or listing |
 | `::: {.group #id attrs} … :::` | a group of elements in local coordinates |
 | `::: tiles {cols, buff, width, height, placement} … :::` | includes laid out as a grid of tiles ([Rows and grids of tiles](slides.html#rows-and-grids-of-tiles)) |
+| `::: timeline {processes, length, width, spacing, x, y} … :::` | a space-time diagram: `p@1 -> q@3 "m"`, `q@2 "e"`, `p: name`, and elements naming points `p@t` ([Space-time diagrams](shapes.html#space-time-diagrams)) |
+| `::: graph {x, y, scale, labels} … :::` | nodes `A (x,y) [shape] ["label"]` and edges `A -> B "3"` ([Graphs](shapes.html#graphs)) |
 | `<!-- … -->` | discarded |
 
 Attributes are space- or comma-separated `key=value` pairs; quoted values may contain spaces and

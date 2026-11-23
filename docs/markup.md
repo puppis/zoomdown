@@ -269,6 +269,15 @@ default), `label_buff`/`sublabel_buff` (0.1) away, at `font_size` and `sublabel_
 the shape's color unless `label_color`/`sublabel_color` say otherwise; the shape alone places the
 whole and is what connections reach.
 
+`::: timeline {processes="p q" length=10}` draws a space-time diagram: a horizontal lifeline per
+process from `x`, `y` over `width` units, `spacing` apart, names at their left (`$p$`, or a line
+`p: name`); lines `p@1 -> q@3 "m"` draw messages (`--` a line), `q@2 "label"` events (dots), and
+any other element may write `p@t` for the point of `p` at time `t`. `::: graph {x y scale}` draws
+nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` and edges `A -> B "3"` (`--` a line). Lines end
+with an optional `"label"`, bare style names and `{attributes}`; the parts are elements of the
+slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`, and the
+block's `step` and `hide` go to the parts without their own.
+
 `fill_gradient` fills a shape with a linear gradient through two colors or more, spaced evenly
 from the first to the last in `gradient_direction` (`right` by default, `left`, `up` or `down`).
 Its colors may be translucent (`#RRGGBBAA`, `#RGBA`, `rgba(r,g,b,a)` written without spaces), so

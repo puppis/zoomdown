@@ -702,6 +702,37 @@ path, or a `.html` file. `width` and `height` are required.
 | `stroke_width` | engine units | 0 | a border around the frame, in `color`; none by default |
 | `x`, `y`, `anchor`, `at`, `dx`, `dy`, `buff`, the relative references, `class`, `step`, `hide`, `color`, `href`, `run_time`, `lag` | | | as for elements |
 
+### ::: timeline and ::: graph
+
+```markdown
+::: timeline {processes="p q" length=10}
+p@1 -> q@3 "m1"
+q@2 "(0,1)" snap
+:::
+
+::: graph {x=-4 y=0 scale=1.5}
+A (0,0)
+B (2,1) "Bob"
+A -> B "3" {bend=20}
+:::
+```
+
+A timeline draws a horizontal lifeline per process (`processes`, names of letters, digits and
+`_`), time flowing right from `x`, `y` (the left end of the top lifeline) over `width` units for
+`length` units of time (either alone gives both), `spacing` (1) apart, each name at its left
+(`$p$`, or the text of a line `p: name`). Its lines draw messages `p@1 -> q@3` (an arrow; `--` a
+line), events `q@2` (a dot, its label the dot's sublabel), and any element, where `p@t` is the
+point of `p` at time `t`. A graph's lines draw nodes `A (x,y)` (a circle, or the `rectangle`,
+`ellipse` or `dot` written after; at the block's `x`, `y` plus `scale` times its own; `radius`
+0.3, 0.6 squares and 0.8 by 0.5 ellipses unless styled; labeled by `"…"`, or by its name with
+`labels=true`), edges `A -> B` (`--` a line), and any element. A line ends with an optional
+`"label"`, bare style names and `{attributes}`. Both blocks take `#id`, `step` and `hide`, given to
+the parts without their own (with sequential steps, `step` to the first part only). The parts
+are elements of the slide (lifelines `#id-p`, names `#id-p-name`, the line `k` of the block
+`#id-k`, nodes by their names), with the extra style roles `lifeline`, `process`, `message`,
+`event`, `node` and `edge`, from which each takes only what its kind takes. See
+[Space-time diagrams](shapes.html#space-time-diagrams) and [Graphs](shapes.html#graphs).
+
 ### ::: {.group}
 
 ```markdown
