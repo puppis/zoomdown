@@ -12,7 +12,7 @@ import {
   ALIGNMENTS, ANIMATE_PROPS, ATTACHMENTS, BASELINE_ANCHORS, BRACE_SIDES, CONNECTIONS, CONTAINER, DIRECTIVE, EFFECT_NAMES, ELEMENT_ATTRS,
   CUSTOM_DIRECTIVE, LIBRARY_NAME,
   ENTER_STYLES, EXIT_STYLES, FILL_ATTRS, GEOMETRY, GROUP_ANCHORS, GROUP_ATTRS, HORIZONTAL_POSITION, ICON_KINDS, IDENTIFIER,
-  LABEL_SIDES, LAYOUT, NEIGHBORS, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, STROKE_ATTRS, TEXT_LIKE, TIMING_ATTRS, TREMBLE_ATTRS,
+  LABEL_SIDES, LAYOUT, SHAPE_LABEL_ATTRS, NEIGHBORS, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, STROKE_ATTRS, TEXT_LIKE, TIMING_ATTRS, TREMBLE_ATTRS,
   VECTOR_KINDS, VERTICAL_POSITION, VIDEO_EXTENSIONS, FILL_STYLE_NAMES, CHART_ATTRS, CHART_TYPE_NAMES, TABLE_ATTRS, TABLE_RULE_NAMES,
   INHERITED_ATTRS, gradientColor,
   ActionSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
@@ -1124,8 +1124,8 @@ export class ASTTransformer {
     } else if (item.kind === 'custom') {
       allowed = null;
     } else if (SHAPES.has(item.kind)) {
-      allowed = new Set([...ELEMENT_ATTRS].filter((key) => !['font_size', 'width', 'height'].includes(key)));
-      for (const key of [...STROKE_ATTRS, ...SKETCH_ATTRS]) allowed.add(key);
+      allowed = new Set([...ELEMENT_ATTRS].filter((key) => !['width', 'height'].includes(key)));
+      for (const key of [...STROKE_ATTRS, ...SKETCH_ATTRS, ...SHAPE_LABEL_ATTRS]) allowed.add(key);
       if (item.kind === 'polyline') allowed.add('points');
       else {
         for (const key of [...FILL_ATTRS, 'fill_gradient', 'gradient_direction']) allowed.add(key);
@@ -1207,6 +1207,18 @@ export class ASTTransformer {
     const styled = styledKeys(item);
     for (const key of ['label_side', 'slanted', 'label_pos', 'label_color', 'label_buff', 'label_width']) {
       if (key in item.attributes && !styled.has(key) && !('label' in item.attributes)) throw new MarkupError(`${key} requires a label`, item.line);
+    }
+    for (const key of ['sublabel_side', 'sublabel_color', 'sublabel_buff', 'sublabel_font_size']) {
+      if (key in item.attributes && !styled.has(key) && !('sublabel' in item.attributes)) throw new MarkupError(`${key} requires a sublabel`, item.line);
+    }
+    if (SHAPES.has(item.kind)) {
+      for (const key of ['label', 'sublabel']) {
+        const side = item.attributes[`${key}_side`];
+        if (side !== undefined && side !== 'center' && !LABEL_SIDES.has(side)) throw new MarkupError(`${key}_side must be center, below, above, left or right`, item.line);
+        if (key in item.attributes) {
+          for (const s of new MarkupParser().parseInlineSpans(item.attributes[key], item.line)) if (s.color) ASTTransformer._checkColor(s.color, item.line);
+        }
+      }
     }
     if ('href' in item.attributes && !LINK_TARGET.test(item.attributes.href)) {
       throw new MarkupError(`Unsupported link target ${JSON.stringify(item.attributes.href)}; use https://, mailto:, #, / or a relative path`, item.line);
@@ -1464,21 +1476,21 @@ export class ASTTransformer {
     if (unknown.length) throw new MarkupError(`Unknown attributes: ${unknown.join(', ')}`, line);
     for (const key of [...GEOMETRY, 'font_size', 'size', 'buff', 'radius', 'corner_radius', 'stroke_width', 'fill_opacity', 'opacity', 'dx', 'dy', 'run_time', 'lag',
       'start_angle', 'scale', 'roughness', 'bowing', 'hachure_angle', 'hachure_gap', 'fill_weight', 'seed', 'smoothness', 'tremble_amplitude', 'tremble_rate',
-      'padding_x', 'padding_y', 'header_opacity', 'stripe_opacity', 'min', 'max', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'halo_width',
+      'padding_x', 'padding_y', 'header_opacity', 'stripe_opacity', 'min', 'max', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'sublabel_buff', 'sublabel_font_size', 'halo_width',
       'tip_length', 'tip_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end', 'flow_top', 'flow_left', 'label_width', 'line_height', 'header_font_size']) {
       if (!(key in attrs)) continue;
       const number = numberValue(attrs, key, line) as number;
-      if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
+      if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'sublabel_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
         throw new MarkupError(`${key} must be nonnegative`, line);
       }
-      if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);
+      if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size', 'sublabel_font_size'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);
       if (['fill_opacity', 'opacity', 'smoothness', 'header_opacity', 'stripe_opacity'].includes(key) && (number < 0 || number > 1)) {
         throw new MarkupError(`${key} must be between zero and one`, line);
       }
     }
     // An element's step may be -1 (shown before the slide's first visit); where that makes no sense the caller says so.
     for (const key of ['step', 'hide']) if (key in attrs && !(key === 'step' && attrs.step === '-1')) stepValue(attrs, key, line);
-    for (const key of ['color', 'fill_color', 'border_color', 'header_color', 'axis_color', 'label_color', 'row_rule_color', 'col_rule_color', 'header_col_rule_color']) if (key in attrs) ASTTransformer._checkColor(attrs[key], line);
+    for (const key of ['color', 'fill_color', 'border_color', 'header_color', 'axis_color', 'label_color', 'sublabel_color', 'row_rule_color', 'col_rule_color', 'header_col_rule_color']) if (key in attrs) ASTTransformer._checkColor(attrs[key], line);
     if ('seed' in attrs && !Number.isInteger(Number(attrs.seed))) throw new MarkupError('seed must be an integer', line);
     if ('sketch' in attrs && !['true', 'false'].includes(attrs.sketch)) throw new MarkupError('sketch must be true or false', line);
     if ('fill_style' in attrs && !FILL_STYLE_NAMES.has(attrs.fill_style)) {

@@ -70,6 +70,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | --- | --- |
 | `rectangle`, `ellipse` | `#id width height fill_color fill_opacity …` (`rectangle` also `corner_radius`) |
 | `circle`, `dot` | `#id radius …` (dot: radius optional) |
+| any shape | `label="…" label_side=center\|above\|below\|left\|right label_buff label_color font_size sublabel="…" sublabel_side sublabel_buff sublabel_color sublabel_font_size` ([Labels](shapes.html#labels)) |
 | `polygon`, `polyline` | `#id points="(x,y) (x,y) …" …` |
 | `arc` | `#id x y radius angle [start_angle] …` |
 | `icon` | `[[icon: name #id size label label_color label_side fill_color fill_opacity stroke_width …]]` (names under [Names](#names)) |

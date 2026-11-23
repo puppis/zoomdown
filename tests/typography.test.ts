@@ -89,9 +89,8 @@ describe('a group\'s font_size, font, color and line_height', () => {
     const [a, b, r, inner] = group.items as ElementSpec[];
     expect(a.attributes).toMatchObject({ font_size: '22.5', font: 'Mono', color: 'RED', line_height: '1.1' });
     expect(b.attributes.font_size).toBe('30');
-    // A shape takes the color, not the size or line height of text.
-    expect(r.attributes.color).toBe('RED');
-    expect(r.attributes).not.toHaveProperty('font_size');
+    // A shape takes the color and the size and face of its labels, not the line height of text.
+    expect(r.attributes).toMatchObject({ color: 'RED', font_size: '22.5', font: 'Mono' });
     expect(r.attributes).not.toHaveProperty('line_height');
     // And a nested group passes them on.
     expect(((inner as GroupSpec).items[0] as ElementSpec).attributes.font_size).toBe('22.5');

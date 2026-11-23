@@ -503,9 +503,9 @@ Directives are `[[kind: …]]` on a line of their own. Those below draw; the dir
 [[arc: #a x=0 y=-2 radius=2 start_angle=3.14 angle=-3.14]]
 ```
 
-A shape needs an `#id` only to be referred to, as any element. Shapes take the common attributes except `font`,
-`font_size`, `width` and `height` (which some of them redefine), the hand-drawn attributes,
-`tremble`, and:
+A shape needs an `#id` only to be referred to, as any element. Shapes take the common attributes except
+`width` and `height` (which some of them redefine), the hand-drawn attributes, `tremble`, the
+labels below, and:
 
 | Shape | Required | Own attributes |
 | --- | --- | --- |
@@ -521,6 +521,16 @@ Common to all: `color` (the stroke, `layout.color` by default), `stroke_width` (
 units: one hundredth of a logical unit), `fill_color` (the stroke color by default),
 `fill_opacity` (0 unless noted), `opacity`. `x`, `y` place the center (or the `anchor`);
 polygons, polylines and arcs stay at their own coordinates unless positioned.
+
+A shape's `label` is written in its middle (`label_side=center`) or beside it (`above`, `below`,
+`left`, `right`), and its `sublabel` beside it (`below` by default, or any of the five sides),
+each its box `label_buff` or `sublabel_buff` (0.1) away and centered on the shape along that
+side, as `at=top:#shape.bottom` places a text. The label is `font_size` (`layout.fontSize`) and
+the sublabel `sublabel_font_size` (the label's size), both in `font`, in the shape's `color`
+unless `label_color` or `sublabel_color` say otherwise; both may hold emphasis, links and
+formulas. The shape alone places the whole (`x`, `y`, the anchors, `at=`), and arrows, lines and
+blobs reach the shape; the labels move, fade and turn with it. The `sublabel_…` attributes need a
+`sublabel`, unless a style sets them.
 
 Every shape but a polyline takes `fill_gradient`, a linear gradient through two colors or more,
 evenly spaced from the first to the last in `gradient_direction`: `right` (the default), `left`,

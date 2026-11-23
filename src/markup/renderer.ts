@@ -328,6 +328,8 @@ export function turnElement(obj: Mobject, angle: number, pivot: [number, number,
 export type PartsMobject = Mobject & { markupParts?: Mobject[] };
 /** A composite whose connections and endpoints address one part (an icon under its label). */
 export type BodyMobject = Mobject & { markupBody?: Mobject };
+/** A composite placed by one part (a shape under its labels): its anchors are that part's. */
+export type AnchoredMobject = Mobject & { markupAnchor?: Mobject };
 /** A circle, a dot or an ellipse, whose connections end on its outline. */
 export type RoundMobject = Mobject & { markupRound?: boolean };
 /**
@@ -378,6 +380,8 @@ export function unionRect(objects: readonly Mobject[]): Rect {
 /** A named point of an object's current geometry (see `ANCHORS`; `origin` for groups). */
 export function anchorPoint(obj: Mobject, anchor: string): [number, number, number] {
   if (!GROUP_ANCHORS.has(anchor)) throw new Error(`Unknown anchor ${JSON.stringify(anchor)}`);
+  const own = (obj as AnchoredMobject).markupAnchor;
+  if (own) return anchorPoint(own, anchor);
   const center = obj.getCenter();
   if (anchor === 'origin') {
     const origin = (obj as OriginMobject).markupOrigin;
@@ -1047,6 +1051,35 @@ export class MarkupRenderer {
     return tex;
   }
 
+  /**
+   * A shape with its labels: `label` in its middle (`label_side=center`, the default) or beside it,
+   * and `sublabel` beside it (below by default), `label_buff` and `sublabel_buff` away (0.1), at
+   * the shape's `font_size` and `sublabel_font_size`, in the shape's color unless `label_color` and
+   * `sublabel_color` say otherwise. The shape stays what places the whole and what arrows, lines
+   * and blobs reach, so that the labels change neither.
+   */
+  private async _shapeLabels(element: ElementSpec, shape: Mobject, size: number, color: string): Promise<Mobject> {
+    const attrs = element.attributes;
+    const parts: Mobject[] = [shape];
+    const directions: Record<string, [number, number, number]> = { below: [0, -1, 0], above: [0, 1, 0], left: [-1, 0, 0], right: [1, 0, 0] };
+    for (const [key, fallback] of [['label', 'center'], ['sublabel', 'below']] as const) {
+      if (!attrs[key]) continue;
+      const fontSize = key === 'label' ? size : numberValue(attrs, 'sublabel_font_size', element.line, size) as number;
+      const tint = attrs[`${key}_color`] ? parseColor(attrs[`${key}_color`]) : color;
+      const text = await this.text(this._parser.parseInlineSpans(attrs[key], element.line), fontSize, 100, tint, attrs.font);
+      const side = attrs[`${key}_side`] ?? fallback;
+      if (side === 'center') text.moveTo(anchorPoint(shape, 'center'));
+      // Beside it by the text's box, as `at=top:#shape.bottom` puts it, centered on the other axis.
+      else text.nextTo(shape, directions[side], numberValue(attrs, `${key}_buff`, element.line, 0.1) as number);
+      parts.push(text);
+    }
+    const group = new Group(...parts) as PartsMobject & BodyMobject & AnchoredMobject;
+    group.markupParts = parts;
+    group.markupBody = shape;
+    group.markupAnchor = shape;
+    return group;
+  }
+
   /** Create one local mobject; connections follow anchor layout. `fontSize` wins over the element's own size (a caption's, from its tile). */
   async make(element: ElementSpec, maxWidth: number, options: { fontSize?: number } = {}): Promise<Mobject> {
     const attrs = element.attributes;
@@ -1147,6 +1180,7 @@ export class MarkupRenderer {
           height > 1e-9 ? (Number(attrs.y ?? 0) - box[1]) / height : 0,
         ];
       }
+      if (attrs.label || attrs.sublabel) obj = await this._shapeLabels(element, obj, size, color);
     } else if (element.kind === 'icon') {
       const strokeWidth = Number(attrs.stroke_width ?? 2);
       const fillColor = attrs.fill_color ? parseColor(attrs.fill_color) : color;

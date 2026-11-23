@@ -39,6 +39,31 @@ translucent (`#RRGGBBAA`, `#RGBA`), so a picture can fade under a white gradient
 | `arc` | `radius`, `angle` | `start_angle` (radians; `x`, `y` are the center of its circle; `angle` is the sweep) |
 | `polyline` | `points` (two or more) | |
 
+### Labels
+
+A shape takes a `label`, written in its middle, and a `sublabel`, written beside it: a node's
+letter and the name under it, without a text of their own placed against the shape.
+
+```markdown
+[[circle: .node x=1 y=0 label="A" sublabel="Alice"]]
+[[dot: x=3 y=0 sublabel="$p_1$" sublabel_side=right]]
+```
+
+| Attribute | Default | Meaning |
+| --- | --- | --- |
+| `label`, `sublabel` | none | the texts, with emphasis, links and formulas |
+| `label_side`, `sublabel_side` | `center`, `below` | where each goes: `center`, `above`, `below`, `left` or `right` |
+| `label_buff`, `sublabel_buff` | 0.1 | the space between the shape and a text beside it |
+| `font_size`, `sublabel_font_size` | `layout.fontSize` | their sizes (the sublabel's is the label's unless set) |
+| `label_color`, `sublabel_color` | the shape's `color` | their colors |
+| `font` | the prose font | their face |
+
+A text beside the shape is centered on it along that side, its box `buff` away, as
+`at=top:#shape.bottom` places a text under it. The shape alone places the whole: `x`, `y`, its
+anchors and `at=` are the shape's, and arrows, lines and blobs reach the shape, while the labels
+move, fade and turn with it. A class sets how the labels of its shapes look
+(`node: radius=0.34 label_color=#1f3d7a sublabel_font_size=20 sublabel_color=#555555`).
+
 Point-defined shapes (`polygon`, `polyline`, `arc`) keep their coordinates unless they are
 positioned; `points` is a quoted, space-separated list of `(x,y)` pairs. Shapes serve as
 positioning anchors and as connection endpoints. Every shape, connection and attachment also

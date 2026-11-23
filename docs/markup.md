@@ -263,7 +263,11 @@ name too, while its other anchors are on the arc's box); polylines at least two 
 `color` (the layout color by default), `stroke_width` (default 2), `fill_color` and `fill_opacity`
 (0 by default; polylines have no fill), `opacity`, the positioning attributes below, `step`,
 `hide` and `focus_only`. Point-defined shapes without positioning keep their coordinates. Shapes
-serve as anchors and connection endpoints.
+serve as anchors and connection endpoints. A shape's `label` goes in its middle (or beside it,
+`label_side=above|below|left|right`) and its `sublabel` beside it (`sublabel_side`, below by
+default), `label_buff`/`sublabel_buff` (0.1) away, at `font_size` and `sublabel_font_size`, in
+the shape's color unless `label_color`/`sublabel_color` say otherwise; the shape alone places the
+whole and is what connections reach.
 
 `fill_gradient` fills a shape with a linear gradient through two colors or more, spaced evenly
 from the first to the last in `gradient_direction` (`right` by default, `left`, `up` or `down`).
