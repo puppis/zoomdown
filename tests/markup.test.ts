@@ -235,8 +235,11 @@ describe('phase 2 markup features', () => {
   const parse = (body: string) => new MarkupParser().parse(`::: slide {#a}\n${body}\n:::`);
 
   it('parses at= expressions and validates their references', () => {
-    expect(parseAt('#ref.bottom-right', 1)).toEqual({ anchor: null, target: { id: 'ref', anchor: 'bottom-right' } });
-    expect(parseAt('top-left:#fig.1', 1)).toEqual({ anchor: 'top-left', target: { id: 'fig.1', anchor: null } });
+    expect(parseAt('#ref.bottom-right', 1)).toEqual({ anchor: null, target: { id: 'ref', anchor: 'bottom-right', text: false } });
+    expect(parseAt('top-left:#fig.1', 1)).toEqual({ anchor: 'top-left', target: { id: 'fig.1', anchor: null, text: false } });
+    // A list item's text alone, at an anchor of it or at its default one.
+    expect(parseAt('top-left:#item.text.bottom-left', 1)).toEqual({ anchor: 'top-left', target: { id: 'item', anchor: 'bottom-left', text: true } });
+    expect(parseAt('#item.text', 1)).toEqual({ anchor: null, target: { id: 'item', anchor: null, text: true } });
     expect(parseAt('center:(2,-1)', 1)).toEqual({ anchor: 'center', target: { point: [2, -1, 0] } });
     expect(() => parseAt('middle:#a', 1)).toThrow(/Unknown anchor/);
     const document = parse('[[dot: #ref x=0 y=0]]\n[t]{#t at=top-left:#ref.bottom-right dx=0.2}');

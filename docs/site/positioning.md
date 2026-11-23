@@ -98,6 +98,50 @@ includes stack without coordinates of their own and captions follow them:
  Sizes are measured once
 during preparation; dependency cycles are reported with their line.
 
+## The element before, and an item's text
+
+`#LAST` names the element written just before, so an element placed against the one above it
+needs no id for that:
+
+```markdown
+![](assets/ring.png){#ring x=-5 y=1 width=4}
+[The ring after one round]{below:#LAST left-aligned:#LAST}
+[[arrow: #LAST -> (3,0)]]
+```
+
+It works wherever a reference does: the relative constraints, `at=` (`at=#LAST.bottom-right`),
+the ends of arrows and lines, and the targets of braces, boxes and blobs. The element before is
+the one written before in the source, imports and snippets expanded, whatever its `step`: arrows,
+lines, braces, boxes and blobs, which nothing can reference, and subslides are passed over. In a
+group it is the member before, and the group itself for what follows it; at a slide's top level
+an include counts, as the slide it shows. Each element finds its own, so a list item's or a
+style's `#LAST` names the element before that item or that styled element:
+`caption: below:#LAST left-aligned:#LAST` in `::: styles` makes `{.caption}` hang a caption
+under whatever precedes it. A `#LAST` with nothing before it in its slide or group is an error,
+and `LAST` is no id.
+
+`#id.text` names a list item's text without its bullet or number, where `#id` names the whole
+item, so a block can line up under either:
+
+```zoomdown {height=4}
+::: slide {#item-text width=16 height=4}
+
+10. Each node sends its identifier to both neighbors {#send x=-7 y=1.2}
+
+[Under its text]{below:#LAST left-aligned:#LAST.text color=BLUE}
+
+[Under its number]{below:#LAST left-aligned:#send color=RED}
+
+[[box: #send.text, #bx, buff=0.1, color=GREEN]]
+
+:::
+```
+
+`.text` takes anchors after it (`at=top-left:#send.text.bottom-left`, `[[arrow: #a -> #send.text.left]]`)
+and works in every reference; on an element that is not a list item it is the element itself.
+It is read at the end of a reference, before an anchor, as anchors are, so an id of your own
+should not end in `.text`.
+
 ## Anchor expressions
 
 <a class="try" href="tour.html#slide=styles">Open in the tour ↗</a>
@@ -109,7 +153,7 @@ during preparation; dependency cycles are reported with their line.
 [Centered on a point]{#cp at=center:(5,-3.6)}
 ```
 
-`at=[anchor:]#id[.anchor]` or `at=[anchor:](x,y)` puts one anchor of the element (the prefix,
+`at=[anchor:]#id[.text][.anchor]` or `at=[anchor:](x,y)` puts one anchor of the element (the prefix,
 or `anchor=`, or its default) on an anchor of another element or on a literal point. Without
 an anchor, a text is aimed at on the middle of its first baseline (`baseline`), anything else
 at its `center`. It replaces `x`, `y` and the relative constraints, combines with `dx`/`dy`, and

@@ -28,7 +28,7 @@ import { LatexError, type MacroDefinition } from './latex';
 import { textLines, type TextLines } from './text';
 import { ASTTransformer } from './parser';
 import {
-  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, elementAnchor, looseOutlines, placeRelative, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject,
+  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, elementAnchor, looseOutlines, placeRelative, referenced, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject,
 } from './renderer';
 
 /** Slide classes by name, as `[[subslide: Name]]` finds them. */
@@ -467,7 +467,9 @@ export class MarkupSlide extends Slide {
     let shift: [number, number] | null = null;
     if ('at' in props) {
       const at = parseAt(props.at, spec?.line ?? 1);
-      const point = 'point' in at.target ? at.target.point : anchorPoint(this._actionTarget(at.target.id), at.target.anchor ?? 'center');
+      const point = 'point' in at.target
+        ? at.target.point
+        : anchorPoint(referenced(new Map([[at.target.id, this._actionTarget(at.target.id)]]), at.target), at.target.anchor ?? 'center');
       const mine = anchorPoint(obj, at.anchor ?? anchor);
       shift = [point[0] - mine[0], point[1] - mine[1]];
     } else if ('x' in props || 'y' in props) {

@@ -31,7 +31,7 @@ import { VideoClip } from '../video';
 import { IframeHost } from './iframe';
 import {
   ALIGNMENTS, BRACE_SIDES, CONNECTIONS, GROUP_ANCHORS, NEIGHBORS, POSITION_REFERENCES, SHAPES, TEXT_ANCHORS, TEXT_LIKE, VIDEO_EXTENSIONS,
-  ElementSpec, CodeSlideSpec, GroupSpec, IncludeSpec, InlineSpan, MarkupError, TableSpec, attachmentTargets, connectionEnd, endpoint, gradientColor, numberValue, parseAt, parseColor,
+  ElementSpec, CodeSlideSpec, GroupSpec, IncludeSpec, InlineSpan, MarkupError, TableSpec, attachmentReferences, attachmentTargets, connectionEnd, endpoint, gradientColor, numberValue, parseAt, parseColor, textReference,
   polylinePoints, span,
 } from './ast';
 import { MarkupParser } from './parser';
@@ -47,10 +47,16 @@ export const MATH_SIZE_RATIO = 4 / 3;
 
 /** The typography and spacing of a deck, as `layout` in its front matter gives them. */
 /**
- * A laid-out list item, which remembers where its text starts: that far right of its marker's
- * left edge, the blocks that continue the item flow.
+ * A laid-out list item, which remembers where its text starts, that far right of its marker's
+ * left edge, where the blocks that continue the item flow, and its text, which `#id.text` names.
  */
-export type ListItemMobject = Mobject & { markupTextColumn?: number };
+export type ListItemMobject = Mobject & { markupTextColumn?: number; markupListText?: Mobject };
+
+/** The object a reference names: the element, or a list item's text alone when it asks for `.text`. */
+export function referenced(objects: ReadonlyMap<string, Mobject>, reference: { id: string; text?: boolean }): Mobject {
+  const obj = objects.get(reference.id) as Mobject;
+  return (reference.text && obj && (obj as ListItemMobject).markupListText) || obj;
+}
 
 export interface LayoutConfigOptions {
   fontSize?: number;
@@ -395,7 +401,7 @@ export function placeRelative(
   if ('at' in attrs) {
     // One anchor of this object lands on an anchor of another object or on a literal point.
     const at = parseAt(attrs.at, item.line);
-    const reference = 'point' in at.target ? null : (objects.get(at.target.id) as Mobject);
+    const reference = 'point' in at.target ? null : referenced(objects, at.target);
     // A text is aimed at its baseline (in the middle), anything else at its center.
     const target = reference === null
       ? (at.target as { point: [number, number, number] }).point
@@ -407,7 +413,7 @@ export function placeRelative(
   if (!Object.keys(attrs).some((key) => POSITION_REFERENCES.has(key))) return;
   for (const [key, direction] of Object.entries(NEIGHBORS)) {
     if (!(key in attrs)) continue;
-    const reference = objects.get(attrs[key].slice(1)) as Mobject;
+    const reference = referenced(objects, textReference(attrs[key].slice(1)));
     const buff = Number(attrs.buff ?? gap);
     obj.nextTo(reference, direction, buff);
     // Two texts line up as lines of type: side by side on one baseline; one below the other a
@@ -437,10 +443,10 @@ export function placeRelative(
     }
   }
   for (const [key, direction] of Object.entries(ALIGNMENTS)) {
-    if (key in attrs) obj.alignTo(objects.get(attrs[key].slice(1)) as Mobject, direction);
+    if (key in attrs) obj.alignTo(referenced(objects, textReference(attrs[key].slice(1))), direction);
   }
   if ('baseline-aligned' in attrs) {
-    const reference = objects.get(attrs['baseline-aligned'].slice(1)) as Mobject;
+    const reference = referenced(objects, textReference(attrs['baseline-aligned'].slice(1)));
     obj.shift([0, baselineY(reference) - baselineY(obj), 0]);
   }
   // An explicit coordinate may override the otherwise centered orthogonal axis.
@@ -1286,7 +1292,7 @@ export class MarkupRenderer {
    */
   async attachment(element: ElementSpec, objects: Map<string, Mobject>, edges: readonly (readonly [string, string])[] = []): Promise<Mobject> {
     const attrs = element.attributes;
-    const targets = attachmentTargets(element).map((id) => objects.get(id) as Mobject);
+    const targets = attachmentReferences(element).map((reference) => referenced(objects, reference));
     const target = targets[0];
     const color = attrs.color ? parseColor(attrs.color) : this.layout.color;
     const strokeWidth = Number(attrs.stroke_width ?? 2);
@@ -1387,8 +1393,9 @@ export class MarkupRenderer {
     }
     const body = await this.text(spans, fontSize, Math.max(maxWidth - column, 0.5), defaultColor, font, lineHeight);
     body.shift([label.getLeft()[0] + column - body.getLeft()[0], baselineY(label) - baselineY(body), 0]);
-    const item = new Group(label, body) as Group & { markupBaselineFraction: number; markupTextColumn: number };
+    const item = new Group(label, body) as Group & { markupBaselineFraction: number; markupTextColumn: number; markupListText: Mobject };
     item.markupTextColumn = column;
+    item.markupListText = body;
     item.markupBaselineFraction = (baselineY(body) - item.getCenter()[1]) / item.getHeight();
     const lines = textLines(body);
     if (lines) markLines(item, lines);
@@ -1445,8 +1452,8 @@ export class MarkupRenderer {
     const [start, end] = ['from', 'to'].map((key) => connectionEnd(attrs[key], element.line));
     // An arrow to a labeled icon aims at the icon itself, not at the box of icon and label together.
     const body = (obj: Mobject | undefined): Mobject | null => (obj ? (obj as BodyMobject).markupBody ?? obj : null);
-    const source = Array.isArray(start) ? null : body(objects.get(start.id));
-    const target = Array.isArray(end) ? null : body(objects.get(end.id));
+    const source = Array.isArray(start) ? null : body(referenced(objects, start));
+    const target = Array.isArray(end) ? null : body(referenced(objects, end));
     const anchorOf = (side: typeof start) => (Array.isArray(side) ? null : side.anchor);
     // An end at a named anchor is that point; any other end of an element aims from its center.
     const at = (obj: Mobject | null, side: typeof start): [number, number, number] => {

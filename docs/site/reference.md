@@ -98,7 +98,8 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | --- | --- | --- |
 | `x`, `y` | elements, children | position of the anchor |
 | `anchor` | elements, children | `center`, edges, corners, `left-baseline`, `right-baseline` (text), `origin` (groups) |
-| `at` | elements, children | `[anchor:]#id[.anchor]` or `[anchor:](x,y)` |
+| `at` | elements, children | `[anchor:]#id[.text][.anchor]` or `[anchor:](x,y)` |
+| `#LAST`, `#id.text` | any reference | the element written just before in the same slide or group; a list item's text without its marker |
 | `below`, `above`, `left-of`, `right-of` | elements, children | place beside `#id`, at distance `buff` |
 | `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` | elements, children | align an edge or baseline with `#id` |
 | `dx`, `dy` | positioned elements | offset after placement |

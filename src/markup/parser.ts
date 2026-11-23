@@ -19,7 +19,7 @@ import {
   type CellAlignment,
   type ListItem,
   NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
-  elementStep, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, span, stepValue,
+  elementStep, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, span, stepValue, textReference,
 } from './ast';
 
 type Env = { line?: number };
@@ -703,6 +703,33 @@ export class MarkupParser {
   }
 }
 
+const RESERVED_LAST = 'LAST is reserved: #LAST names the element written just before';
+
+/** The attributes whose values name elements as `#id`: relative constraints, `at=` and the ends of an arrow or a line. */
+const NAMING_KEYS = [...POSITION_REFERENCES, 'at', 'from', 'to'];
+
+/**
+ * Put the id of the element written just before, `last`, for `#LAST` in what an item names: its
+ * relative constraints, its `at=`, the ends of an arrow or a line and an attachment's targets,
+ * `.text` and anchors after it kept (`#LAST.text`, `at=#LAST.bottom-left`).
+ */
+function resolveLast(item: ElementSpec | IncludeSpec | CodeSlideSpec, last: string | null, where: string): void {
+  const attrs = item.attributes;
+  const missing = () => new MarkupError(`#LAST names the element written just before, and none comes before this one ${where}`, item.line);
+  for (const key of NAMING_KEYS) {
+    const value = attrs[key];
+    if (value === undefined || !/#LAST(?![\w-])/.test(value)) continue;
+    if (last === null) throw missing();
+    attrs[key] = value.replace(/#LAST(?![\w-])/g, `#${last}`);
+  }
+  if (item instanceof ElementSpec && ATTACHMENTS.has(item.kind) && attrs.target) {
+    const targets = attrs.target.split(/\s+/);
+    if (!targets.some((target) => /^LAST(?![\w-])/.test(target))) return;
+    if (last === null) throw missing();
+    attrs.target = targets.map((target) => target.replace(/^LAST(?![\w-])/, last)).join(' ');
+  }
+}
+
 /** Validate a component tree and compile fragment state into animation steps. */
 export class ASTTransformer {
   validate(document: MarkupDocument): MarkupDocument {
@@ -710,6 +737,7 @@ export class ASTTransformer {
     const parents = new Map<string, string>();
     for (const slide of document.slides) {
       if (!IDENTIFIER.test(slide.id) || slides.has(slide.id)) throw new MarkupError(`Invalid or duplicate slide ID ${JSON.stringify(slide.id)}`, slide.line);
+      if (slide.id === 'LAST') throw new MarkupError(RESERVED_LAST, slide.line);
       slides.set(slide.id, slide);
       this._checkAttrs(slide.attributes, new Set(['id', 'title', 'width', 'height', 'flow_top', 'flow_left', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', ...(slide.placeholder ? ['src'] : [])]), slide.line);
       ASTTransformer._checkFlags(slide.attributes, slide.line);
@@ -722,9 +750,15 @@ export class ASTTransformer {
       // What a group passes down to its members that do not set their own: the text's size, face,
       // color and line height, a member taking those it has (a shape no font, an arrow no line height).
       const visit = (items: SlideItem[], scope: string, inherited: Attributes = {}): void => {
+        // The element written last in this scope, which `#LAST` names: arrows, lines and
+        // attachments, which nothing can reference, and subslides are passed over.
+        let last: string | null = null;
+        const where = scope ? 'in its group' : 'on its slide';
         for (const item of items) {
           if (item instanceof ElementSpec) {
             applyStyles(item, styles);
+            if (item.id === 'LAST') throw new MarkupError(RESERVED_LAST, item.line);
+            resolveLast(item, last, where);
             if (!IDENTIFIER.test(item.id) || elements.has(item.id)) {
               throw new MarkupError(`Invalid or duplicate element ID ${JSON.stringify(item.id)} in ${slide.id}`, item.line);
             }
@@ -740,10 +774,14 @@ export class ASTTransformer {
               for (const key of INHERITED_ATTRS) if (key in item.attributes) passed[key] = item.attributes[key];
               visit(item.items, item.id, passed);
             }
+            if (!CONNECTIONS.has(item.kind) && !ATTACHMENTS.has(item.kind)) last = item.id;
           } else if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
             if (scope) throw new MarkupError('Groups cannot contain includes or subslides', item.line);
             applyStyles(item, styles);
+            resolveLast(item, last, where);
             this._checkChild(item, slide, slides, parents);
+            // An include is referenced by the id of the slide it includes.
+            if (item instanceof IncludeSpec) last = item.target;
           } else if (scope) throw new MarkupError('Groups cannot contain directives', item.line);
         }
       };
@@ -1295,7 +1333,7 @@ export class ASTTransformer {
       if (!reference.startsWith('#') || !IDENTIFIER.test(reference.slice(1))) {
         throw new MarkupError(`${key} requires a slide-local #element ID`, item.line);
       }
-      const target = lookup(reference.slice(1));
+      const target = lookup(textReference(reference.slice(1)).id);
       if (!target) throw new MarkupError(`Unknown positioning reference ${reference}`, item.line);
       if (decoration(target)) throw new MarkupError('Positioning references cannot target an arrow, line, brace, box or blob', item.line);
       if (scopeOfTarget(target) !== scope) throw new MarkupError(`${reference} belongs to a different group`, item.line);

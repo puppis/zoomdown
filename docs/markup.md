@@ -458,7 +458,7 @@ to 1) makes any element translucent.
 [Centered on a point]{at=center:(5,-3)}
 ```
 
-`at=[anchor:]#id[.anchor]` or `at=[anchor:](x,y)` puts one anchor of the element (the prefix, or
+`at=[anchor:]#id[.text][.anchor]` or `at=[anchor:](x,y)` puts one anchor of the element (the prefix, or
 `anchor=`, or its default) on an anchor of another element (`center` when omitted) or on a literal
 point. It replaces `x`, `y` and the relative constraints below, combines with `dx`/`dy`, leaves
 the flow, and follows the same reference rules (same slide, same group, no arrows or lines).
@@ -486,6 +486,13 @@ most one constraint per axis are allowed; an explicit coordinate may set the fre
 target elements of the same slide, including later ones and hidden fragments; sizes are measured
 once during preparation, so show/hide never reflows. Includes and subslides accept the same
 attributes against local elements.
+
+`#LAST` names the element written just before in the same slide or group, in any reference
+(constraints, `at=`, arrow ends, attachment targets), arrows, lines, attachments and subslides
+passed over; it is resolved for each element, so a list's or a style's `#LAST` names the element
+before each one, and with nothing before it, it is an error. `#id.text` names a list item's text
+without its marker (any other element itself), before an optional anchor:
+`[Note]{below:#LAST left-aligned:#LAST.text}`, `at=top-left:#item.text.bottom-left`.
 
 ## Styles
 

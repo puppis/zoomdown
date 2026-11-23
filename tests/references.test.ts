@@ -73,9 +73,10 @@ describe('braces', () => {
 
 describe('the ends of arrows and lines', () => {
   it('parse an element, an element at an anchor, or a point', () => {
-    expect(connectionEnd('#a0', 1)).toEqual({ id: 'a0', anchor: null });
-    expect(connectionEnd('#a0.top-right', 1)).toEqual({ id: 'a0', anchor: 'top-right' });
-    expect(connectionEnd('#v1.2', 1)).toEqual({ id: 'v1.2', anchor: null });
+    expect(connectionEnd('#a0', 1)).toEqual({ id: 'a0', anchor: null, text: false });
+    expect(connectionEnd('#a0.top-right', 1)).toEqual({ id: 'a0', anchor: 'top-right', text: false });
+    expect(connectionEnd('#v1.2', 1)).toEqual({ id: 'v1.2', anchor: null, text: false });
+    expect(connectionEnd('#item.text.left', 1)).toEqual({ id: 'item', anchor: 'left', text: true });
     expect(connectionEnd('(1,-2)', 1)).toEqual([1, -2, 0]);
   });
 
@@ -113,5 +114,45 @@ describe('quoted attribute values', () => {
 
   it('say how to make a styled span a block of its own', () => {
     expect(() => new MarkupParser().parse('::: slide {#s}\n[one]{#a x=1}\n[two]{#b x=2}\n:::')).toThrow(/put a blank line between it and the lines around it/);
+  });
+});
+
+describe('#LAST, the element written just before', () => {
+  it('names it in relative constraints, at=, the ends of arrows and the targets of attachments', () => {
+    const items = parse('First {#a x=0 y=3}\n\nSecond {below:#LAST left-aligned:#LAST}\n\n[[dot: #d at=#LAST.bottom-right]]\n\n[[arrow: #LAST -> #a]]\n\n[[box: #LAST #a, #bx]]')
+      .slides[0].items as ElementSpec[];
+    const [, second, dot, arrow, box] = items;
+    expect(second.attributes.below).toBe('#a');
+    expect(second.attributes['left-aligned']).toBe('#a');
+    expect(dot.attributes.at).toBe(`#${second.id}.bottom-right`);
+    expect(arrow.attributes.from).toBe(`#${dot.id}`);
+    // Nothing references an arrow, so the box's #LAST passes over it.
+    expect(box.attributes.target).toBe(`${dot.id} a`);
+  });
+
+  it('keeps .text after it, and names the one before each element when a list or a style repeats it', () => {
+    const list = parse('- one {#one}\n- two {#two left-aligned:#LAST.text}\n- three {#three left-aligned:#LAST.text}').slides[0].items as ElementSpec[];
+    expect(list[1].attributes['left-aligned']).toBe('#one.text');
+    expect(list[2].attributes['left-aligned']).toBe('#two.text');
+    const styled = new MarkupParser().parse('::: styles\nnote: below:#LAST left-aligned:#LAST.text\n:::\n::: slide {#r}\n- one {#one}\n\nA note {#n .note}\n\nAnother {.note}\n:::');
+    const [, note, another] = styled.slides[0].items as ElementSpec[];
+    expect(note.attributes.below).toBe('#one');
+    expect(note.attributes['left-aligned']).toBe('#one.text');
+    expect(another.attributes.below).toBe('#n');
+  });
+
+  it('is the previous member inside a group, the group after it, and an include by the slide it shows', () => {
+    const items = parse('::: {.group #g x=0 y=0}\nA {#ga}\n\nB {#gb below:#LAST}\n:::\n\nC {#c below:#LAST}').slides[0].items;
+    const group = items[0] as GroupSpec;
+    expect((group.items[1] as ElementSpec).attributes.below).toBe('#ga');
+    expect((items[1] as ElementSpec).attributes.below).toBe('#g');
+    const after = parse('[[include: #a width=4]]\n\n[caption]{#cap below:#LAST}', CHILDREN).slides[0].items;
+    expect((after[1] as ElementSpec).attributes.below).toBe('#a');
+  });
+
+  it('needs an element before it, and LAST is no id', () => {
+    expect(() => parse('A {#x below:#LAST}')).toThrow(/none comes before this one on its slide/);
+    expect(() => parse('::: {.group #g x=0 y=0}\nA {#ga below:#LAST}\n:::')).toThrow(/none comes before this one in its group/);
+    expect(() => parse('A {#LAST}')).toThrow(/LAST is reserved/);
   });
 });

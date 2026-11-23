@@ -139,3 +139,22 @@ describe('the blocks that continue a list item', () => {
     expect(left(element(s, 'nm'))).toBeCloseTo(left(element(s, 'n')) + column(element(s, 'n')), 6);
   });
 });
+
+describe('the text of a list item as a reference, #id.text', () => {
+  const column = (obj: Mobject) => (obj as ListItemMobject).markupTextColumn as number;
+
+  it('starts past the bullet, while #id still starts at it', async () => {
+    const s = await slide('', '- Each node sends its identifier {#item}\n\nUnder its text {#t below:#LAST left-aligned:#item.text}\n\nUnder its bullet {#b below:#LAST left-aligned:#item}');
+    const text = left(element(s, 'item')) + column(element(s, 'item'));
+    expect(left(element(s, 't'))).toBeCloseTo(text, 6);
+    expect(left(element(s, 'b'))).toBeCloseTo(left(element(s, 'item')), 6);
+  });
+
+  it('works with at=, #LAST and a wide number, and is the element itself on anything else', async () => {
+    const s = await slide('', '10. ten {#ten}\n\n[[dot: #d at=#LAST.text.left radius=0.05]]\n\n[P]{#p x=0 y=-2}\n\n[Q]{#q below:#p left-aligned:#p.text}');
+    const text = left(element(s, 'ten')) + column(element(s, 'ten'));
+    expect(column(element(s, 'ten'))).toBeGreaterThan(0.6);
+    expect(element(s, 'd').getCenter()[0]).toBeCloseTo(text, 6);
+    expect(left(element(s, 'q'))).toBeCloseTo(left(element(s, 'p')), 6);
+  });
+});

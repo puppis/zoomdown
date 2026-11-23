@@ -325,8 +325,28 @@ export const SKETCH_ATTRS = new Set(['sketch', 'roughness', 'bowing', 'fill_styl
 export const FILL_STYLE_NAMES = new Set<string>(FILL_STYLES);
 
 /** The element IDs an attachment decorates (`target` holds them separated by spaces). */
+/** The ids of an attachment's targets. */
 export function attachmentTargets(item: ElementSpec): string[] {
-  return (item.attributes.target ?? '').split(/\s+/).filter(Boolean);
+  return attachmentReferences(item).map((reference) => reference.id);
+}
+
+/** An attachment's targets, each the whole element or, with `.text`, a list item's text alone. */
+export function attachmentReferences(item: ElementSpec): Reference[] {
+  return (item.attributes.target ?? '').split(/\s+/).filter(Boolean).map(textReference);
+}
+
+/** An element a reference names: the whole of it, or with `text`, a list item's text without its marker. */
+export interface Reference {
+  id: string;
+  text: boolean;
+}
+
+/**
+ * Read a reference without its `#`: `id`, or `id.text` for a list item's text without its bullet
+ * or number (on anything else, the element itself).
+ */
+export function textReference(id: string): Reference {
+  return id.length > 5 && id.endsWith('.text') ? { id: id.slice(0, -5), text: true } : { id, text: false };
 }
 
 /** A parsed `tremble=` value: the step the vibration starts at and the step it stops at, if any. */
@@ -353,7 +373,7 @@ export function parseTremble(value: string, appear: number, line: number): Tremb
 
 export function positionTargets(item: ElementSpec | IncludeSpec | CodeSlideSpec): Set<string> {
   const result = new Set<string>();
-  for (const [key, value] of Object.entries(item.attributes)) if (POSITION_REFERENCES.has(key)) result.add(value.slice(1));
+  for (const [key, value] of Object.entries(item.attributes)) if (POSITION_REFERENCES.has(key)) result.add(textReference(value.slice(1)).id);
   if ('at' in item.attributes) {
     const at = parseAt(item.attributes.at, item.line);
     if ('id' in at.target) result.add(at.target.id);
@@ -365,7 +385,7 @@ export function positionTargets(item: ElementSpec | IncludeSpec | CodeSlideSpec)
 export interface AtExpression {
   /** The element's own anchor to place, or null for its default anchor. */
   anchor: string | null;
-  target: { id: string; anchor: string | null } | { point: [number, number, number] };
+  target: { id: string; anchor: string | null; text: boolean } | { point: [number, number, number] };
 }
 
 /** Parse an `at=` value: `[anchor:]#id[.anchor]` or `[anchor:](x,y)`. */
@@ -379,7 +399,7 @@ export function parseAt(value: string, line: number): AtExpression {
     if (!GROUP_ANCHORS.has(anchor)) throw new MarkupError(`Unknown anchor ${JSON.stringify(anchor)} in at=`, line);
   }
   if (rest.startsWith('(')) return { anchor, target: { point: endpoint(rest, line) as [number, number, number] } };
-  if (!rest.startsWith('#')) throw new MarkupError('at= takes [anchor:]#id[.anchor] or [anchor:](x,y)', line);
+  if (!rest.startsWith('#')) throw new MarkupError('at= takes [anchor:]#id[.text][.anchor] or [anchor:](x,y)', line);
   let id = rest.slice(1);
   let targetAnchor: string | null = null;
   const dot = id.lastIndexOf('.');
@@ -387,8 +407,9 @@ export function parseAt(value: string, line: number): AtExpression {
     targetAnchor = id.slice(dot + 1);
     id = id.slice(0, dot);
   }
-  if (!IDENTIFIER.test(id)) throw new MarkupError(`Invalid at= reference #${id}`, line);
-  return { anchor, target: { id, anchor: targetAnchor } };
+  const reference = textReference(id);
+  if (!IDENTIFIER.test(reference.id)) throw new MarkupError(`Invalid at= reference #${id}`, line);
+  return { anchor, target: { id: reference.id, anchor: targetAnchor, text: reference.text } };
 }
 
 /** Normalize deck-provided styles (attribute strings or plain objects) into attribute maps. */
@@ -756,10 +777,10 @@ export function endpoint(value: string, line: number): Endpoint {
   return [coordinates[0], coordinates[1], 0];
 }
 
-/** An end of an arrow or a line: an element, at one of its anchors or at its edge, or a point. */
-export type ConnectionEnd = { id: string; anchor: string | null } | [number, number, number];
+/** An end of an arrow or a line: an element (or a list item's text), at one of its anchors or at its edge, or a point. */
+export type ConnectionEnd = { id: string; anchor: string | null; text: boolean } | [number, number, number];
 
-/** Parse `#id`, `#id.anchor` (as in `at=`) or `(x,y)` as an end of an arrow or a line. */
+/** Parse `#id`, `#id.text`, either with `.anchor` (as in `at=`), or `(x,y)` as an end of an arrow or a line. */
 export function connectionEnd(value: string, line: number): ConnectionEnd {
   if (!value.startsWith('#')) return endpoint(value, line) as [number, number, number];
   let id = value.slice(1);
@@ -769,7 +790,7 @@ export function connectionEnd(value: string, line: number): ConnectionEnd {
     anchor = id.slice(dot + 1);
     id = id.slice(0, dot);
   }
-  return { id, anchor };
+  return { ...textReference(id), anchor };
 }
 
 export function polylinePoints(value: string, line: number, minimum = 2): Array<[number, number, number]> {

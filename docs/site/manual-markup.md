@@ -747,6 +747,14 @@ the same id comes first):
 under one. One horizontal and one vertical constraint at most, and not together with the
 coordinate of the same axis. References may chain; a cycle is an error.
 
+`#LAST`, in any reference, names the element written just before in the same slide or group
+(arrows, lines, attachments and subslides passed over; at the top level an include counts, as the
+slide it shows), resolved for each element, so in a list or a style it names the element before
+each one; with nothing before it, it is an error, and `LAST` is no id. `#id.text` names a list
+item's text without its bullet or number (on anything else, the element itself) and takes
+anchors after it: `left-aligned:#LAST.text`, `at=top-left:#item.text.bottom-left`,
+`[[box: #item.text, #b]]`.
+
 ### at=
 
 ```markdown
@@ -755,7 +763,7 @@ coordinate of the same axis. References may chain; a cycle is an error.
 [[dot: #d at=(3,-2)]]               my anchor on a point
 ```
 
-`at=[anchor:]#id[.anchor]` or `at=[anchor:](x,y)` lands an anchor of the element (its default
+`at=[anchor:]#id[.text][.anchor]` or `at=[anchor:](x,y)` lands an anchor of the element (its default
 anchor when omitted) on an anchor of another element (its center when omitted) or on a point.
 `at` replaces `x`, `y`, `buff` and the relative references, and may not reference a connection
 or an attachment.
