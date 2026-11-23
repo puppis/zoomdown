@@ -467,7 +467,9 @@ by its right end or its middle, a `step=-1` caption placed out of the flow and a
 block are passed over), lists keeping their bullets in one column, `buff=` alone setting the space
 after the block before as `below:` does, and the paragraphs of a column wrapping at the `width` of
 the block placed at its top. Text with only `x` stands in a
-column of its own that the flow fills from where it stands; an explicit `y` or a vertical
+column of its own that the flow fills from where it stands, or, written right after a block
+placed by a point (`y`, `at=` a point) and right of it, beside that block at its top, starting a
+column the blocks after it go on in; an explicit `y` or a vertical
 constraint sets the height and keeps the flow's left edge; any other element, or text anchored at
 its center, defaults an omitted axis to zero. `dx` and `dy` shift the final
 position of any positioned element. `angle` then turns it by that many radians, counterclockwise,

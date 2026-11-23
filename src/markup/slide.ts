@@ -18,7 +18,7 @@ import { DelayedAnimation, type SlideContext } from '../runtime';
 import { markEarly, setSourceRank } from '../display';
 import { BRIDGE_PATHS, findBridges, withBridges, type BridgePath } from '../bridges';
 import {
-  ATTACHMENTS, CONNECTIONS, EFFECT_NAMES, ENTER_STYLES, EXIT_STYLES, NEIGHBORS, TEXT_LIKE, VERTICAL_POSITION,
+  ATTACHMENTS, CONNECTIONS, EFFECT_NAMES, ENTER_STYLES, EXIT_STYLES, NEIGHBORS, POSITION_REFERENCES, TEXT_LIKE, VERTICAL_POSITION,
   ActionSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, MarkupDocument, MarkupError, NextSpec,
   SkipNextSpec, SlideItem, SlideSpec, StepChange, childKey, connectionEnd, numberValue, parseAt, parseColor, parseTremble, positionTargets,
   elementStep, roleStyledKeys,
@@ -54,6 +54,13 @@ interface FlowNode {
   flowY: boolean;
   /** The element the flow places it after, or null at the start of the flow. */
   after: FlowNode | null;
+  /**
+   * The block placed by a point written just before it, when it is a text with an x alone: right of
+   * that block, it starts a column beside it, at the same top.
+   */
+  besideOf: FlowNode | null;
+  /** Whether it stands beside the block before, as `besideOf` allowed once both were placed. */
+  beside: boolean;
   /** What the flow knows of it once it is placed: its column's left edge and width, its bottom and its lines. */
   next: { left: number; width: number; bottom: number; lines: TextLines | null; tight: boolean } | null;
 }
@@ -71,6 +78,21 @@ function placedAside(item: ElementSpec | IncludeSpec | CodeSlideSpec): boolean {
 }
 
 /** The options that set an element's horizontal position (a direction sets both), and its vertical one. */
+/** A block written as such (not a caption of the parent's view, nor made by a tile or a drawing), which may head a column. */
+function columnHead(item: ElementSpec | IncludeSpec | CodeSlideSpec): boolean {
+  return item instanceof ElementSpec && FLOW_BLOCKS.has(item.kind) && item.role === null && item.attributes.step !== '-1';
+}
+
+/**
+ * Whether a block is placed by a point: a `y` or `at=` a point, by its left edge, and no relative
+ * constraint; a text placed against another element (a picture's caption) is not.
+ */
+function placedAtPoint(item: ElementSpec | IncludeSpec | CodeSlideSpec): boolean {
+  const attrs = item.attributes;
+  if (Object.keys(attrs).some((key) => POSITION_REFERENCES.has(key)) || placedAside(item)) return false;
+  return 'y' in attrs || ('at' in attrs && 'point' in parseAt(attrs.at, item.line).target);
+}
+
 const SETS_X = (key: string) => key in NEIGHBORS || key === 'left-aligned' || key === 'right-aligned';
 const SETS_Y = (key: string) => key in NEIGHBORS || key === 'top-aligned' || key === 'bottom-aligned' || key === 'baseline-aligned';
 
@@ -254,9 +276,14 @@ export class MarkupSlide extends Slide {
     // Where an element with outlines it does not draw stood when it was made, so that they follow it.
     const madeAt = new Map<Mobject, [number, number, number]>();
     const nodes: FlowNode[] = [];
+    // The node of the item written just before (directives aside), or null when that item makes none.
+    let written: FlowNode | null = null;
     for (const [index, item] of items.entries()) {
       if (item instanceof EventSpec || item instanceof ActionSpec || item instanceof NextSpec || item instanceof SkipNextSpec) continue;
-      if (item instanceof ElementSpec && (CONNECTIONS.has(item.kind) || ATTACHMENTS.has(item.kind))) continue;
+      if (item instanceof ElementSpec && (CONNECTIONS.has(item.kind) || ATTACHMENTS.has(item.kind))) {
+        written = null;
+        continue;
+      }
       let obj: Mobject;
       let explicit: boolean;
       let position: [number, number, number] | null;
@@ -306,8 +333,11 @@ export class MarkupSlide extends Slide {
         index, item, obj, indent, explicit, position, fixed, textLike, anchor, tight: Boolean(list?.tight),
         flowX: flowing && !('x' in attrs) && !('at' in attrs) && !keys.some(SETS_X),
         flowY: flowing && !('y' in attrs) && !('at' in attrs) && !keys.some(SETS_Y),
-        after: null, next: null,
+        after: null, next: null, besideOf: null, beside: false,
       });
+      const node = nodes[nodes.length - 1];
+      if (node.flowY && 'x' in attrs && written && columnHead(node.item) && columnHead(written.item) && (placedAtPoint(written.item) || written.besideOf)) node.besideOf = written;
+      written = node;
     }
     // A reference names an element or, at the top level and when no element has that id, an include
     // by the slide it shows; code-authored children are no references.
@@ -381,7 +411,7 @@ export class MarkupSlide extends Slide {
     // it flows after, in the order of the source otherwise.
     const placed = new Set<FlowNode>();
     while (placed.size < nodes.length) {
-      const node = nodes.find((candidate) => !placed.has(candidate) && references(candidate).every((target) => placed.has(target)) && (!candidate.after || placed.has(candidate.after)));
+      const node = nodes.find((candidate) => !placed.has(candidate) && references(candidate).every((target) => placed.has(target)) && (!candidate.after || placed.has(candidate.after)) && (!candidate.besideOf || placed.has(candidate.besideOf)));
       if (!node) {
         const stuck = nodes.find((candidate) => !placed.has(candidate)) as FlowNode;
         const name = stuck.item instanceof IncludeSpec ? stuck.item.target : stuck.item instanceof ElementSpec ? stuck.item.id : '?';
@@ -450,6 +480,13 @@ export class MarkupSlide extends Slide {
         const target = node.position as [number, number, number];
         obj.shift([target[0] - point[0], target[1] - point[1], 0]);
       }
+      // A text with an x alone, written right after a block placed by a point (or a column this rule
+      // started) and standing right of it, starts a column beside it: its top at that block's top.
+      const head = node.besideOf;
+      if (head && (head.beside || placedAtPoint(head.item)) && obj.getLeft()[0] >= head.obj.getRight()[0] - 1e-9) {
+        node.beside = true;
+        obj.shift([0, head.obj.getTop()[1] - obj.getTop()[1], 0]);
+      }
       if (item instanceof ElementSpec) placeRelative(item, obj, scope.local, layout.gap, layout.textAnchor);
       else placeRelative(item, obj, scope.local, layout.gap);
       offset(item, obj);
@@ -462,12 +499,14 @@ export class MarkupSlide extends Slide {
       // The next block goes on at this one's left edge, less the indent a list gave it: aligned with
       // it, as left-aligned:#LAST.text aligns this one. One that flows down with an x of its own
       // stands in a column of its own and passes on the column it was given.
-      const ownColumn = node.flowY && 'x' in attrs;
+      // A text beside the block before starts a column of its own, as a placed block does.
+      const flowsDown = node.flowY && !node.beside;
+      const ownColumn = flowsDown && 'x' in attrs;
       node.next = {
         left: ownColumn ? column : obj.getLeft()[0] - indent,
         // A block placed out of the flow starts a column as wide as it says; one in the flow passes on
         // the width of the column it is in, though it has a width of its own.
-        width: node.flowY ? columnWidth : 'width' in attrs ? Number(attrs.width) + indent : scope.width,
+        width: flowsDown ? columnWidth : 'width' in attrs ? Number(attrs.width) + indent : scope.width,
         bottom: obj.getBottom()[1], lines: textLines(obj), tight: node.tight,
       };
       if (item instanceof ElementSpec) turn(item, obj);

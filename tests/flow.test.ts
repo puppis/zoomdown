@@ -214,10 +214,13 @@ describe('the flow after a placed element', () => {
 
   it('takes from the flow only the axes no option sets, and a direction keeps centering', async () => {
     const s = await slide('', 'Placed {#p x=-3 y=2}\n\nOwn x {#a x=1}\n\n[Reference]{#q x=4 y=-3}\n\nAligned {#b left-aligned:#p}\n\nCentered under {#c below:#b}');
-    // An x of its own makes a column of its own, which the flow fills from where it is, not under #p.
-    const plain = await slide('', 'Own x {#a x=1}');
+    // An x of its own right of the block placed just before starts a column beside it, at its top.
     expect(anchorPoint(element(s, 'a'), 'left-baseline')[0]).toBeCloseTo(1, 9);
-    expect(top(element(s, 'a'))).toBeCloseTo(top(element(plain, 'a')), 9);
+    expect(top(element(s, 'a'))).toBeCloseTo(top(element(s, 'p')), 9);
+    // Left of it, the x makes a column the flow fills from where it is, not under #p.
+    const plain = await slide('', 'Own x {#a x=-7}');
+    const leftOf = await slide('', 'Placed {#p x=-3 y=2}\n\nOwn x {#a x=-7}');
+    expect(top(element(leftOf, 'a'))).toBeCloseTo(top(element(plain, 'a')), 9);
     // Aligned with #p, under #q, the element before it.
     expect(left(element(s, 'b'))).toBeCloseTo(left(element(s, 'p')), 9);
     expect(baseline(s, 'q') - baseline(s, 'b')).toBeCloseTo(await spacing(), 9);
@@ -227,6 +230,37 @@ describe('the flow after a placed element', () => {
     const pinned = await slide('', 'Placed {#p x=2 y=2}\n\nAt its own height {#h y=-2}\n\n[[dot: #d x=5 y=0]]\n\nAligned on a baseline {#k baseline-aligned:#h}');
     expect(left(element(pinned, 'h'))).toBeCloseTo(-8 + 0.65, 9);
     expect(left(element(pinned, 'k'))).toBeCloseTo(-8 + 0.65, 9);
+  });
+
+  it('starts a column beside a block placed by a point, at its top, with a text that sets its x alone', async () => {
+    const s = await slide('', [
+      '**proposer**: picks a number {#a y=1 anchor=top-left width=3}',
+      '',
+      '**acceptor**: promises it {#b x=-4 width=3}',
+      '',
+      '**proposer** again {#c x=0 width=3}',
+      '',
+      'Under the last column {#d}',
+    ].join('\n'));
+    expect(top(element(s, 'b'))).toBeCloseTo(top(element(s, 'a')), 9);
+    // A column so started heads the next one.
+    expect(top(element(s, 'c'))).toBeCloseTo(top(element(s, 'a')), 9);
+    // The block after it flows on in its column.
+    expect(left(element(s, 'd'))).toBeCloseTo(left(element(s, 'c')), 9);
+    expect(top(element(s, 'd'))).toBeLessThan(element(s, 'c').getBottom()[1]);
+  });
+
+  it('starts no column beside a block that a drawing, a caption of a picture or the start of the slide separates from it', async () => {
+    const plain = await slide('', 'Own x {#b x=4}');
+    const flowTop = top(element(plain, 'b'));
+    const after = async (before: string) => top(element(await slide('', `${before}\n\nOwn x {#b x=4}`), 'b'));
+    expect(await after('Placed {#a y=1 width=3}\n\n[[line: (0,0) -> (1,1)]]')).toBeCloseTo(flowTop, 9);
+    expect(await after('[[dot: #d x=-6 y=0]]\n\n[a caption]{#a at=left:#d.right}')).toBeCloseTo(flowTop, 9);
+    expect(await after('Caption {#a x=-7 y=1 step=-1}')).toBeCloseTo(flowTop, 9);
+    expect(await after('[corner]{#a x=-4 y=1 anchor=right-baseline}')).toBeCloseTo(flowTop, 9);
+    // Nor beside a block that flows: it goes on under it.
+    const flowing = await slide('', 'Flowing {#a width=3}\n\nOwn x {#b x=4}');
+    expect(top(element(flowing, 'b'))).toBeLessThan(element(flowing, 'a').getBottom()[1]);
   });
 
   it('passes over a caption of the parent\'s view and an overlay written before what it marks', async () => {

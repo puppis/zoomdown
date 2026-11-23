@@ -68,12 +68,22 @@ and goes on under it, at its left edge, with no position of its own.
   and `flow_left`.
 - **Options win, axis by axis**: the default is as if `below` and `left-aligned` the block before
   were written, and what is written replaces either. `x` alone puts the block in a column of its
-  own, which the flow fills from where it stands, as before, not under the block before; a
+  own, which the flow fills from where it stands, as before, not under the block before (unless
+  it starts a column beside that block, below); a
   horizontal alignment (`left-aligned:#q`, `left-aligned:#LAST.text`) keeps it under the block
   before, aligned with `#q`, and the blocks after it go on at that edge. A `y` or a vertical
   alignment sets its height, and its left edge stays the flow's. A direction (`below:#x`,
   `right-of:#x`) or `at=` places it entirely, as before: `below:#x` alone still centers it under
   `#x`; add `left-aligned:#LAST` to keep the left edge.
+- **Columns side by side**: a text, formula or listing with `x` alone, written right after a block
+  placed by a point (`y`, or `at=` a point, by its left edge) and standing right of that block's
+  right edge, starts a column beside it: its top at that block's top, as `top-aligned:#LAST`
+  would put it, and the blocks written after it without a position go on under it, in its
+  column. A column so started heads the next one, so a row of columns needs a position only on
+  the first: `{y=0.75 anchor=top-left width=3.6}`, then `{x=-3.65 width=3.6}`,
+  `{x=0.45 width=3.6}`. A drawing, an arrow or a line written between the two, a block placed
+  against another element (a picture's caption), a block placed by its right end or its middle,
+  a caption of the parent's view and an `x` left of the block before keep the flow as above.
 - **Spacing**: `buff=` alone sets the space after the block before, as `below:` measures it, so
   `{buff=0.45}` places a block where `{below:#LAST left-aligned:#LAST buff=0.45}` did whenever
   the block before is the one `#LAST` names (not a picture or an include, which the flow passes

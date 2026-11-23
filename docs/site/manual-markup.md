@@ -784,7 +784,10 @@ after the block before, as `below:` measures it. The block before is text, a for
 chart or a group, or anything that flowed down; pictures and drawings placed at a point, a block
 placed by its right end or its middle, a `step=-1` caption placed out of the flow and an element
 placed against the next one are passed over. A text block with only `x` stands in a column of its
-own, filled by the flow from where it stands. An explicit `y` or a vertical alignment sets the
+own, filled by the flow from where it stands; written right after a block placed by a point (`y`
+or `at=` a point, by its left edge) and right of that block's right edge, it starts a column
+beside it instead, its top at that block's top, and the blocks after it go on in its column
+(see [Columns side by side](positioning.html#after-a-placed-block)). An explicit `y` or a vertical alignment sets the
 height, keeping the flow's left edge; a direction (`below`, `above`, `left-of`, `right-of`) or
 `at` places the element entirely.
 
