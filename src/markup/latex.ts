@@ -4,7 +4,7 @@
  * MathJax `\class` groups and the rendered glyphs are recolored afterwards.
  */
 import { VMobject, getGlyphClasses, type Mobject } from 'manim-web';
-import { parseCssColor } from './ast';
+import { deckColor, parseCssColor } from './ast';
 
 /** dvipsnames and xcolor base colors as sRGB hex values. */
 export const LATEX_COLORS: Record<string, string> = {
@@ -40,7 +40,7 @@ function resolveLatexColor(model: string | null, value: string): string | null {
     if (parts.length === 3 && parts.every(Number.isFinite)) return '#' + parts.map((p) => p.toString(16).padStart(2, '0').toUpperCase()).join('');
     return null;
   }
-  const named = LATEX_COLORS[trimmed] ?? LATEX_COLORS[trimmed.toLowerCase()];
+  const named = deckColor(trimmed) ?? LATEX_COLORS[trimmed] ?? LATEX_COLORS[trimmed.toLowerCase()];
   if (named) return named;
   try {
     return parseCssColor(trimmed);

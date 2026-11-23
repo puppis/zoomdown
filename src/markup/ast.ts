@@ -674,6 +674,36 @@ const CSS_NAMED: Record<string, string> = {
 
 let enginePalette: Map<string, string> | null = null;
 
+/**
+ * The deck's named colors (`colors:` in its front matter or theme), by lowercase name: every
+ * color attribute, inline span and formula of the deck may name them, before the engine's names.
+ * One deck is loaded per page; loading one sets them.
+ */
+const DECK_COLORS = new Map<string, string>();
+
+/** The color a deck names `name`, as #RRGGBB, or undefined. */
+export function deckColor(name: string): string | undefined {
+  return DECK_COLORS.get(name.trim().toLowerCase());
+}
+
+/**
+ * Set the deck's named colors, replacing those of a deck loaded before: names of letters, digits,
+ * `_` and `-`, each any color `color=` takes (a later one may name an earlier one).
+ */
+export function setDeckColors(colors: Record<string, string> | undefined): void {
+  DECK_COLORS.clear();
+  for (const [name, value] of Object.entries(colors ?? {})) {
+    if (!/^[A-Za-z][\w-]*$/.test(name)) throw new MarkupError(`A color's name is letters, digits, _ and -: not ${JSON.stringify(name)}`);
+    let color: string;
+    try {
+      color = parseColor(String(value));
+    } catch {
+      throw new MarkupError(`The color ${name} is not a color: ${JSON.stringify(value)}`);
+    }
+    DECK_COLORS.set(name.toLowerCase(), color);
+  }
+}
+
 function palette(): Map<string, string> {
   if (!enginePalette) {
     enginePalette = new Map();
@@ -746,6 +776,8 @@ export function gradientColor(value: string): { color: string; alpha: number } {
 /** Normalize an engine palette name, hex value or CSS color into a hex string. */
 export function parseColor(value: string): string {
   const trimmed = value.trim();
+  const named = deckColor(trimmed);
+  if (named) return named;
   const fromPalette = palette().get(trimmed.toUpperCase());
   if (fromPalette) return fromPalette;
   return parseCssColor(trimmed);

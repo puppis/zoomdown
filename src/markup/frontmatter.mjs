@@ -25,6 +25,7 @@ export const SETTINGS = {
   layout: 'map',
   presenter: 'map',
   macros: 'map',
+  colors: 'map',
   styles: 'map',
   classes: 'path',
   extends: 'path',
@@ -88,6 +89,7 @@ export function parseSettings(yaml, where) {
     }
     if (['title', 'root', 'background'].includes(key) && typeof value !== 'string') throw new Error(`${where}: ${key} is text`);
     if (key === 'showOutline' && typeof value !== 'boolean') throw new Error(`${where}: showOutline is true or false`);
+    if (key === 'colors' && !Object.values(value).every((color) => typeof color === 'string')) throw new Error(`${where}: colors maps names to colors, as ok: '#1e7d32'`);
     if (key === 'theme' && !(typeof value === 'string' || (Array.isArray(value) && value.every((item) => typeof item === 'string')))) {
       throw new Error(`${where}: theme is a theme's name or a list of names`);
     }

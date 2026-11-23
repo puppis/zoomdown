@@ -217,9 +217,10 @@ deck: background=#0F172A viewport=16x9
 ```
 
 A theme is a deck's look kept apart from its slides: a Markdown file whose `::: styles` blocks (or
-every line, when it has no block) define [styles](styles.html), with three reserved names for the
+every line, when it has no block) define [styles](styles.html), with four reserved names for the
 settings that are not styles: `layout:` takes the keys of `layout` in the front matter,
-`presenter:` those of `presenter`, and `deck:` takes `background=` and `viewport=16x9`.
+`presenter:` those of `presenter`, `deck:` takes `background=` and `viewport=16x9`, and `colors:`
+names colors (`colors: ok=#1e7d32 bad=#c0392b`), under the deck's own.
 `theme: lecture` in the front matter applies `themes/lecture.zd` (or `themes/lecture.md`); a list `[lecture, wide]`
 applies several, later ones over earlier. The deck's own `styles`, `layout`, `presenter`,
 `background` and `viewport` win over the theme key by key, and its `::: styles` block over

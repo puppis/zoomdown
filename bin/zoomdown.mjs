@@ -549,6 +549,7 @@ runDeck(await loadMarkupDeck({
   background: config.background,
   viewport: config.viewport,
   macros: config.macros,
+  colors: config.colors,
   styles: config.styles,
   showOutline: Boolean(config.showOutline) || ${options.showOutline},
   classes: slides,

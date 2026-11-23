@@ -53,6 +53,7 @@ read: its settings move into the front matter, without `markup`, and `imports` i
 | `theme` | a name or a list of names | none | themes under the deck's own `styles`, `layout`, `presenter`, `background` and `viewport`: `themes/<name>.zd`, see [Extending a deck](extending.html#themes) |
 | `layout` | map | below | typography and spacing, below |
 | `presenter` | map | below | timing and camera policy, below |
+| `colors` | map | none | named colors (`ok: '#1e7d32'`, `ink: BLUE_E`) that every color attribute, style, inline span and formula (`\textcolor{ok}{…}`) of the deck may name |
 | `macros` | map | none | LaTeX macros for every formula, in MathJax's form: an expansion, or `[expansion, number of arguments]`, or `[expansion, number of arguments, default of an optional first argument]` (see [Mathematics](math.html)) |
 | `styles` | map | none | named styles applied by `.class` tokens and roles, a name to an attribute string or a map, see [Styles](styles.html) |
 | `classes` | path | none | module exporting `Slide` classes for `[[subslide: Name]]`, relative to the file |

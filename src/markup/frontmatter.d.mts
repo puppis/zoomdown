@@ -19,6 +19,7 @@ export interface DeckSettings {
   layout?: Record<string, unknown>;
   presenter?: Record<string, unknown>;
   macros?: Record<string, unknown>;
+  colors?: Record<string, string>;
   styles?: Record<string, string | Record<string, unknown>>;
   classes?: string;
   paths?: string[];

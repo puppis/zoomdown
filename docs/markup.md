@@ -175,7 +175,8 @@ spacing is counted in that interline, and a line's reach is its share of it, so 
 lines stays evenly spaced. Listings keep their own spacing.
 
 Colors are palette names (`BLUE`, `RED`, `TEAL`, `ORANGE`, `YELLOW`, `GRAY`, …), CSS names, hex
-values or `rgb(…)`, written as `color=…` or `style="color:…"` (not both). Nested emphasis and
+values or `rgb(…)`, or names the deck gives under `colors:` in its front matter (`ok: '#1e7d32'`),
+which formulas may name too (`\textcolor{ok}{…}`), written as `color=…` or `style="color:…"` (not both). Nested emphasis and
 math inherit the span's color.
 
 ## Math

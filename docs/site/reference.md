@@ -139,7 +139,8 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 
 - **Colors**: palette names (`BLUE`, `TEAL`, `GREEN`, `YELLOW`, `GOLD`, `RED`, `MAROON`, `PURPLE`,
   `PINK`, `ORANGE`, `GRAY`, `WHITE`, `BLACK`, with `_A` … `_E` variants), CSS names, `#rgb`,
-  `#rrggbb`, `rgb(…)`.
+  `#rrggbb`, `rgb(…)`, and the deck's own names under `colors:` in its front matter, also in
+  formulas (`\textcolor{ok}{…}`).
 - **Effects**: `indicate`, `wiggle`, `circumscribe`, `flash`, `focus`, `grow`, `shrink`, `write`,
   `create`, `uncreate`, `draw`, `wave`.
 - **Rates**: `smooth`, `linear`, `rush_into`, `rush_from`, `there_and_back`, `ease_in`,

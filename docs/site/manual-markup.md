@@ -62,6 +62,12 @@ names are listed under [Color names](#color-names). Everywhere a color is taken 
 `fill_color`, `border_color`, `header_color`, `axis_color`, `colors`, inline spans) the same
 forms apply.
 
+A deck names colors of its own under `colors:` in its front matter (or a theme's `colors:` line):
+`ok: '#1e7d32'`, `bad: '#c0392b'`, `ink: BLUE_E`, each any color above or a name given before it.
+Every color of the deck may then be written by name, in attributes and styles (`color=ok`),
+inline spans (`[x]{color=bad}`) and labels, and in formulas (`$\textcolor{ok}{x}$`,
+`{\color{bad} y}`), case aside; a deck's name wins over a palette name it repeats.
+
 ### Fonts and sizes
 
 `font=` names a family: the bundled text face Latin Modern Roman (the default), the bundled
@@ -1072,6 +1078,7 @@ styles:
 | `background` | color | the canvas background (white) |
 | `viewport` | `16x9`, `16:9` or `{ width: 16, height: 9 }` | the proportions the camera fits (16 × 9) |
 | `showOutline` | `true`, `false` | open the outline at start |
+| `colors` | map | named colors of the deck: name to a color (`ok: '#1e7d32'`), which attributes, styles, inline spans and formulas may name; see [Colors](#colors) |
 | `macros` | map | LaTeX macros for every formula: name to an expansion, or to `[expansion, number of arguments]`, or to `[expansion, number of arguments, default of the optional first one]`, as in MathJax; single quotes keep backslashes as written, `'\mathbb{N}'` |
 | `styles` | map | named styles, a name to an attribute string or a map |
 | `theme` | name or list | themes applied under the deck's own settings |
@@ -1140,8 +1147,9 @@ searched last for every kind. [Extending a deck](extending.html) describes each 
 ### Theme files
 
 A Markdown theme is a style sheet: `::: styles` blocks, or every line when it has none, with
-three reserved names. `layout:` takes the keys of `layout` above, `presenter:` those of
-`presenter`, and `deck:` takes `background=` and `viewport=16x9`. Later themes of a list
+four reserved names. `layout:` takes the keys of `layout` above, `presenter:` those of
+`presenter`, `deck:` takes `background=` and `viewport=16x9`, and `colors:` names colors
+(`colors: ok=#1e7d32 bad=#c0392b`). Later themes of a list
 override earlier ones; the deck's own settings override them all.
 
 ## Errors

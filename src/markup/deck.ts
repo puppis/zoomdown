@@ -2,7 +2,7 @@
 import { defineDeck, type DeckDefinition, type ResolvedDeck, type ViewportSize } from '../deck';
 import { PresenterConfig, type PresenterConfigOptions } from '../runtime';
 import { MarkupParser } from './parser';
-import { MarkupError, normalizeStyles } from './ast';
+import { MarkupError, normalizeStyles, setDeckColors } from './ast';
 import type { MacroDefinition } from './latex';
 import { describeOrigin, expandImports } from './imports';
 import { LayoutConfig, type LayoutConfigOptions } from './renderer';
@@ -51,6 +51,8 @@ export interface MarkupDeckOptions {
   files?: Record<string, string>;
   /** LaTeX macros for every formula: an expansion, or [expansion, number of arguments, default of an optional first one]. */
   macros?: Record<string, MacroDefinition>;
+  /** Named colors (`ok: '#1e7d32'`), which every color attribute, inline span and formula of the deck may name. */
+  colors?: Record<string, string>;
   /** Preloaded assets (path relative to the markup file → URL or data URI) for single-file bundles. */
   assets?: Record<string, string>;
   /** Named styles: attribute strings (`"font_size=18 color=GRAY"`) or objects, applied by role or `.class`. */
@@ -224,13 +226,14 @@ async function readMarkup(read: ReturnType<typeof libraryReader>, name: string, 
 /** What a theme sets: styles, and the deck settings a Markdown theme gives under `layout:`, `presenter:` and `deck:`. */
 export interface ThemeParts {
   styles?: Record<string, string | Record<string, unknown>>;
+  colors?: Record<string, string>;
   layout?: LayoutConfigOptions;
   presenter?: PresenterConfigOptions;
   background?: string;
   viewport?: ViewportSize;
 }
 
-const THEME_SECTIONS = new Set(['layout', 'presenter', 'deck']);
+const THEME_SECTIONS = new Set(['layout', 'presenter', 'deck', 'colors']);
 
 function themeValue(value: string): unknown {
   if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
@@ -252,7 +255,8 @@ export function parseTheme(text: string): ThemeParts {
       continue;
     }
     const values = Object.fromEntries(Object.entries(attributes).map(([key, value]) => [key, themeValue(String(value))]));
-    if (name === 'layout') parts.layout = values as LayoutConfigOptions;
+    if (name === 'colors') parts.colors = Object.fromEntries(Object.entries(attributes).map(([key, value]) => [key, String(value)]));
+    else if (name === 'layout') parts.layout = values as LayoutConfigOptions;
     else if (name === 'presenter') parts.presenter = values as PresenterConfigOptions;
     else {
       if (typeof values.background === 'string') parts.background = values.background;
@@ -270,6 +274,7 @@ export function parseTheme(text: string): ThemeParts {
 function mergeThemes(base: ThemeParts, theme: ThemeParts): ThemeParts {
   return {
     styles: { ...(base.styles ?? {}), ...(theme.styles ?? {}) },
+    colors: { ...(base.colors ?? {}), ...(theme.colors ?? {}) },
     layout: { ...(base.layout ?? {}), ...(theme.layout ?? {}) },
     presenter: { ...(base.presenter ?? {}), ...(theme.presenter ?? {}) },
     background: theme.background ?? base.background,
@@ -283,6 +288,7 @@ export function applyTheme(options: MarkupDeckOptions, theme: ThemeParts): Marku
     ...options,
     theme: undefined,
     styles: { ...(theme.styles ?? {}), ...(options.styles ?? {}) },
+    colors: theme.colors || options.colors ? { ...(theme.colors ?? {}), ...(options.colors ?? {}) } : undefined,
     layout: options.layout instanceof LayoutConfig ? options.layout : { ...(theme.layout ?? {}), ...(options.layout ?? {}) },
     presenter: options.presenter instanceof PresenterConfig ? options.presenter : { ...(theme.presenter ?? {}), ...(options.presenter ?? {}) },
     background: options.background ?? theme.background,
@@ -313,6 +319,7 @@ function withSettings(options: MarkupDeckOptions, settings: DeckSettings): Marku
     layout: options.layout instanceof LayoutConfig ? options.layout : { ...(settings.layout as LayoutConfigOptions | undefined), ...options.layout },
     presenter: options.presenter instanceof PresenterConfig ? options.presenter : { ...(settings.presenter as PresenterConfigOptions | undefined), ...options.presenter },
     macros: settings.macros || options.macros ? { ...(settings.macros as Record<string, MacroDefinition> | undefined), ...options.macros } : undefined,
+    colors: settings.colors || options.colors ? { ...(settings.colors as Record<string, string> | undefined), ...options.colors } : undefined,
     styles: settings.styles || options.styles ? { ...settings.styles, ...options.styles } : undefined,
   };
 }
@@ -450,6 +457,8 @@ export function markupDeck(options: MarkupDeckOptions): ResolvedDeck {
       });
       // Errors name the imported file a line came from.
       MarkupError.describe = (line) => describeOrigin(expanded.origins[line - 1], line);
+      // The deck's named colors, which its styles, elements and formulas may name from now on.
+      setDeckColors(options.colors);
       const document = new MarkupParser().parse(expanded.source, { root: options.root, basePath, styles: normalizeStyles(options.styles), steps: layout.steps });
       // Slide classes: the module given, the bundled ones, and `Name.ts` in the slides folders for what is still missing.
       const namespace: SlideNamespace = { ...(options.classes ?? options.imports ?? {}), ...(options.slideModules ?? {}) };
