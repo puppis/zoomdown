@@ -39,7 +39,7 @@ import { MONOSPACE, PX_PER_WORLD_BASE, StyledLine, baselineY, layoutParagraph, m
 import { layoutCode } from './code';
 import { DEFAULT_TEXT_FONT } from '../fonts';
 import {
-  LatexError, applyLatexColors, compileMacros, edgeSpaces, expandMacros, latexErrorOf, plainMacros, preprocessLatex, ruleGlyphs, type Macro, type MacroDefinition, type RuledGlyph,
+  LatexError, applyLatexColors, compileMacros, edgeSpaces, emptyEdgeGroups, expandMacros, latexErrorOf, plainMacros, preprocessLatex, ruleGlyphs, type Macro, type MacroDefinition, type RuledGlyph,
 } from './latex';
 
 /** Formula pixel size per prose point, so that `font_size` means the same for both. */
@@ -862,18 +862,50 @@ export class MarkupRenderer {
       if (ruled) ({ latex: source, glyphs } = ruled);
     }
     // Space at the edges of a formula that draws is measured as a formula of its own, before and
-    // after the rest, which is measured by its ink.
+    // after the rest, which is measured by its ink; so is the space next to an empty group there.
     const { lead, core, trail } = edgeSpaces(source);
-    if (!lead && !trail) return this._mathPiece(source, glyphs, color, fontSize, fontFamily);
+    const groups = await this._emptyGroupSpace(core, fontSize);
+    if (!lead && !trail && !groups) return this._mathPiece(source, glyphs, color, fontSize, fontFamily);
     const rules = (part: string) => part.split(GLYPH_RULE_MARK).length - 1;
     const [before, piece, after] = await Promise.all([
       lead ? this._mathPiece(lead, glyphs.slice(0, rules(lead)), color, fontSize, fontFamily) : null,
       this._mathPiece(core, glyphs.slice(rules(lead), rules(lead) + rules(core)), color, fontSize, fontFamily),
       trail ? this._mathPiece(trail, glyphs.slice(rules(lead) + rules(core)), color, fontSize, fontFamily) : null,
     ]);
-    const start = Math.max(0, before?.advance ?? 0);
+    const start = Math.max(0, before?.advance ?? 0) + (groups?.before ?? 0);
     piece.mobject.shift([start, 0, 0]);
-    return { ...piece, advance: start + piece.advance + Math.max(0, after?.advance ?? 0), inset: (piece.inset ?? 0) + start };
+    const end = (groups?.after ?? 0) + Math.max(0, after?.advance ?? 0);
+    return { ...piece, advance: start + piece.advance + end, inset: (piece.inset ?? 0) + start };
+  }
+
+  /**
+   * The space TeX puts between a formula's ink and the empty group (`{}`) it starts or ends with,
+   * or null without one. The group adds that space to the typeset width and nothing to the ink but
+   * what it adds inside, as a binary operator it makes binary, `m + {}`, is spaced on both sides.
+   */
+  private async _emptyGroupSpace(core: string, fontSize: number): Promise<{ before: number; after: number } | null> {
+    const { withoutLead, withoutTrail } = emptyEdgeGroups(core);
+    if (withoutLead === null && withoutTrail === null) return null;
+    const em = ((fontSize * 4) / 3) / PX_PER_WORLD_BASE;
+    // A typeset width less the ink: the edge glyphs' side bearings and the space at the edges.
+    const margin = async (latex: string) => {
+      const macros = this._plainMacros ? { macros: this._plainMacros } : {};
+      const [rendered, tex] = await Promise.all([
+        renderLatexToSVG(preprocessLatex(expandMacros(latex, this.macros)), { displayMode: true, ...macros }).catch(() => null),
+        this._mathTex(latex, '#000000', fontSize).catch(() => null),
+      ]);
+      if (!rendered || latexErrorOf(rendered.svgString) || !tex || !hasInk(tex)) return null;
+      return (rendered.width / 1000) * em - tex.getWidth();
+    };
+    const whole = await margin(core);
+    if (whole === null) return null;
+    // A group that is a command's argument, `\frac{a}{}`, leaves an error behind.
+    const space = async (rest: string | null) => {
+      const without = rest === null ? null : await margin(rest);
+      return without === null ? 0 : Math.max(0, whole - without);
+    };
+    const [before, after] = await Promise.all([space(withoutLead), space(withoutTrail)]);
+    return before || after ? { before, after } : null;
   }
 
   /**

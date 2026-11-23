@@ -4,7 +4,7 @@ import { MarkupParser } from '../src/markup/parser';
 import { GroupSpec, type ElementSpec, type InlineSpan } from '../src/markup/ast';
 import { LayoutConfig, MarkupRenderer } from '../src/markup/renderer';
 import { buildTable } from '../src/markup/table';
-import { edgeSpaces, ruleGlyphs } from '../src/markup/latex';
+import { edgeSpaces, emptyEdgeGroups, ruleGlyphs } from '../src/markup/latex';
 import { StyledLine, inlineRows, inlineWords, layoutParagraph, textLines, textResolutionScale, type MathPiece } from '../src/markup/text';
 import { CANVAS_CALLS, element, installFakeCanvas, slide } from './helpers/slides';
 
@@ -382,6 +382,38 @@ describe('space at the edges of a formula that draws', () => {
     expect(arrow.getBounds().min.x - element(s, 'p').getLeft()[0]).toBeCloseTo(2 * emOf(28), 6);
     const word = (id: string) => Math.min(...element(s, id).getFamily().filter((part) => part instanceof StyledLine).map((part) => part.getBounds().min.x));
     expect(word('q') - word('r')).toBeCloseTo(emOf(28), 6);
+  });
+
+  it('includes an empty group at the top level, not a script\'s base or argument', () => {
+    expect(emptyEdgeGroups('m \\in {}')).toEqual({ withoutLead: null, withoutTrail: 'm \\in' });
+    expect(emptyEdgeGroups('{ }= b')).toEqual({ withoutLead: '= b', withoutTrail: null });
+    expect(emptyEdgeGroups('{}={}')).toEqual({ withoutLead: '={}', withoutTrail: '{}=' });
+    for (const latex of ['x^{}', 'x_{} ', '{}^2 x', 'a{}b', '{}', '\\{ \\}', 'm \\in {x}']) expect(emptyEdgeGroups(latex), latex).toEqual({ withoutLead: null, withoutTrail: null });
+  });
+
+  it('keeps the space TeX puts next to an empty group at the edge', async () => {
+    const renderer = new MarkupRenderer();
+    const piece = (latex: string) => renderer.mathPiece(latex, '#000000', 24);
+    const mu = emOf(24) / 18;
+    expect((await piece('m \\in {}')).advance).toBeCloseTo((await piece('m \\in')).advance + 5 * mu, 4);
+    const relation = await piece('{}= b');
+    expect(relation.advance).toBeCloseTo((await piece('= b')).advance + 5 * mu, 4);
+    expect(relation.inset).toBeCloseTo(5 * mu, 4);
+    expect(relation.mobject.getLeft()[0]).toBeCloseTo(5 * mu, 4);
+    // A binary operator is spaced on both sides once a group follows it, the left side in its ink.
+    const binary = await piece('m + {}');
+    expect(binary.advance - binary.mobject.getWidth()).toBeCloseTo(4 * mu, 4);
+    const comma = await piece('m , {}');
+    expect(comma.advance - comma.mobject.getWidth()).toBeCloseTo(3 * mu, 4);
+    // A group that is a command's argument is no edge.
+    const fraction = await piece('\\frac{a}{}');
+    expect(fraction.advance).toBeCloseTo(fraction.mobject.getWidth(), 9);
+  });
+
+  it('spaces the next word after a relation that ends with an empty group', async () => {
+    const s = await slide('', '$m \\in {}$ y {#a x=0 y=0 anchor=left font_size=28}\n\n$m \\in$ y {#b x=0 y=-2 anchor=left font_size=28}');
+    const word = (id: string) => Math.min(...element(s, id).getFamily().filter((part) => part instanceof StyledLine).map((part) => part.getBounds().min.x));
+    expect(word('a') - word('b')).toBeCloseTo((5 / 18) * emOf(28), 4);
   });
 });
 

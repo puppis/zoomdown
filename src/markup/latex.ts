@@ -425,6 +425,37 @@ export function edgeSpaces(source: string): { lead: string; core: string; trail:
   };
 }
 
+/**
+ * A formula without the empty group (`{}`) it starts or ends with, at its top level and not a
+ * script's base or argument, or null for an edge without one. TeX spaces an atom from an empty
+ * group as from any other, so that `m \in {}` ends with the thick space after `\in` and `{}= b`
+ * starts with the one before `=`: space with no ink to measure.
+ */
+export function emptyEdgeGroups(source: string): { withoutLead: string | null; withoutTrail: string | null } {
+  const none = { withoutLead: null, withoutTrail: null };
+  if (!/\{\s*\}/.test(source)) return none;
+  const tokens: Array<{ start: number; end: number }> = [];
+  let i = skipSpaces(source, 0);
+  while (i < source.length) {
+    const start = i;
+    if (source[i] === '{') i = groupEnd(source, i);
+    else if (source[i] === '\\') i = controlSequence(source, i)[1];
+    else i += 1;
+    tokens.push({ start, end: i });
+    i = skipSpaces(source, i);
+  }
+  if (tokens.length < 2) return none;
+  const text = (token: { start: number; end: number }) => source.slice(token.start, token.end);
+  const empty = (token: { start: number; end: number }) => /^\{\s*\}$/.test(text(token));
+  const script = (token: { start: number; end: number }) => /^[\^_]$/.test(text(token));
+  const [first, second] = tokens;
+  const [before, last] = tokens.slice(-2);
+  return {
+    withoutLead: empty(first) && !script(second) ? source.slice(second.start) : null,
+    withoutTrail: empty(last) && !script(before) ? source.slice(0, before.end) : null,
+  };
+}
+
 /** Commands whose argument is text, where a rule cannot stand. */
 const TEXT_COMMANDS = new Set(['text', 'textrm', 'textit', 'textbf', 'textsf', 'texttt', 'textnormal', 'textup', 'textmd', 'textsl', 'mbox', 'hbox']);
 /** Commands whose argument is not drawn. */

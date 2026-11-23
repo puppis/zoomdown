@@ -82,7 +82,9 @@ first one too: `&nbsp;`, `&ensp;` and `&emsp;`, or the characters themselves (a 
 em space), and a formula of space alone. A phantom is as wide as what it hides, so
 `$\phantom{\Rightarrow}$ or` under `$\Rightarrow$ either` starts *or* under *either*; other space,
 such as `$\quad$` or `$\hspace{2em}$`, is as wide as it is typeset. So is the space a formula
-starts or ends with, as in `$\qquad\Downarrow$` or `$x \quad$ for`. A plain space after such a
+starts or ends with, as in `$\qquad\Downarrow$` or `$x \quad$ for`, and the space TeX puts next
+to an empty group there: `$m \in {}$ channel` keeps the thick space after the relation, and
+`${}= b$` the one before it. A plain space after such a
 start counts, as between words, and the lines a line that starts with space wraps to start under
 its first word, as after a `\\` indent. Plain spaces after a list marker still only separate it
 from the text. A list of pseudocode keeps its indentation:
