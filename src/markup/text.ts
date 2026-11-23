@@ -47,6 +47,26 @@ export interface TextRun {
   strike?: boolean;
   /** Underlined without being a link. */
   underline?: boolean;
+  /** A subscript or a superscript: smaller, lowered or raised. */
+  script?: 'sub' | 'sup';
+}
+
+/**
+ * The size of a subscript or superscript of text, relative to the text, and how far it is raised,
+ * in ems of the text: LaTeX's `\textsuperscript` and `\textsubscript` at ten points, a seven-point
+ * script on the math axis' shifts of text style.
+ */
+const SCRIPT_SIZE = 0.7;
+const SCRIPT_RISE = { sub: -0.15, sup: 0.363 } as const;
+
+/** A run's font size in pixels, `px` being the text's. */
+function runPx(run: Pick<TextRun, 'script'>, px: number): number {
+  return run.script ? px * SCRIPT_SIZE : px;
+}
+
+/** How far a run's baseline is above the line's, in pixels. */
+function runRise(run: Pick<TextRun, 'script'>, px: number): number {
+  return run.script ? SCRIPT_RISE[run.script] * px : 0;
 }
 
 /** A link's horizontal extent on a rendered line, in the line's local world coordinates. */
@@ -121,20 +141,25 @@ export interface RunMetrics {
   fontDescent: number;
 }
 
-/** Measure one run at `px` canvas pixels, in canvas pixels. */
+/**
+ * Measure one run of text `px` canvas pixels large, in canvas pixels. A script's ink is where it
+ * is drawn, raised or lowered; its line box is the text's.
+ */
 export function measureRun(run: TextRun, px: number, family: string): RunMetrics {
   const ctx = measurer();
-  ctx.font = fontString(run, px, family);
+  const size = runPx(run, px);
+  const rise = runRise(run, px);
+  ctx.font = fontString(run, size, family);
   const m = ctx.measureText(run.text);
-  const fontAscent = m.fontBoundingBoxAscent ?? px * 0.8;
-  const fontDescent = m.fontBoundingBoxDescent ?? px * 0.2;
+  const fontAscent = (m.fontBoundingBoxAscent ?? size * 0.8) * (px / size);
+  const fontDescent = (m.fontBoundingBoxDescent ?? size * 0.2) * (px / size);
   const blank = !run.text.trim();
   return {
     advance: m.width,
     inkLeft: blank ? 0 : -(m.actualBoundingBoxLeft ?? 0),
     inkRight: blank ? 0 : m.actualBoundingBoxRight ?? m.width,
-    ascent: blank ? 0 : m.actualBoundingBoxAscent ?? fontAscent,
-    descent: blank ? 0 : m.actualBoundingBoxDescent ?? fontDescent,
+    ascent: blank ? 0 : (m.actualBoundingBoxAscent ?? fontAscent) + rise,
+    descent: blank ? 0 : (m.actualBoundingBoxDescent ?? fontDescent) - rise,
     fontAscent,
     fontDescent,
   };
@@ -363,13 +388,16 @@ export class StyledLine extends Text {
     let x = layout.originX;
     const rule = Math.max(1, px * 0.05);
     runs.forEach((run, i) => {
-      ctx.font = fontString(run, px, this._family);
+      const size = runPx(run, px);
+      const baseline = layout.baselineY - runRise(run, px);
+      ctx.font = fontString(run, size, this._family);
       ctx.fillStyle = tint ?? run.color;
       ctx.globalAlpha = this.fillOpacity;
-      if (run.text.trim()) ctx.fillText(run.text, x, layout.baselineY);
+      if (run.text.trim()) ctx.fillText(run.text, x, baseline);
+      // An underline stays on the line's, under a script too.
       if (run.href || run.underline) ctx.fillRect(x, layout.baselineY + px * 0.1, layout.metrics[i].advance, rule);
       // A strike runs through the middle of the lowercase letters, by the font's own x-height.
-      if (run.strike) ctx.fillRect(x, layout.baselineY - xHeight(ctx, px) / 2 - rule / 2, layout.metrics[i].advance, rule);
+      if (run.strike) ctx.fillRect(x, baseline - xHeight(ctx, size) / 2 - rule / 2, layout.metrics[i].advance, rule);
       x += layout.metrics[i].advance;
     });
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -604,9 +632,10 @@ function runsOf(atoms: Atom[], defaultColor: string): TextRun[] {
     };
     if (atom.strike) run.strike = true;
     if (atom.underline) run.underline = true;
+    if (atom.script) run.script = atom.script;
     const last = runs[runs.length - 1];
     if (last && last.bold === run.bold && last.italic === run.italic && last.color === run.color && last.mono === run.mono && (last.href ?? null) === run.href
-      && Boolean(last.strike) === Boolean(run.strike) && Boolean(last.underline) === Boolean(run.underline)) {
+      && Boolean(last.strike) === Boolean(run.strike) && Boolean(last.underline) === Boolean(run.underline) && last.script === run.script) {
       last.text += run.text;
     } else runs.push(run);
   }
@@ -693,7 +722,7 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       for (const atom of segment.prose) {
         const spaces = isBlank(atom.content) ? atom.content : KEPT_SPACES.exec(atom.content)?.[0];
         if (!spaces) return lead;
-        lead += measureRun({ text: spaces, bold: atom.bold, italic: atom.italic, color: defaultColor, mono: atom.kind === 'code', href: null }, px, fontFamily).advance / pxPerWorld;
+        lead += measureRun({ text: spaces, bold: atom.bold, italic: atom.italic, color: defaultColor, mono: atom.kind === 'code', href: null, script: atom.script }, px, fontFamily).advance / pxPerWorld;
         if (spaces.length < atom.content.length) return lead;
       }
     }

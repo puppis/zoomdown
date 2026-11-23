@@ -95,6 +95,35 @@ function hardLineBreak(state: StateInline, silent: boolean): boolean {
   return true;
 }
 
+/**
+ * A subscript or superscript of text, `H~2~O` and `x^2^`, as in Pandoc. It holds no space but an
+ * escaped one, `\ `, which is a no-break space, and no formula, code or bracket either: a `~` in a
+ * link's text and another in its target never pair, nor do two `^` around a formula. Emphasis
+ * works inside.
+ */
+function textScript(state: StateInline, silent: boolean): boolean {
+  const marker = state.src[state.pos];
+  if (marker !== '~' && marker !== '^') return false;
+  let end = state.pos + 1;
+  while (end < state.posMax && state.src[end] !== marker) {
+    if (state.src[end] === '\\' && end + 1 < state.posMax && state.src[end + 1] !== '\n') {
+      end += 2;
+      continue;
+    }
+    if (/[\s$`[\]]/.test(state.src[end])) return false;
+    end += 1;
+  }
+  if (end >= state.posMax || end === state.pos + 1) return false;
+  if (!silent) {
+    const token = state.push('text_script', marker === '~' ? 'sub' : 'sup', 0);
+    token.meta = marker === '~' ? 'sub' : 'sup';
+    token.children = [];
+    state.md.inline.parse(state.src.slice(state.pos + 1, end).replace(/\\ /g, ' '), state.md, state.env, token.children);
+  }
+  state.pos = end + 1;
+  return true;
+}
+
 function coloredSpan(state: StateInline, silent: boolean): boolean {
   if (state.src[state.pos] !== '[') return false;
   const end = bracketEnd(state.src, state.pos);
@@ -125,9 +154,10 @@ interface SpanStyle {
   href: string | null;
   strike: boolean;
   underline: boolean;
+  script: 'sub' | 'sup' | null;
 }
 
-const PLAIN: SpanStyle = { bold: false, italic: false, color: null, href: null, strike: false, underline: false };
+const PLAIN: SpanStyle = { bold: false, italic: false, color: null, href: null, strike: false, underline: false, script: null };
 
 function spans(tokens: Token[], outer: SpanStyle = PLAIN): InlineSpan[] {
   const result: InlineSpan[] = [];
@@ -136,7 +166,7 @@ function spans(tokens: Token[], outer: SpanStyle = PLAIN): InlineSpan[] {
   let struck = outer.strike ? 1 : 0;
   const links: Array<string | null> = [];
   const currentHref = () => (links.length ? links[links.length - 1] : outer.href);
-  const style = (): SpanStyle => ({ bold: strong > 0, italic: emphasis > 0, color: outer.color, href: currentHref(), strike: struck > 0, underline: outer.underline });
+  const style = (): SpanStyle => ({ bold: strong > 0, italic: emphasis > 0, color: outer.color, href: currentHref(), strike: struck > 0, underline: outer.underline, script: outer.script });
   for (const token of tokens) {
     switch (token.type) {
       case 'strong_open': strong += 1; break;
@@ -153,6 +183,9 @@ function spans(tokens: Token[], outer: SpanStyle = PLAIN): InlineSpan[] {
         result.push(...spans(token.children ?? [], inner));
         break;
       }
+      case 'text_script':
+        result.push(...spans(token.children ?? [], { ...style(), script: token.meta as 'sub' | 'sup' }));
+        break;
       case 'text':
       case 'text_special':
       case 'code_inline':
@@ -167,6 +200,7 @@ function spans(tokens: Token[], outer: SpanStyle = PLAIN): InlineSpan[] {
         if (token.type === 'hardbreak' && token.meta?.indent) piece.indent = token.meta.indent as number;
         if (now.strike) piece.strike = true;
         if (now.underline) piece.underline = true;
+        if (now.script) piece.script = now.script;
         result.push(piece);
         break;
       }
@@ -204,6 +238,8 @@ export class MarkupParser {
     this.markdown.inline.ruler.before('escape', 'dollar_math', dollarMath);
     this.markdown.inline.ruler.before('escape', 'hard_line_break', hardLineBreak);
     this.markdown.inline.ruler.before('link', 'colored_span', coloredSpan);
+    // After ~~strikethrough~~, which takes two tildes or more.
+    this.markdown.inline.ruler.after('emphasis', 'text_script', textScript);
   }
 
   /** Parse inline markup (used for connection labels). */

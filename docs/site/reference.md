@@ -39,6 +39,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | paragraph, `# heading`, `- item`, `1. item` | text (attributes in `{…}` at the end of the block); indented items nest |
 | `[text]{attrs}` | a positioned text block, or a span inside prose when only `color`/`style` and `underline` are given |
 | `~~text~~`, `&nbsp;`, `&emsp;` | struck text; spaces that keep their width |
+| `H~2~O`, `x^2^` | a subscript and a superscript of text (no spaces inside but `\ `) |
 | `[label](url)` | a link inside prose |
 | `$…$`, `$$ … $$` | inline math (part of a paragraph), display math |
 | `![alt](path){attrs}` | image, animated image or video (`play=once|loop`, `muted`) |

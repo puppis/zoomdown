@@ -41,6 +41,8 @@ export interface InlineSpan {
   strike?: boolean;
   /** Underlined without being a link, `[text]{underline=true}`. */
   underline?: boolean;
+  /** A subscript, `H~2~O`, or a superscript, `x^2^`, of text. */
+  script?: 'sub' | 'sup';
   /** A `\\` break's indent of the line it starts: the spaces that begin that line in the source. */
   indent?: number;
 }

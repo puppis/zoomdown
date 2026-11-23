@@ -148,6 +148,28 @@ link; an inline span takes `color` and `underline` together. HTML entities keep 
 would collapse: `&nbsp;` (never breaking the line), `&ensp;`, `&emsp;` and `&thinsp;`, as in
 `WWW,&nbsp;&nbsp;Wikipedia`.
 
+## Subscripts and superscripts
+
+Text takes a subscript between single tildes and a superscript between carets, as in Pandoc:
+
+```zoomdown {height=2}
+::: slide {#scripts width=16 height=2}
+
+H~2~O and CO~2~, the 1^st^ and 2^nd^ round, T~max\ load~, **x^2^** and *y~i~* {x=-7 y=0 font_size=28}
+
+:::
+```
+
+A script is 0.7 as large as its text and lowered 0.15 em or raised 0.363 em, as LaTeX's
+`\textsubscript` and `\textsuperscript` set it, and it keeps the style around it, bold, italic
+or a color. It holds no space: a space written `\ ` is a no-break one, so `T~max\ load~` is one
+subscript. A tilde or a caret with a space, a bracket, a formula or code before the next one stays
+as it is, so `~5 ms`, `2^n and 3^m` and a link such as `[example.org/~me](https://example.org/~me)`
+read as before, and `\~` or `\^` is always a literal one. Two tildes still strike text through.
+Emphasis works inside a script, `y~*i*~`; a formula does not, so a variable with a subscript is
+written as a formula, `$L_i$`, and a word with one either way: `send~i~` sets the index upright in
+the text font, `$\mathit{send}_i$` in the formula's italic.
+
 ## Links
 
 `[label](https://…)` renders an underlined label that opens the page in a new tab; `mailto:` and

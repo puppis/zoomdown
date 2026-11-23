@@ -107,6 +107,8 @@ Normal text with **bold**, *italic*, ***both***, `inline code` and [blue **empha
 
 ~~read-after-write consistency~~, [Erlang]{underline=true}, WWW,&nbsp;&nbsp;Wikipedia&emsp;Google
 
+H~2~O, the 1^st^ round, T~max\ load~
+
 First line.\\
 Second line.
 
@@ -136,6 +138,12 @@ line wraps to keep its indent, within the rest of the width (an indent leaves a 
 least). Spaces after any other line end collapse, those in a block with `&&` columns align only
 the source, and in a list item they count from the column of the item's text, so a continuation
 aligned under the text is not indented.
+
+`H~2~O` and `x^2^` set a subscript and a superscript of text, as in Pandoc: 0.7 as large,
+lowered 0.15 em or raised 0.363 em, as LaTeX's `\textsubscript` and `\textsuperscript`, in the
+style around them. A script holds no space but an escaped one (`T~max\ load~`, a no-break space),
+and no formula, code or bracket, so `~5 ms`, `2^n and 3^m` and a `~` in a link's text and target
+stay as they are; emphasis works inside, and `\~` and `\^` are literal.
 
 `~~text~~` strikes text through, at the middle of its lowercase letters, and `[text]{underline=true}`
 underlines it without making it a link; inside a paragraph a `[text]{…}` span takes `color` and

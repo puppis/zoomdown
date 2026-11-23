@@ -166,6 +166,55 @@ describe('struck and underlined text', () => {
   });
 });
 
+describe('subscripts and superscripts of text', () => {
+  /** Inline spans as one string, a subscript marked `_(…)` and a superscript `^(…)`. */
+  const marked = (source: string) => new MarkupParser().parseInlineSpans(source, 1)
+    .map((s) => (s.script === 'sub' ? `_(${s.content})` : s.script === 'sup' ? `^(${s.content})` : s.content)).join('');
+
+  it('reads H~2~O and x^2^ as in Pandoc, an escaped space as a no-break one', () => {
+    expect(marked('H~2~O and x^2^, a~n+1~')).toBe('H_(2)O and x^(2), a_(n+1)');
+    expect(marked('T~max\\ load~ on the 1^st^')).toBe('T_(max load) on the 1^(st)');
+    const spans = new MarkupParser().parseInlineSpans('**x^2^** and y~*i*~', 1);
+    expect(spans.find((s) => s.content === '2')).toMatchObject({ script: 'sup', bold: true });
+    expect(spans.find((s) => s.content === 'i')).toMatchObject({ script: 'sub', italic: true });
+  });
+
+  it('leaves alone what holds a space, a bracket, a formula or code, an escaped marker and ~~strikes~~', () => {
+    expect(marked('~~struck~~ about ~5 ms, 2^n and 3^m')).toBe('struck about ~5 ms, 2^n and 3^m');
+    // A tilde in a link's text and another in its target.
+    expect(marked('[users.example.org/~me](https://users.example.org/~me)')).toBe('users.example.org/~me');
+    expect(marked('x^$n$^ and y~`i`~')).toBe('x^n^ and y~i~');
+    expect(marked('\\~a~ and \\^b^')).toBe('~a~ and ^b^');
+    expect(new MarkupParser().parseInlineSpans('x^$n$^ \\~a~ ~~struck~~', 1).every((s) => !s.script)).toBe(true);
+  });
+
+  it('draws a script 0.7 as large, raised or lowered as LaTeX\'s \\textsuperscript and \\textsubscript', async () => {
+    await slide('', 'H~2~O x^3^');
+    const drawn = (text: string) => {
+      const call = CANVAS_CALLS.find((c) => c.method === 'fillText' && c.args[0] === text);
+      if (!call) throw new Error(`${text} was not drawn`);
+      return { baseline: call.args[2] as number, px: Number(/(\d+(?:\.\d+)?)px/.exec(call.font)?.[1]) };
+    };
+    const text = drawn('H');
+    const sub = drawn('2');
+    const sup = drawn('3');
+    expect(sub.px).toBeCloseTo(0.7 * text.px, 6);
+    expect(sup.px).toBeCloseTo(0.7 * text.px, 6);
+    expect(sub.baseline - text.baseline).toBeCloseTo(0.15 * text.px, 6);
+    expect(text.baseline - sup.baseline).toBeCloseTo(0.363 * text.px, 6);
+  });
+
+  it('advances the pen by the script\'s own width', async () => {
+    const s = await slide('', 'H~22~O {#script}\n\nH22O {#plain}');
+    const call = CANVAS_CALLS.find((c) => c.method === 'fillText' && c.args[0] === 'H22O');
+    const ems = Number(/(\d+(?:\.\d+)?)px/.exec(call?.font ?? '')?.[1]) / (96 * textResolutionScale());
+    // Every character is half an em wide in the fake font, and the two digits are 0.7 as wide;
+    // a line's width is whole canvas pixels.
+    const shorter = element(s, 'plain').getWidth() - element(s, 'script').getWidth();
+    expect(Math.abs(shorter - 2 * 0.5 * 0.3 * ems)).toBeLessThanOrEqual(2 / 96);
+  });
+});
+
 describe('spaces written as entities', () => {
   it('keep their width: a no-break space joins words, runs of them do not collapse', () => {
     const words = inlineWords(new MarkupParser().parseInlineSpans('WWW,&nbsp;&nbsp;Wikipedia,&emsp;Google search', 1))[0];
