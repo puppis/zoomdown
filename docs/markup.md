@@ -248,7 +248,7 @@ exported screenshots.
 [[box: #tri, #tb, buff=0.2, corner_radius=0.1, color=GREEN]]
 ```
 
-Shapes need an `#id`. Rectangles take `width`, `height` and optional `corner_radius`; ellipses
+Shapes take an `#id` when something refers to them. Rectangles take `width`, `height` and optional `corner_radius`; ellipses
 `width` and `height`; circles `radius`; dots an optional `radius` (0.08, filled by default);
 polygons at least three `points` (closed, fillable); arcs `radius`, `angle` and optional
 `start_angle` (radians; `x`, `y` are the center of its circle, which its anchor `center` and `at=`

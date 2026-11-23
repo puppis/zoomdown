@@ -468,9 +468,9 @@ export class MarkupParser {
           attrs.to = match[2];
           items.push(new ActionSpec('transform', match[1], stepValue(attrs, 'step', line), attrs, line));
         } else if (SHAPES.has(kind)) {
+          // A shape needs an id only to be referenced, as any other element.
           const attrs = parseAttributes(value, line, { commas: true });
-          if (!('id' in attrs)) throw new MarkupError('Shapes require an explicit #id', line);
-          items.push(new ElementSpec(attrs.id, kind, [], attrs, '', line));
+          items.push(new ElementSpec(attrs.id ?? `${prefix}element-${items.length + 1}`, kind, [], attrs, '', line));
         } else {
           const end = '(?:#[\\w.-]+|\\([^()]+\\))';
           const match = new RegExp(`^(${end})\\s*->\\s*(${end})(.*)$`, 's').exec(value);

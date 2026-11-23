@@ -17,7 +17,7 @@ description: Rectangles, circles, dots, ellipses, polygons, arcs and polylines; 
 
 ## Shapes
 
-Every shape needs an `#id`. All accept `color` (the layout color by default), `stroke_width`
+A shape takes an `#id` when something refers to it, as any element does. All accept `color` (the layout color by default), `stroke_width`
 (default 2), `fill_color` and `fill_opacity` (0 by default; polylines have no fill), `opacity`,
 the placement attributes of [Positioning](positioning.html), `step`, `hide` and `focus_only`.
 

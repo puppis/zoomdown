@@ -156,3 +156,14 @@ describe('#LAST, the element written just before', () => {
     expect(() => parse('A {#LAST}')).toThrow(/LAST is reserved/);
   });
 });
+
+describe('shapes without an id', () => {
+  it('are allowed, with an id of their own, and can be named by #LAST', () => {
+    const items = parse('[[rectangle: x=0 y=0 width=2 height=1]]\n\n[[dot: x=1 y=1]]\n\n[Under the dot]{#t below:#LAST}').slides[0].items as ElementSpec[];
+    const [box, dot, label] = items;
+    expect(box.kind).toBe('rectangle');
+    expect(box.id).toMatch(/^element-\d+$/);
+    expect(dot.id).not.toBe(box.id);
+    expect(label.attributes.below).toBe(`#${dot.id}`);
+  });
+});

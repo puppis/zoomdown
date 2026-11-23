@@ -490,7 +490,7 @@ Directives are `[[kind: …]]` on a line of their own. Those below draw; the dir
 [[arc: #a x=0 y=-2 radius=2 start_angle=3.14 angle=-3.14]]
 ```
 
-Every shape needs an explicit `#id`. Shapes take the common attributes except `font`,
+A shape needs an `#id` only to be referred to, as any element. Shapes take the common attributes except `font`,
 `font_size`, `width` and `height` (which some of them redefine), the hand-drawn attributes,
 `tremble`, and:
 
