@@ -10,6 +10,9 @@ description: Anchors, flow, explicit coordinates, relative constraints, at= expr
 `x`, `y` position an element's **anchor**. The default anchor is `left-baseline` for prose,
 headings, math and listings (the left edge and the first baseline), `origin` for groups (their
 local `(0,0)`) and `center` for images, shapes, icons, tables, charts and child viewports.
+`layout.textAnchor` changes the default of prose, headings, math and listings for the whole deck:
+with `textAnchor: top-left` they stand by their top-left corner, measured as the flow and
+`flow_top` measure a block, and `anchor=top-left` need not be written on each.
 `anchor=` chooses another point:
 
 | Anchors | Available on |

@@ -128,7 +128,7 @@ and the options' folders come before the front matter's.
 | `haloBridgeTolerance` | 0.2 | arrows and lines whose ends lie closer than this never bridge one another (`halo_bridge`) |
 | `animationTime` | 0.35 | duration of fades |
 | `defaultSlideSize` | `[16, 9]` | canvas of slides without `width`/`height` |
-| `textAnchor` | `left-baseline` | default anchor of text (`top-left` or `center` possible) |
+| `textAnchor` | `left-baseline` | default anchor of text, formulas and listings placed by a point: any anchor; `top-left` places them by their top-left corner, as the flow and `flow_top` measure |
 | `steps` | `explicit` | `sequential`: steps follow the source, an element without `step` taking the step of the element before it and `step=+` the click after, see [Steps that follow the source](fragments.html#steps-that-follow-the-source) |
 | `captionSize` | unset | size of the captions of tiles (`step=-1` text without a `font_size` of its own or of a class), in points of the parent whatever the tile's width, see [Captions sized by their tile](slides.html#captions-sized-by-their-tile) |
 

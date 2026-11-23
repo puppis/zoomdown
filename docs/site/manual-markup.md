@@ -1115,7 +1115,7 @@ matter in the same way.
 | `haloBridgeTolerance` | 0.2 | two arrows or lines whose ends lie closer than this never bridge one another with `halo_bridge` |
 | `animationTime` | 0.35 | the default `run_time` of fades and effects |
 | `defaultSlideSize` | `[16, 9]` | the canvas of slides without `width` or `height` |
-| `textAnchor` | `left-baseline` | the default anchor of text (`top-left` or `center` possible) |
+| `textAnchor` | `left-baseline` | the default anchor of text, formulas and listings placed by a point (`x`, `y`, `at=` a point, `[[animate]]`): any anchor; `top-left` places them by their top-left corner, as the flow and `flow_top` measure |
 | `steps` | `explicit` | `sequential`: an element without `step` takes the step of the element before it, and `step=+` and `hide=+` count from it; see [Sequential steps](#sequential-steps) |
 | `captionSize` | unset | the size of the captions of tiles (`step=-1` text without a `font_size` of its own or of a class), in points of the parent, whatever the tile's width |
 

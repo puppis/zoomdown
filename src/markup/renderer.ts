@@ -153,7 +153,7 @@ export class LayoutConfig {
     this.captionSize = options.captionSize ?? null;
     if (this.captionSize !== null && !(Number.isFinite(this.captionSize) && this.captionSize > 0)) throw new Error('captionSize must be finite and positive');
     resolveSize(null, null, this.defaultSlideSize);
-    if (!TEXT_ANCHORS.has(this.textAnchor)) throw new Error('textAnchor must be left-baseline, top-left or center');
+    if (!TEXT_ANCHORS.has(this.textAnchor)) throw new Error(`textAnchor must be an anchor (left-baseline, top-left, center, …), not ${JSON.stringify(this.textAnchor)}`);
     for (const key of ['fontSize', 'headingSize', 'codeSize', 'animationTime'] as const) {
       if (!Number.isFinite(this[key]) || this[key] <= 0) throw new Error(`${key} must be finite and positive`);
     }
