@@ -54,7 +54,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | `line_height` | text, groups | the distance between baselines, in ems |
 | `font`, and `font_size` on labels | text, connection and brace labels | font family (`Zeyada`, the bundled handwriting face, or any loaded font) |
 | `lang` | listings | language name (normally from the fence info) |
-| `math` | listings | `true` typesets the listing's `$…$` as formulas, `false` keeps them code; by default the language profile's `math` |
+| `math` | listings | `true` typesets the listing's `$…$` as formulas and its `~…~`, `^…^` as subscripts and superscripts, `false` keeps them code; by default the language profile's `math` |
 | `play`, `muted` | animated images, videos | `once`, `loop`; sound for videos |
 | `title`, `poster` | iframes | label and preview image |
 | `rules`, `valign`, `header`, `header_font_size`, `col_font_size`, `padding`, `padding_x`, `padding_y`, `col_width`, `border_color`, `row_rule_color`, `row_rule_width`, `col_rule_color`, `col_rule_width`, `header_col_rules`, `header_col_rule_color`, `header_col_rule_width`, `header_color`, `header_opacity`, `stripe_opacity` | tables | rules (all, or rows and columns apart, and whether the vertical rules cross the header row), header row, text sizes of the header and of each column, cell padding, column widths and shading |

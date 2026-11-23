@@ -79,7 +79,9 @@ drawn in another face.
 
 A listing is verbatim, so `$L_i$` shows as typed, unless its `$…$` are formulas: a profile with
 `"math": true` typesets them in every fence of its language, and `math=true` on a fence does it
-for that listing alone, in any language (`math=false` turns a profile's off again):
+for that listing alone, in any language (`math=false` turns a profile's off again). Such a listing
+also reads `~…~` and `^…^` as a subscript and a superscript of its code, as
+[text](text.html#subscripts-and-superscripts) does:
 
 ````zoomdown {height=4}
 ::: slide {#pseudo-math width=16 height=4}
@@ -89,6 +91,7 @@ upon receiving $\langle \mathit{wave}, m \rangle$ from $q$ do
   if $\mathit{parent}_p = \bot$ then          // first wave: $O(|E|)$ messages
     $\mathit{parent}_p \gets q$
     for each $r \in N_p \setminus \{q\}$ do send $m$ to $r$
+  wait for ack~r~ from every r, at most 2^k^ rounds
   pay \$5 to $L_i$
 ```
 
@@ -100,5 +103,10 @@ line's baseline between the runs of code, which keep their monospace columns bef
 continue after it. It takes the color of the code it starts in: the text color, or the comment
 color in a comment. `\$` is a dollar, and a `$` left open on its line is an error. The lines keep
 one pitch, the font's, or a taller formula's (a fraction spreads every line of its listing).
+
+A subscript or superscript is code set 0.7 as large, lowered or raised, in the colors of the code
+it is made of: `ack~i,j~` and `2^k^`, in a comment too. As in text it holds no space but an escaped
+one (`T~max\ load~`) and no formula, code or bracket, so an operator with spaces around it,
+`a ^ b`, stays code, and so do `\~` and `\^`. Listings without formulas keep every `~` and `^`.
 
 > **Tip** To show markup that itself contains fences, open the outer block with four backticks.

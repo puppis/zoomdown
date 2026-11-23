@@ -158,6 +158,32 @@ describe('formulas in a listing', () => {
     expect(drawnText().some((text) => text.includes('$'))).toBe(false);
   });
 
+  it('set ~…~ and ^…^ as a subscript and a superscript, as in text', async () => {
+    await slide('', '```pseudo-math {#p}\nx~i~ := y^2^ + a ^ b\nwait ~5 ms, \\~a~ and \\^b^\n```');
+    const font = (text: string) => {
+      const call = CANVAS_CALLS.find((c) => c.method === 'fillText' && c.args[0] === text);
+      if (!call) throw new Error(`${text} was not drawn`);
+      return { px: Number(/(\d+(?:\.\d+)?)px/.exec(call.font)?.[1]), baseline: call.args[2] as number };
+    };
+    const x = font('x');
+    expect(font('i').px).toBeCloseTo(0.7 * x.px, 6);
+    expect(font('i').baseline - x.baseline).toBeCloseTo(0.15 * x.px, 6);
+    expect(x.baseline - font('2').baseline).toBeCloseTo(0.363 * x.px, 6);
+    // An operator with spaces around it, a tilde before a space and escaped markers stay code.
+    const drawn = drawnText().join('');
+    expect(drawn).toContain('^');
+    expect(drawn).toContain('~5');
+    expect(drawn).toContain('~a~');
+    expect(drawn).toContain('^b^');
+  });
+
+  it('leave ~ and ^ as code with math=false', async () => {
+    await slide('', '```pseudo-math {#p math=false}\nx~i~ := y^2^\n```');
+    const drawn = drawnText().join('');
+    expect(drawn).toContain('x~i~');
+    expect(drawn).toContain('y^2^');
+  });
+
   it('report a $ left open with the line of the listing it is on', async () => {
     await expect(slide('', '```pseudo-math {#p}\nx := 1\nx := $a + 1\n```')).rejects.toThrow(/Line 4: A \$ opens a formula/);
   });

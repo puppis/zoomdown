@@ -185,7 +185,8 @@ as it is, so `~5 ms`, `2^n and 3^m` and a link such as `[example.org/~me](https:
 read as before, and `\~` or `\^` is always a literal one. Two tildes still strike text through.
 Emphasis works inside a script, `y~*i*~`; a formula does not, so a variable with a subscript is
 written as a formula, `$L_i$`, and a word with one either way: `send~i~` sets the index upright in
-the text font, `$\mathit{send}_i$` in the formula's italic.
+the text font, `$\mathit{send}_i$` in the formula's italic. A listing whose formulas are typeset reads
+`~…~` and `^…^` too ([Formulas in pseudocode](code.html#formulas-in-pseudocode)).
 
 ## Links
 

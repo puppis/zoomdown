@@ -31,7 +31,7 @@ export interface Language {
   keys?: boolean;
   /** Special line-oriented tokenizers. */
   mode?: 'markup' | 'tags';
-  /** `$…$` is a formula, typeset in the listing (pseudocode); `\$` is a dollar. */
+  /** `$…$` is a formula and `~…~`, `^…^` a subscript and a superscript, typeset in the listing (pseudocode); `\$`, `\~` and `\^` are those characters. */
   math?: boolean;
 }
 

@@ -47,7 +47,8 @@ export interface CodeLayoutOptions {
   theme?: CodeTheme | null;
   /**
    * The typeset formula of a `$…$` of the listing in a color, as `codeFormulas` lists them. When it
-   * is given, the listing's `$…$` are formulas and `\$` is a dollar; otherwise every `$` is code.
+   * is given, the listing's `$…$` are formulas, its `~…~` and `^…^` subscripts and superscripts as
+   * in text, and `\$`, `\~` and `\^` those characters; otherwise all of them are code.
    */
   formula?: (latex: string, color: string) => MathPiece;
 }
@@ -68,39 +69,78 @@ function themeOf(options: Pick<CodeLayoutOptions, 'defaultColor' | 'theme'>): Co
 }
 
 /**
+ * Where a subscript (`~…~`) or a superscript (`^…^`) that opens at `i` closes, as in text: it holds
+ * no space but an escaped one, and no formula, code or bracket; -1 when it does not close.
+ */
+function scriptEnd(line: string, i: number): number {
+  const marker = line[i];
+  let end = i + 1;
+  while (end < line.length && line[end] !== marker) {
+    if (line[end] === '\\' && end + 1 < line.length) {
+      end += 2;
+      continue;
+    }
+    if (/[\s$`[\]]/.test(line[end])) return -1;
+    end += 1;
+  }
+  return end < line.length && end > i + 1 ? end : -1;
+}
+
+/**
  * The lines of a listing as runs of code in the theme's colors, null for a blank one. With `math`,
  * a `$…$` is a formula, in the color of the code its first `$` belongs to (a comment's in a
- * comment), and `\$` is a dollar; an empty `$$` stays as it is.
+ * comment), `~…~` and `^…^` are a subscript and a superscript as in text, and `\$`, `\~` and `\^`
+ * are those characters; an empty `$$` stays as it is.
  */
 function codeParts(source: string, language: string, defaultColor: string, theme: CodeTheme, math: boolean): Array<CodePart[] | null> {
   return tokenizeCode(source, language).map((tokens, lineIndex) => {
     if (!tokens.some((token) => token.text.trim())) return null;
-    const runOf = (text: string, token: CodeToken): TextRun => ({
-      text, bold: Boolean(token.bold), italic: token.cls === 'comment', color: theme[token.cls] ?? defaultColor, mono: false,
+    const runOf = (text: string, token: CodeToken, script: TextRun['script'] = undefined): TextRun => ({
+      text, bold: Boolean(token.bold), italic: token.cls === 'comment', color: theme[token.cls] ?? defaultColor, mono: false, ...(script ? { script } : {}),
     });
-    if (!math || !tokens.some((token) => token.text.includes('$'))) return tokens.map((token) => ({ run: runOf(token.text, token) }));
-    // The line as one string, each character's token remembered: a `$…$` may span tokens.
+    if (!math || !tokens.some((token) => /[$~^]/.test(token.text))) return tokens.map((token) => ({ run: runOf(token.text, token) }));
+    // The line as one string, each character's token remembered: a `$…$` or a script may span tokens.
     const line = tokens.map((token) => token.text).join('');
     const owner = tokens.flatMap((token, index) => Array.from({ length: token.text.length }, () => index));
     const parts: CodePart[] = [];
     let pending = '';
     let pendingToken = -1;
+    let pendingScript: TextRun['script'] = undefined;
     const flush = () => {
-      if (pending) parts.push({ run: runOf(pending, tokens[pendingToken]) });
+      if (pending) parts.push({ run: runOf(pending, tokens[pendingToken], pendingScript) });
       pending = '';
     };
-    const put = (text: string, token: number) => {
-      if (token !== pendingToken) {
+    const put = (text: string, token: number, script: TextRun['script'] = undefined) => {
+      if (token !== pendingToken || script !== pendingScript) {
         flush();
         pendingToken = token;
+        pendingScript = script;
       }
       pending += text;
     };
     let i = 0;
     while (i < line.length) {
-      if (line[i] === '\\' && line[i + 1] === '$') {
-        put('$', owner[i]);
+      if (line[i] === '\\' && /[$~^]/.test(line[i + 1] ?? '')) {
+        put(line[i + 1], owner[i + 1]);
         i += 2;
+        continue;
+      }
+      if (line[i] === '~' || line[i] === '^') {
+        const end = scriptEnd(line, i);
+        if (end < 0) {
+          put(line[i], owner[i]);
+          i += 1;
+          continue;
+        }
+        const script = line[i] === '~' ? 'sub' : 'sup';
+        // An escaped space is a no-break one, any other escaped character itself.
+        for (let k = i + 1; k < end; k += 1) {
+          if (line[k] === '\\') {
+            k += 1;
+            put(line[k] === ' ' ? ' ' : line[k], owner[k], script);
+          } else put(line[k], owner[k], script);
+        }
+        i = end + 1;
         continue;
       }
       if (line[i] !== '$') {

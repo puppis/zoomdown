@@ -408,7 +408,8 @@ A listing's `$…$` are formulas when its language profile has `"math": true` (p
 fence has `math=true`; `math=false` keeps them code. A formula is typeset at the listing's size on
 the line's baseline, between runs of code that keep their columns, in the color of the code it
 starts in (a comment's in a comment); `\$` is a dollar, and a `$` left open on its line is an
-error.
+error. Such a listing also reads `~…~` and `^…^` as a subscript and a superscript of its code, by
+the rules of text (no unescaped space inside), so `a ^ b` stays code.
 
 Tokens are colored for `python`, `javascript`/`typescript`/`jsx`/`tsx`, C-like languages (`c`,
 `cpp`, `java`, `cs`, `rust`, `go`, `kotlin`, `swift`, …), `bash`/`sh`, `json`, `latex`/`tex`,
