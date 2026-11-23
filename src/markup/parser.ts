@@ -555,6 +555,19 @@ export class MarkupParser {
           index += 1;
           continue;
         }
+        // Display math indented under a list item after a blank line continues the item, down to
+        // its closing `$$` when it spans lines.
+        const itemMath = text.startsWith('$$') && LIST_START.test(lines[start]) && /^\s+\$\$/.test(lines[index]) && !lines[index - 1].trim();
+        if (fence === null && itemMath) {
+          if (!/^\$\$.*\$\$\s*(?:\{[^{}]*\})?$/.test(text)) {
+            const opening = index;
+            index += 1;
+            while (index < lines.length && !/^\$\$\s*(?:\{[^{}]*\})?$/.test(lines[index].trim())) index += 1;
+            if (index === lines.length) throw new MarkupError('Unclosed display math delimiter', firstLine + opening);
+          }
+          index += 1;
+          continue;
+        }
         if (fence === null && (CONTAINER.test(text) || text.startsWith('[[') || text.startsWith('$$'))) break;
         if (fence === null && !text) {
           // Blank lines end a block, except inside a list: further items and indented continuation
@@ -620,7 +633,7 @@ export class MarkupParser {
           }
         }
         index += 1;
-        result.push(new TableSpec(`${prefix}element-${offset + result.length + 1}`, rows, aligns, {}, tokenLine));
+        result.push(new TableSpec(`${prefix}element-${offset + result.length + 1}`, rows, aligns, {}, tokenLine, listItem()));
         continue;
       }
       if (token.type === 'heading_open') level = Number(token.tag.slice(1));
@@ -648,8 +661,15 @@ export class MarkupParser {
         } else result.push(new ElementSpec(identifier, 'code', [], attrs, token.content.replace(/\s+$/, ''), tokenLine, 0, listItem()));
       } else if (token.type === 'inline') {
         const [content, attrs] = MarkupParser._blockAttributes(token.content, tokenLine);
-        const inline = this.markdown.parseInline(content, { line: tokenLine })[0]?.children ?? [];
         const identifier = attrs.id ?? `${prefix}element-${offset + result.length + 1}`;
+        // Display math that continues a list item, a paragraph of its own indented under it.
+        const display = lists.length && !marker ? /^\$\$([\s\S]*)\$\$$/.exec(content.trim()) : null;
+        if (display) {
+          if (!display[1].trim()) throw new MarkupError('Display math must not be empty', tokenLine);
+          result.push(new ElementSpec(identifier, 'math', [], attrs, display[1].trim(), tokenLine, 0, listItem()));
+          continue;
+        }
+        const inline = this.markdown.parseInline(content, { line: tokenLine })[0]?.children ?? [];
         if (inline.length === 1 && inline[0].type === 'image') {
           result.push(new ElementSpec(identifier, 'image', [], attrs, inline[0].attrGet('src') ?? '', tokenLine, 0, listItem()));
         } else {

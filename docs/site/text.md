@@ -46,9 +46,26 @@ wraps to the rest of the width with a hanging indent, and nested items are shift
 per level. Markers are `•`, `–` and `◦` by depth; numbered items show their own number with
 its delimiter, so a list may start at any value. Items written line after line follow one
 another as lines, one interline apart; blank lines between items are allowed and space them as
-paragraphs, and an indented paragraph after a blank line continues the item without a marker. Attributes in braces
-work on an item as on any paragraph; an explicit `x` is the left edge of the list, nested items
-keep their indentation to its right.
+paragraphs. Attributes in braces work on an item as on any paragraph; an explicit `x` is the left
+edge of the list, nested items keep their indentation to its right.
+
+A block indented under an item after a blank line continues the item, as in Markdown: a
+paragraph, a formula between `$$`, a listing, an image or a table, each an element of its own,
+starts where the item's text starts, past its bullet or number:
+
+```zoomdown {height=5}
+::: slide {#item-blocks width=16 height=5}
+
+1. Each node sends its identifier to both neighbors.
+
+   The largest identifier survives each round:
+
+   $$ \max(\mathit{id}_{p-1}, \mathit{id}_p, \mathit{id}_{p+1}) $$
+
+2. The survivors start the next round.
+
+:::
+```
 
 HTML comments are discarded and raw HTML is shown as text. Soft line breaks in the source are
 joined; an explicit break takes two trailing spaces, a backslash before the newline, or `\\`.

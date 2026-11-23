@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { Mobject } from 'manim-web';
 import { MarkupParser } from '../src/markup/parser';
 import { MarkupSlide, SlideBuilder } from '../src/markup/slide';
-import { anchorPoint } from '../src/markup/renderer';
+import { anchorPoint, type ListItemMobject } from '../src/markup/renderer';
+import type { ElementSpec } from '../src/markup/ast';
 import { textLines } from '../src/markup/text';
 import { element, installFakeCanvas, slide } from './helpers/slides';
 
@@ -97,5 +98,44 @@ describe('the start of a slide\'s flow', () => {
     expect(() => build('width=4 flow_left=4')).toThrow(/flow_left must be nonnegative and less than the slide's width, 4/);
     expect(() => build('height=12 flow_top=11.5')).not.toThrow();
     await expect(slide('flow_left=15.5', 'Hello')).rejects.toThrow(/flow_left must leave room before the right margin/);
+  });
+});
+
+describe('the blocks that continue a list item', () => {
+  const ITEM = [
+    '- one {#one}', '', '  more of one {#more}', '', '  $$ x^2 $$ {#m}', '', '  $$', '  \\sum_i i', '  $$', '',
+    '  ```text {#code}', '  code', '  ```', '', '  | a | b |', '  | --- | --- |', '  | 1 | 2 |', '', '- two {#two}',
+  ].join('\n');
+  /** Where an item's text starts, right of its marker's left edge. */
+  const column = (obj: Mobject) => (obj as ListItemMobject).markupTextColumn as number;
+
+  it('belong to it, display math and tables too', () => {
+    const items = new MarkupParser().parse(`::: slide {#s}\n${ITEM}\n:::`).slides[0].items as ElementSpec[];
+    expect(items.map((item) => `${item.kind}:${item.list?.depth}:${item.list?.marker}`)).toEqual([
+      'text:0:•', 'text:0:', 'math:0:', 'math:0:', 'code:0:', 'table:0:', 'text:0:•',
+    ]);
+    expect(items[2].id).toBe('m');
+    expect(items[2].source).toBe('x^2');
+    expect(items[3].source).toBe('\\sum_i i');
+    // Display math not indented under an item still ends the list.
+    const after = new MarkupParser().parse('::: slide {#s}\n- one\n\n$$ x $$\n:::').slides[0].items as ElementSpec[];
+    expect(after.map((item) => `${item.kind}:${item.list?.marker ?? null}`)).toEqual(['text:•', 'math:null']);
+  });
+
+  it('flow under its text, past the bullet, whatever kind they are', async () => {
+    const s = await slide('', ITEM);
+    const text = left(element(s, 'one')) + column(element(s, 'one'));
+    expect(column(element(s, 'one'))).toBeGreaterThan(0.5);
+    for (const id of ['more', 'm', 'code']) expect(left(element(s, id))).toBeCloseTo(text, 6);
+    // The next item starts at the bullet again.
+    expect(left(element(s, 'two'))).toBeCloseTo(left(element(s, 'one')), 6);
+  });
+
+  it('flow under the text of a wide number, and of a nested item', async () => {
+    const s = await slide('', '10. ten {#ten}\n\n    more of ten {#more}\n\n    - nested {#n}\n\n      more of nested {#nm}');
+    const ten = element(s, 'ten');
+    expect(column(ten)).toBeGreaterThan(0.6);
+    expect(left(element(s, 'more'))).toBeCloseTo(left(ten) + column(ten), 6);
+    expect(left(element(s, 'nm'))).toBeCloseTo(left(element(s, 'n')) + column(element(s, 'n')), 6);
   });
 });

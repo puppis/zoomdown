@@ -316,7 +316,9 @@ Bullet (`-`, `*`, `+`) and numbered (`1.`, `1)`) lists nest by indentation. Ever
 element of its own, with the attributes written at the end of its line, so items appear one
 click at a time. Bullets cycle through •, – and ◦ by depth; numbers keep the delimiter written.
 Each level indents by `layout.listIndent` (0.6) and wraps within what remains of the width. A
-blank line between items keeps the list together.
+blank line between items keeps the list together. A block indented under an item after a blank
+line continues it: a paragraph, display math (`$$…$$`), a listing, an image or a table starts
+where the item's text starts, past the bullet or number, as an element of its own.
 
 ### ::: {.element}
 

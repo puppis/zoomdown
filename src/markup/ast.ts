@@ -91,8 +91,8 @@ export type CellAlignment = 'left' | 'center' | 'right';
 
 /** A pipe table: rows of cells (the first row is the header), each cell a list of inline spans. */
 export class TableSpec extends ElementSpec {
-  constructor(id: string, readonly rows: InlineSpan[][][], readonly aligns: CellAlignment[], attributes: Attributes = {}, line = 1) {
-    super(id, 'table', [], attributes, '', line);
+  constructor(id: string, readonly rows: InlineSpan[][][], readonly aligns: CellAlignment[], attributes: Attributes = {}, line = 1, list: ListItem | null = null) {
+    super(id, 'table', [], attributes, '', line, 0, list);
   }
 }
 

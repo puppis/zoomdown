@@ -46,6 +46,12 @@ import {
 export const MATH_SIZE_RATIO = 4 / 3;
 
 /** The typography and spacing of a deck, as `layout` in its front matter gives them. */
+/**
+ * A laid-out list item, which remembers where its text starts: that far right of its marker's
+ * left edge, the blocks that continue the item flow.
+ */
+export type ListItemMobject = Mobject & { markupTextColumn?: number };
+
 export interface LayoutConfigOptions {
   fontSize?: number;
   headingSize?: number;
@@ -1374,11 +1380,15 @@ export class MarkupRenderer {
    */
   async listItem(spans: InlineSpan[], marker: string, fontSize: number, maxWidth: number, defaultColor: string, font?: string, lineHeight?: number | null): Promise<Mobject> {
     const label = await this.text([span(marker)], fontSize, maxWidth, defaultColor, font, lineHeight);
-    if (!spans.some((s) => s.content.trim())) return label;
     const column = Math.max(this.layout.listIndent, label.getWidth() + 0.15);
+    if (!spans.some((s) => s.content.trim())) {
+      (label as ListItemMobject).markupTextColumn = column;
+      return label;
+    }
     const body = await this.text(spans, fontSize, Math.max(maxWidth - column, 0.5), defaultColor, font, lineHeight);
     body.shift([label.getLeft()[0] + column - body.getLeft()[0], baselineY(label) - baselineY(body), 0]);
-    const item = new Group(label, body) as Group & { markupBaselineFraction: number };
+    const item = new Group(label, body) as Group & { markupBaselineFraction: number; markupTextColumn: number };
+    item.markupTextColumn = column;
     item.markupBaselineFraction = (baselineY(body) - item.getCenter()[1]) / item.getHeight();
     const lines = textLines(body);
     if (lines) markLines(item, lines);

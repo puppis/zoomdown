@@ -125,7 +125,9 @@ Paragraphs, headings (`#` to `######`), bold, italic, nested emphasis, code span
 numbered lists are supported; headings only change the size. Lists nest by indentation: each item
 is one element whose marker (`•`, `–`, `◦` by depth, or the item's own number) sits in a column
 of `layout.listIndent` and whose prose wraps with a hanging indent; nested items shift one column
-per level, also under an explicit `x`. Blank lines separate elements. HTML comments are
+per level, also under an explicit `x`. A block indented under an item after a blank line (a
+paragraph, `$$…$$`, a listing, an image or a table) continues the item and starts where its text
+starts, past the marker. Blank lines separate elements. HTML comments are
 discarded and raw HTML is shown as text. `href=` on any element, group, connection or attachment
 makes the whole element a link that opens in a new tab. Links (`[label](https://…)`, also `mailto:` and relative
 URLs) are underlined and clickable in the player, opening in a new tab. Explicit line breaks take two

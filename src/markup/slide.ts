@@ -28,7 +28,7 @@ import { LatexError, type MacroDefinition } from './latex';
 import { textLines, type TextLines } from './text';
 import { ASTTransformer } from './parser';
 import {
-  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, elementAnchor, looseOutlines, placeRelative, turnElement, type OriginMobject, type PartsMobject,
+  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, elementAnchor, looseOutlines, placeRelative, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject,
 } from './renderer';
 
 /** Slide classes by name, as `[[subslide: Name]]` finds them. */
@@ -208,6 +208,9 @@ export class MarkupSlide extends Slide {
     const paragraphGap = (lines: TextLines) => Math.max(0, layout.paragraphSpacing * lines.interline - lines.ascent - lines.descent);
     const elements = new Map<string, ElementSpec>();
     const verticalKeys = new Set([...Object.keys(NEIGHBORS), ...VERTICAL_POSITION, 'at']);
+    // Where the text of the last item of each depth starts, right of its marker's left edge: the
+    // blocks that continue an item (indented under it in the source) flow under its text.
+    const textColumns: number[] = [];
     const pointShapes = ['polyline', 'polygon', 'arc'];
     // Where an element with outlines it does not draw stood when it was made, so that they follow it.
     const madeAt = new Map<Mobject, [number, number, number]>();
@@ -217,8 +220,10 @@ export class MarkupSlide extends Slide {
       let obj: Mobject;
       let explicit: boolean;
       let position: [number, number, number] | null;
-      // Nested list items flow indented by their depth and wrap within the remaining width.
-      const indent = item instanceof ElementSpec && item.list ? item.list.depth * layout.listIndent : 0;
+      // Nested list items flow indented by their depth and wrap within the remaining width; the
+      // blocks that continue an item start where its text does, past its bullet or number.
+      const list = item instanceof ElementSpec ? item.list : null;
+      const indent = list ? list.depth * layout.listIndent + (list.marker ? 0 : textColumns[list.depth] ?? layout.listIndent) : 0;
       if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
         if (!viewportOf) throw new MarkupError('Groups cannot contain includes or subslides', item.line);
         obj = viewportOf(index, item);
@@ -226,6 +231,7 @@ export class MarkupSlide extends Slide {
         position = [Number(item.attributes.x ?? 0), Number(item.attributes.y ?? 0), 0];
       } else {
         obj = item instanceof GroupSpec ? await this._buildGroup(item, scope.width) : await located(item.line, () => this.renderer.make(item, Math.max(scope.width - indent, 0.5)));
+        if (list?.marker) textColumns[list.depth] = (obj as ListItemMobject).markupTextColumn ?? layout.listIndent;
         if (item.attributes.href) LINKED_OBJECTS.set(obj, item.attributes.href);
         SOURCE_OBJECTS.set(obj, this.locate(item.line));
         this.elements.set(item.id, obj);
