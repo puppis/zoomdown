@@ -81,9 +81,11 @@ Spaces that keep their width indent the start of any line, a paragraph's or a li
 first one too: `&nbsp;`, `&ensp;` and `&emsp;`, or the characters themselves (a no-break, en or
 em space), and a formula of space alone. A phantom is as wide as what it hides, so
 `$\phantom{\Rightarrow}$ or` under `$\Rightarrow$ either` starts *or* under *either*; other space,
-such as `$\quad$` or `$\hspace{2em}$`, is as wide as it is typeset. A plain space after such a
-start counts, as between words. Plain spaces after a list marker still only separate it from
-the text. A list of pseudocode keeps its indentation:
+such as `$\quad$` or `$\hspace{2em}$`, is as wide as it is typeset. So is the space a formula
+starts or ends with, as in `$\qquad\Downarrow$` or `$x \quad$ for`. A plain space after such a
+start counts, as between words, and the lines a line that starts with space wraps to start under
+its first word, as after a `\\` indent. Plain spaces after a list marker still only separate it
+from the text. A list of pseudocode keeps its indentation:
 
 ```zoomdown {height=4}
 ::: slide {#pseudocode width=16 height=4}
@@ -169,7 +171,8 @@ Our team
 By default prose is set in **Latin Modern Roman** and code spans in **Latin Modern Mono**, the
 OpenType versions of the Computer Modern family LaTeX uses, both bundled with the player; formulas
 use MathJax's TeX fonts, and a `font_size` means the same em for all three, so a paragraph with
-code and formulas inside it looks like one LaTeX paragraph without any tuning. `layout.font` and
+code and formulas inside it looks like one LaTeX paragraph without any tuning. A character those
+fonts lack, such as `$☞$`, is drawn in the prose face, where TeX would set it, a script's smaller. `layout.font` and
 `layout.codeFont` replace the faces (`"Georgia"`, `"Fira Code"`, …) while keeping the size
 calibration.
 

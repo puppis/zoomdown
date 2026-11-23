@@ -35,10 +35,12 @@ import {
   polylinePoints, span,
 } from './ast';
 import { MarkupParser } from './parser';
-import { MONOSPACE, PX_PER_WORLD_BASE, baselineY, layoutParagraph, markLines, textLines, type MathPiece } from './text';
+import { MONOSPACE, PX_PER_WORLD_BASE, StyledLine, baselineY, layoutParagraph, markLines, measureRun, textLines, textResolutionScale, type MathPiece } from './text';
 import { layoutCode } from './code';
 import { DEFAULT_TEXT_FONT } from '../fonts';
-import { LatexError, applyLatexColors, compileMacros, expandMacros, latexErrorOf, plainMacros, preprocessLatex, type Macro, type MacroDefinition } from './latex';
+import {
+  LatexError, applyLatexColors, compileMacros, edgeSpaces, expandMacros, latexErrorOf, plainMacros, preprocessLatex, ruleGlyphs, type Macro, type MacroDefinition, type RuledGlyph,
+} from './latex';
 
 /** Formula pixel size per prose point, so that `font_size` means the same for both. */
 export const MATH_SIZE_RATIO = 4 / 3;
@@ -150,6 +152,21 @@ export type AnyMobject = Mobject & { markupBaselineFraction?: number };
 type TypesetMobject = Mobject & { markupTypesetWidth?: number };
 /** Whether a formula draws anything. */
 const hasInk = (tex: Mobject) => tex.getFamily().some((member) => member instanceof VMobject && member.hasOwnPoints());
+
+/** The height, in ems, of the rules that stand for characters MathJax has no glyph for: a hair, told from any other. */
+const GLYPH_RULE_HEIGHT = 0.0071;
+const GLYPH_RULE_MARK = `}{${GLYPH_RULE_HEIGHT}em}`;
+const FOREIGN_GLYPHS = new Map<string, Promise<boolean>>();
+
+/** Whether MathJax has no glyph for a character: it sets it as text, which the engine does not draw. */
+function foreignGlyph(char: string): Promise<boolean> {
+  let known = FOREIGN_GLYPHS.get(char);
+  if (!known) {
+    known = renderLatexToSVG(char, { displayMode: true }).then((rendered) => /<text[\s>]/.test(rendered.svgString) && !latexErrorOf(rendered.svgString)).catch(() => false);
+    FOREIGN_GLYPHS.set(char, known);
+  }
+  return known;
+}
 
 /** Hand-drawn options of an element with `sketch=true`, or null when it is drawn crisply. */
 export function sketchOptions(
@@ -832,8 +849,79 @@ export class MarkupRenderer {
     return pending;
   }
 
-  /** Render a math object with its left edge at x = 0 and baseline at y = 0. */
-  async mathPiece(latex: string, color: string, fontSize: number): Promise<MathPiece> {
+  /**
+   * Render a math object with its left edge at x = 0 and baseline at y = 0. Characters MathJax has
+   * no glyph for are drawn in the text font, `fontFamily` (the prose's by default), and the space a
+   * formula that draws starts or ends with keeps its width.
+   */
+  async mathPiece(latex: string, color: string, fontSize: number, fontFamily = this.layout.fontFamily): Promise<MathPiece> {
+    let source = expandMacros(latex, this.macros);
+    let glyphs: RuledGlyph[] = [];
+    if (/[^\x00-\x7f]/.test(source)) {
+      const ruled = await this._ruleGlyphs(source, fontSize, fontFamily);
+      if (ruled) ({ latex: source, glyphs } = ruled);
+    }
+    // Space at the edges of a formula that draws is measured as a formula of its own, before and
+    // after the rest, which is measured by its ink.
+    const { lead, core, trail } = edgeSpaces(source);
+    if (!lead && !trail) return this._mathPiece(source, glyphs, color, fontSize, fontFamily);
+    const rules = (part: string) => part.split(GLYPH_RULE_MARK).length - 1;
+    const [before, piece, after] = await Promise.all([
+      lead ? this._mathPiece(lead, glyphs.slice(0, rules(lead)), color, fontSize, fontFamily) : null,
+      this._mathPiece(core, glyphs.slice(rules(lead), rules(lead) + rules(core)), color, fontSize, fontFamily),
+      trail ? this._mathPiece(trail, glyphs.slice(rules(lead) + rules(core)), color, fontSize, fontFamily) : null,
+    ]);
+    const start = Math.max(0, before?.advance ?? 0);
+    piece.mobject.shift([start, 0, 0]);
+    return { ...piece, advance: start + piece.advance + Math.max(0, after?.advance ?? 0), inset: (piece.inset ?? 0) + start };
+  }
+
+  /**
+   * A formula as `\rule`s of the width of the characters MathJax has no glyph for, with those
+   * characters, or null when it has none.
+   */
+  private async _ruleGlyphs(source: string, fontSize: number, fontFamily: string): Promise<{ latex: string; glyphs: RuledGlyph[] } | null> {
+    const chars = [...new Set([...source].filter((char) => (char.codePointAt(0) as number) >= 0x80))];
+    const foreign = new Set<string>();
+    await Promise.all(chars.map(async (char) => {
+      if (await foreignGlyph(char)) foreign.add(char);
+    }));
+    if (!foreign.size) return null;
+    await this.layoutFonts();
+    const px = ((fontSize * 4) / 3) * textResolutionScale();
+    const width = (char: string) => measureRun({ text: char, bold: false, italic: false, color: '#000000', mono: false, href: null }, px, fontFamily).advance / px;
+    return ruleGlyphs(source, (char) => foreign.has(char), width, GLYPH_RULE_HEIGHT);
+  }
+
+  /**
+   * Draw each character over its rule in the text font, as large as the rule is wide for it (a
+   * script's smaller), in the rule's color, and take the rule away.
+   */
+  private _drawGlyphs(tex: Mobject, glyphs: RuledGlyph[], color: string, fontSize: number, fontFamily: string): Mobject {
+    const em = ((fontSize * 4) / 3) / PX_PER_WORLD_BASE;
+    const members = tex.getFamily().filter((member): member is VMobject => member instanceof VMobject && member.hasOwnPoints());
+    const lines: Mobject[] = [];
+    let from = 0;
+    for (const glyph of glyphs) {
+      // A rule is told from the formula's own by its proportions, a hair high for its width.
+      const ratio = GLYPH_RULE_HEIGHT / glyph.width;
+      const index = members.findIndex((member, k) => k >= from && member.getWidth() > 0 && Math.abs(member.getHeight() / member.getWidth() - ratio) <= 0.03 * ratio);
+      if (index < 0) continue;
+      from = index + 1;
+      const rule = members[index];
+      const line = new StyledLine({
+        runs: [{ text: glyph.char, bold: false, italic: false, color: rule.fillColor ?? color, mono: false, href: null }],
+        fontSize: fontSize * (rule.getWidth() / (glyph.width * em)), fontFamily, baseColor: color,
+      });
+      line.placeOrigin(rule.getLeft()[0], rule.getBottom()[1]);
+      (rule.parent ?? tex).remove(rule);
+      lines.push(line);
+    }
+    return lines.length ? new Group(tex, ...lines) : tex;
+  }
+
+  /** A formula's piece once its characters without glyphs are rules and its edges hold no space. */
+  private async _mathPiece(latex: string, glyphs: RuledGlyph[], color: string, fontSize: number, fontFamily: string): Promise<MathPiece> {
     const [obj, probe] = await Promise.all([
       this._mathTex(latex, color, fontSize),
       this._mathTex(['\\mathrm{H}', latex], color, fontSize),
@@ -865,7 +953,14 @@ export class MarkupRenderer {
       }
       return { mobject: obj, advance, ascent: 0, descent: 0, blank: true };
     }
-    return { mobject: obj, advance: obj.getWidth(), ascent: Math.max(0, top), descent: Math.max(0, -bottom) };
+    const drawn = glyphs.filter((glyph) => !glyph.hidden);
+    if (!drawn.length) return { mobject: obj, advance: obj.getWidth(), ascent: Math.max(0, top), descent: Math.max(0, -bottom) };
+    // The rules give the formula's width; the characters drawn over them its height.
+    const advance = obj.getWidth();
+    const mobject = this._drawGlyphs(obj, drawn, color, fontSize, fontFamily);
+    const extent = mobject.getHeight();
+    (mobject as AnyMobject).markupBaselineFraction = extent > 0 ? -mobject.getCenter()[1] / extent : 0;
+    return { mobject, advance, ascent: Math.max(0, mobject.getTop()[1]), descent: Math.max(0, -mobject.getBottom()[1]) };
   }
 
   private async _mathTex(latex: string | string[], color: string, fontSize: number): Promise<MathTex> {
@@ -1101,7 +1196,7 @@ export class MarkupRenderer {
         throw new MarkupError(`Chart: ${(error as Error).message}`, element.line);
       }
     } else if (element.kind === 'math') {
-      const piece = await this.mathPiece(element.source, color, size);
+      const piece = await this.mathPiece(element.source, color, size, this.layout.fontFamilyFor(attrs.font));
       obj = piece.mobject;
       // A display formula is one line on its baseline (y = 0 here), spaced as a line of prose of its size.
       const interline = this.layout.lineHeight !== null ? this.layout.lineHeight * (size / 72) : (size / 72) * 1.2 + this.layout.lineGap;
@@ -1233,7 +1328,7 @@ export class MarkupRenderer {
     return layoutParagraph(
       resolved,
       { fontSize, maxWidth, defaultColor, fontFamily: this.layout.fontFamilyFor(font), lineGap: this.layout.lineGap, lineHeight: lineHeight ?? this.layout.lineHeight },
-      (latex, color) => this.mathPiece(latex, color, fontSize),
+      (latex, color) => this.mathPiece(latex, color, fontSize, this.layout.fontFamilyFor(font)),
     );
   }
 

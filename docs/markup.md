@@ -145,7 +145,9 @@ entities give spaces Markdown would collapse: `&nbsp;` (a space that never break
 between the words, at the start of a line too, a paragraph's or a list item's first one included,
 as entities or as the characters themselves; only plain spaces, tabs and line ends separate words
 and collapse. A formula of space alone indents a line it starts: `$\phantom{X}$` is as wide as
-`$X$`, and `$\quad$` or `$\hspace{2em}$` as wide as it is typeset.
+`$X$`, and `$\quad$` or `$\hspace{2em}$` as wide as it is typeset, as is the space a formula starts
+or ends with (`$\qquad\Downarrow$`). The lines a line that starts with space wraps to start under
+its first word. A character MathJax's fonts lack, such as `$☞$`, is drawn in the prose face.
 
 The interline, the distance between the baselines of two lines of a paragraph, is the font's reach
 above and below the baseline plus `layout.lineGap` (0.12). `layout.lineHeight` replaces it with a

@@ -278,7 +278,7 @@ or icon:
 | --- | --- |
 | `**bold**`, `*italic*` | emphasis, nested as in CommonMark |
 | `` `code` `` | inline code, in the code face |
-| `$x^2$` | an inline formula, rendered by MathJax with the deck's `macros`; a dollar needs a backslash to stay literal |
+| `$x^2$` | an inline formula, rendered by MathJax with the deck's `macros`; a dollar needs a backslash to stay literal; space it starts or ends with (`$\qquad x$`) keeps its width, and a character MathJax's fonts lack (`$☞$`) is drawn in the prose face |
 | `[text](https://…)` | a link; targets as under [Links](#links) |
 | `[text]{color=RED}` | a colored span; an inline span takes `color` and `underline` only |
 | `[text]{underline=true}` | underlined text that is no link |

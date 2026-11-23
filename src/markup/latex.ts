@@ -355,3 +355,140 @@ export function applyLatexColors(tex: Mobject): void {
     if (colorClass) member.setColor('#' + colorClass.slice(CLASS_PREFIX.length));
   }
 }
+
+/** Commands of space alone, without an argument, with one in braces, and with a dimension after them. */
+const SPACE_COMMANDS = new Set(['quad', 'qquad', ',', ':', ';', '>', '!', ' ', 'enspace', 'thinspace', 'medspace', 'thickspace', 'negthinspace', 'negmedspace', 'negthickspace', 'space', 'nobreakspace']);
+const SPACE_ARGUMENT_COMMANDS = new Set(['hspace', 'phantom', 'hphantom']);
+const KERN_COMMANDS = new Set(['kern', 'mkern', 'hskip', 'mskip']);
+const DIMENSION = /^\s*[-+]?(?:\d+\.?\d*|\.\d+)\s*(?:em|ex|mu|pt|px|bp|pc|cm|mm|in)/;
+
+/**
+ * The space a formula starts and ends with, and what it holds between: `\quad x \,` gives `\quad`,
+ * `x` and `\,`. Space is a command of space alone (`\quad`, `\,`, `\ `, `~`, `\hspace{…}`,
+ * `\phantom{…}`, `\kern 1em`…) at the formula's top level, not a script's argument; plain spaces do
+ * not count, as in TeX. A formula of space alone has no core, and all of it is `core`.
+ */
+export function edgeSpaces(source: string): { lead: string; core: string; trail: string } {
+  const tokens: Array<{ start: number; end: number; kind: 'space' | 'blank' | 'other' }> = [];
+  let i = 0;
+  while (i < source.length) {
+    const start = i;
+    const char = source[i];
+    let kind: 'space' | 'blank' | 'other' = 'other';
+    if (/\s/.test(char)) {
+      i = skipSpaces(source, i);
+      kind = 'blank';
+    } else if (char === '~') {
+      i += 1;
+      kind = 'space';
+    } else if (char === '{') i = groupEnd(source, i);
+    else if (char !== '\\') i += 1;
+    else {
+      const [name, after] = controlSequence(source, i);
+      i = after;
+      if (SPACE_COMMANDS.has(name)) kind = 'space';
+      else if (SPACE_ARGUMENT_COMMANDS.has(name)) {
+        let open = skipSpaces(source, i);
+        if (name === 'hspace' && source[open] === '*') open = skipSpaces(source, open + 1);
+        if (source[open] === '{') {
+          i = groupEnd(source, open);
+          kind = 'space';
+        }
+      } else if (KERN_COMMANDS.has(name)) {
+        const dimension = DIMENSION.exec(source.slice(i));
+        if (dimension) {
+          i += dimension[0].length;
+          kind = 'space';
+        }
+      }
+    }
+    tokens.push({ start, end: i, kind });
+  }
+  let first = 0;
+  while (first < tokens.length && tokens[first].kind !== 'other') first += 1;
+  let last = tokens.length;
+  while (last > first && tokens[last - 1].kind !== 'other') last -= 1;
+  // The space after `^` or `_` is the script's argument.
+  if (last > first && last < tokens.length && /^[\^_]$/.test(source.slice(tokens[last - 1].start, tokens[last - 1].end))) last = tokens.length;
+  if (first === tokens.length) return { lead: '', core: source, trail: '' };
+  // From the first command of space to the last one, so that a control space (`\ `) stays whole.
+  const span = (from: number, to: number) => {
+    const spaces = tokens.slice(from, to).filter((token) => token.kind === 'space');
+    return spaces.length ? source.slice(spaces[0].start, spaces[spaces.length - 1].end) : '';
+  };
+  const lead = span(0, first);
+  const trail = span(last, tokens.length);
+  return {
+    lead,
+    core: source.slice(lead ? tokens[first].start : 0, trail ? tokens[last - 1].end : source.length),
+    trail,
+  };
+}
+
+/** Commands whose argument is text, where a rule cannot stand. */
+const TEXT_COMMANDS = new Set(['text', 'textrm', 'textit', 'textbf', 'textsf', 'texttt', 'textnormal', 'textup', 'textmd', 'textsl', 'mbox', 'hbox']);
+/** Commands whose argument is not drawn. */
+const HIDING_COMMANDS = new Set(['phantom', 'hphantom', 'vphantom']);
+
+/** A character MathJax has no glyph for, standing in a formula as a rule of its width. */
+export interface RuledGlyph {
+  char: string;
+  /** Its width in the text font, in ems. */
+  width: number;
+  /** Inside a phantom, where nothing is drawn. */
+  hidden: boolean;
+}
+
+/**
+ * A formula whose characters MathJax has no glyph for (those `foreign` names) are rules as wide as
+ * `width` gives, in ems, and `height` ems high, so that TeX leaves them their room and places them
+ * as it would the characters; in a text argument (`\text{…}`) the text is closed around the rule.
+ * The characters come in the order of their rules; null when there is none. A character in a
+ * group nested in a text argument stays as it is.
+ */
+export function ruleGlyphs(source: string, foreign: (char: string) => boolean, width: (char: string) => number, height: number): { latex: string; glyphs: RuledGlyph[] } | null {
+  const glyphs: RuledGlyph[] = [];
+  // Each open group: the text command whose argument it is, whether its content is hidden, and whether it is in text.
+  const groups: Array<{ text: string | null; hidden: boolean; inText: boolean }> = [];
+  let pending: { text: string | null; hidden: boolean } | null = null;
+  let result = '';
+  let i = 0;
+  while (i < source.length) {
+    const char = source[i];
+    if (char === '\\') {
+      const [name, after] = controlSequence(source, i);
+      result += source.slice(i, after);
+      i = after;
+      pending = TEXT_COMMANDS.has(name) ? { text: name, hidden: false } : HIDING_COMMANDS.has(name) ? { text: null, hidden: true } : null;
+      continue;
+    }
+    if (char === '{') {
+      const outer = groups[groups.length - 1];
+      groups.push({ text: pending?.text ?? null, hidden: Boolean(pending?.hidden || outer?.hidden), inText: Boolean(pending?.text) || Boolean(outer?.inText) });
+      pending = null;
+      result += char;
+      i += 1;
+      continue;
+    }
+    if (char === '}') {
+      groups.pop();
+      result += char;
+      i += 1;
+      continue;
+    }
+    if (!/\s/.test(char)) pending = null;
+    const code = source.codePointAt(i) as number;
+    const glyph = String.fromCodePoint(code);
+    i += glyph.length;
+    const group = groups[groups.length - 1];
+    if (code < 0x80 || !foreign(glyph) || (group?.inText && !group.text)) {
+      result += glyph;
+      continue;
+    }
+    const em = width(glyph);
+    const rule = `\\rule{${em.toFixed(4)}em}{${height}em}`;
+    result += group?.text ? `}${rule}\\${group.text}{` : rule;
+    glyphs.push({ char: glyph, width: em, hidden: Boolean(group?.hidden) });
+  }
+  return glyphs.length ? { latex: result, glyphs } : null;
+}

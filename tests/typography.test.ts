@@ -4,6 +4,7 @@ import { MarkupParser } from '../src/markup/parser';
 import { GroupSpec, type ElementSpec, type InlineSpan } from '../src/markup/ast';
 import { LayoutConfig, MarkupRenderer } from '../src/markup/renderer';
 import { buildTable } from '../src/markup/table';
+import { edgeSpaces, ruleGlyphs } from '../src/markup/latex';
 import { StyledLine, inlineRows, inlineWords, layoutParagraph, textLines, textResolutionScale, type MathPiece } from '../src/markup/text';
 import { CANVAS_CALLS, element, installFakeCanvas, slide } from './helpers/slides';
 
@@ -346,5 +347,108 @@ describe('space that keeps its width at the start of a list item or a paragraph'
     expect(ink.blank).toBeUndefined();
     expect(ink.advance).toBeCloseTo(ink.mobject.getWidth(), 9);
     expect(ink.advance).toBeLessThan(await typeset('MMM'));
+  });
+});
+
+describe('space at the edges of a formula that draws', () => {
+  const emOf = (points: number) => ((points * 4) / 3) / 96;
+
+  it('is told apart from the rest: commands of space at the top level, not plain spaces or a script', () => {
+    expect(edgeSpaces('\\qquad\\Downarrow')).toEqual({ lead: '\\qquad', core: '\\Downarrow', trail: '' });
+    expect(edgeSpaces('\\bar\\delta \\quad')).toEqual({ lead: '', core: '\\bar\\delta', trail: '\\quad' });
+    expect(edgeSpaces('\\hspace{2em} y \\kern 1em')).toEqual({ lead: '\\hspace{2em}', core: 'y', trail: '\\kern 1em' });
+    expect(edgeSpaces('~\\phantom{\\Rightarrow} or\\ ')).toEqual({ lead: '~\\phantom{\\Rightarrow}', core: 'or', trail: '\\' + ' ' });
+    for (const latex of ['a\\quad b', ' x ', 'x^\\quad', '{\\quad x}', '\\quad']) expect(edgeSpaces(latex), latex).toEqual({ lead: '', core: latex, trail: '' });
+  });
+
+  it('keeps its width, before the ink and after it', async () => {
+    const renderer = new MarkupRenderer();
+    const piece = (latex: string) => renderer.mathPiece(latex, '#000000', 24);
+    const x = await piece('x');
+    const before = await piece('\\qquad x');
+    expect(before.advance).toBeCloseTo(x.advance + 2 * emOf(24), 9);
+    expect(before.inset).toBeCloseTo(2 * emOf(24), 9);
+    expect(before.mobject.getLeft()[0]).toBeCloseTo(2 * emOf(24), 9);
+    const after = await piece('x\\quad');
+    expect(after.advance).toBeCloseTo(x.advance + emOf(24), 9);
+    expect(after.inset ?? 0).toBe(0);
+    // Space inside a formula was always kept, by its ink.
+    expect((await piece('a\\quad b')).inset).toBeUndefined();
+  });
+
+  it('indents a line it starts, and spaces the next word after it', async () => {
+    const s = await slide('', 'A \\\\\n$\\qquad\\Downarrow$ \\\\\nB {#p x=0 y=0 anchor=left font_size=28}\n\n$x\\quad$ y {#q x=0 y=-2 anchor=left font_size=28}\n\n$x$ y {#r x=0 y=-3 anchor=left font_size=28}');
+    const arrow = ((element(s, 'p') as Group).children[1] as Mobject).getFamily().find((part) => part instanceof VMobject && part.hasOwnPoints()) as Mobject;
+    expect(arrow.getBounds().min.x - element(s, 'p').getLeft()[0]).toBeCloseTo(2 * emOf(28), 6);
+    const word = (id: string) => Math.min(...element(s, id).getFamily().filter((part) => part instanceof StyledLine).map((part) => part.getBounds().min.x));
+    expect(word('q') - word('r')).toBeCloseTo(emOf(28), 6);
+  });
+});
+
+describe('a line that starts with space and wraps', () => {
+  /** The lines of a text, by where their words start. */
+  const starts = (obj: Mobject) => ((obj as Group).children as Mobject[]).map((line) => Math.min(...line.getFamily().filter((part) => part instanceof StyledLine && part.runs.some((run) => run.text.trim())).map((part) => part.getBounds().min.x)));
+  const emOf = (points: number) => ((points * 4) / 3) / 96;
+
+  it('continues under its first word, in a list item as in a paragraph', async () => {
+    const long = 'forward the message to every other neighbour of the node that sent it';
+    const s = await slide('', [
+      `&emsp;&emsp;${long} {#p x=0 y=2 anchor=top-left width=4 font_size=24}`,
+      `::: {.group #list x=0 y=-1 anchor=top-left width=5 font_size=24}\n1. first\n2. &emsp;&emsp;${long}\n:::`,
+    ].join('\n\n'));
+    const paragraph = starts(element(s, 'p'));
+    expect(paragraph.length).toBeGreaterThan(2);
+    // An em space of the fake font is half an em.
+    expect(paragraph[0] - element(s, 'p').getLeft()[0]).toBeCloseTo(emOf(24), 6);
+    for (const left of paragraph.slice(1)) expect(left).toBeCloseTo(paragraph[0], 6);
+    const [, item] = (element(s, 'list') as Group).children as Group[];
+    const lines = starts(item.children[1] as Mobject);
+    expect(lines.length).toBeGreaterThan(2);
+    for (const left of lines.slice(1)) expect(left).toBeCloseTo(lines[0], 6);
+  });
+});
+
+describe('a character MathJax has no glyph for', () => {
+  const emOf = (points: number) => ((points * 4) / 3) / 96;
+  const glyphs = (obj: Mobject) => obj.getFamily().filter((part): part is StyledLine => part instanceof StyledLine);
+  /** The formula's own drawing: its paths, without a rule a hair high. */
+  const hairs = (obj: Mobject) => obj.getFamily().filter((part) => part instanceof VMobject && part.hasOwnPoints() && part.getHeight() < 0.01);
+
+  it('stands as a rule of its width in the text font, closing a text argument around it', () => {
+    const foreign = (char: string) => char === '☞';
+    const ruled = (latex: string) => ruleGlyphs(latex, foreign, () => 0.5, 0.0071);
+    expect(ruled('a☞b')).toEqual({ latex: 'a\\rule{0.5000em}{0.0071em}b', glyphs: [{ char: '☞', width: 0.5, hidden: false }] });
+    expect(ruled('\\text{a ☞ b}')?.latex).toBe('\\text{a }\\rule{0.5000em}{0.0071em}\\text{ b}');
+    expect(ruled('\\phantom{☞}')?.glyphs[0].hidden).toBe(true);
+    expect(ruled('α≤β')).toBeNull();
+    // Nested in a text argument it stays as it is.
+    expect(ruled('\\text{a {☞}}')).toBeNull();
+  });
+
+  it('is drawn in the text font, as wide as there, smaller in a script, in its color', async () => {
+    const renderer = new MarkupRenderer();
+    const piece = (latex: string) => renderer.mathPiece(latex, '#000000', 24);
+    // Every character of the fake font is half an em wide.
+    const alone = await piece('☞');
+    expect(alone.advance).toBeCloseTo(emOf(24) / 2, 6);
+    expect(glyphs(alone.mobject).map((line) => line.runs[0].text)).toEqual(['☞']);
+    expect(hairs(alone.mobject)).toEqual([]);
+    for (const latex of ['a☞b', '\\frac{☞}{2}', '\\text{a ☞ b}']) expect(glyphs((await piece(latex)).mobject), latex).toHaveLength(1);
+    expect(glyphs((await piece('x_{☞}')).mobject)[0].getFontSize()).toBeLessThan(20);
+    expect(glyphs((await piece('\\color{red}{☞}')).mobject)[0].runs[0].color.toUpperCase()).toBe('#FF0000');
+    const phantom = await piece('\\phantom{☞}');
+    expect(phantom.blank).toBe(true);
+    expect(phantom.advance).toBeCloseTo(alone.advance, 6);
+    expect(glyphs(phantom.mobject)).toEqual([]);
+  });
+
+  it('lines a phantom of it up with it in prose', async () => {
+    const s = await slide('', '☞ configurations \\\\\n$\\phantom{☞}$ transitions {#p x=0 y=0 anchor=left font_size=28}');
+    const words = ((element(s, 'p') as Group).children as Mobject[]).map((line) => Math.max(...line.getFamily().filter((part) => part instanceof StyledLine && part.runs.some((run) => /[a-z]/.test(run.text))).map((part) => part.getBounds().min.x)));
+    // The first line's words are one line of text with the hand: its right part is where they start.
+    const first = (element(s, 'p') as Group).children[0] as Mobject;
+    const text = first.getFamily().find((part) => part instanceof StyledLine) as StyledLine;
+    expect(text.runs.map((run) => run.text).join('')).toBe('☞ configurations');
+    expect(words[1] - text.getBounds().min.x).toBeCloseTo(emOf(28) / 2 + emOf(28) / 2, 6);
   });
 });

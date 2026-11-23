@@ -478,7 +478,10 @@ export class StyledLine extends Text {
   }
 }
 
-/** A math object laid out so that its left edge is at x = 0 and its baseline at y = 0. */
+/**
+ * A math object laid out so that its pen starts at x = 0 and its baseline is at y = 0: its ink
+ * starts at x = 0, or `inset` further when the formula starts with space.
+ */
 export interface MathPiece {
   mobject: Mobject;
   advance: number;
@@ -486,6 +489,8 @@ export interface MathPiece {
   descent: number;
   /** A formula of space alone (`\phantom{MMM}`, `\quad`): it draws nothing, and its advance is its typeset width. */
   blank?: boolean;
+  /** The space a formula that draws starts with (`$\qquad x$`), before its ink and within its advance. */
+  inset?: number;
 }
 
 /** Makes the mobject of an inline formula at a size and a color. */
@@ -670,6 +675,30 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
     }
     return total;
   };
+  /**
+   * A line is placed by its ink, which what starts it without ink does not have: spaces that keep
+   * their width, formulas of space alone and the space a formula starts with. The line keeps its
+   * width, and that of a plain space after it, which then separates words as anywhere in a line
+   * (plain spaces that start the line are gone already).
+   */
+  const leadOf = async (words: Word[]): Promise<number> => {
+    let lead = 0;
+    for (const segment of segments(words)) {
+      if ('math' in segment) {
+        const piece = await mathFor(segment.math);
+        if (!piece.blank) return lead + (piece.inset ?? 0);
+        lead += piece.advance;
+        continue;
+      }
+      for (const atom of segment.prose) {
+        const spaces = isBlank(atom.content) ? atom.content : KEPT_SPACES.exec(atom.content)?.[0];
+        if (!spaces) return lead;
+        lead += measureRun({ text: spaces, bold: atom.bold, italic: atom.italic, color: defaultColor, mono: atom.kind === 'code', href: null }, px, fontFamily).advance / pxPerWorld;
+        if (spaces.length < atom.content.length) return lead;
+      }
+    }
+    return lead;
+  };
   const shape = async (words: Word[]): Promise<ShapedLine> => {
     const parts: ShapedLine['parts'] = [];
     let advance = 0;
@@ -686,25 +715,7 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       }
     }
     const first = words[0]?.[0];
-    // A line is placed by its ink, which its leading kept spaces and formulas of space alone do not
-    // have; it keeps their width, and that of a plain space after them, which then separates words
-    // as anywhere in a line (plain spaces that start the line are gone already).
-    let lead = 0;
-    opening: for (const segment of segments(words)) {
-      if ('math' in segment) {
-        const piece = await mathFor(segment.math);
-        if (!piece.blank) break;
-        lead += piece.advance;
-        continue;
-      }
-      for (const atom of segment.prose) {
-        const spaces = isBlank(atom.content) ? atom.content : KEPT_SPACES.exec(atom.content)?.[0];
-        if (!spaces) break opening;
-        lead += measureRun({ text: spaces, bold: atom.bold, italic: atom.italic, color: defaultColor, mono: atom.kind === 'code', href: null }, px, fontFamily).advance / pxPerWorld;
-        if (spaces.length < atom.content.length) break opening;
-      }
-    }
-    return { parts, advance, keepIndent: Boolean(first && first.kind === 'code' && !first.content.trim()), lead };
+    return { parts, advance, keepIndent: Boolean(first && first.kind === 'code' && !first.content.trim()), lead: await leadOf(words) };
   };
   const rows = inlineRows(spans);
   // Columns: each row's cells are shaped unwrapped, every column is as wide as its widest cell,
@@ -781,7 +792,8 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
     return block;
   }
   // A line indented by spaces starts that many plain spaces of the font in, and so do the lines it
-  // wraps to, within what remains of the width (a quarter of it at least).
+  // wraps to, within what remains of the width (a quarter of it at least). The lines a line that
+  // starts with space wraps to start under its first word too.
   const space = rows.some((row) => row.indent)
     ? measureRun({ text: ' ', bold: false, italic: false, color: defaultColor, mono: false, href: null }, px, fontFamily).advance / pxPerWorld
     : 0;
@@ -795,9 +807,12 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       continue;
     }
     const indent = Math.min(row.indent * space, 0.75 * maxWidth);
-    const width = maxWidth - indent;
+    let hang: number | null = null;
     let start = 0;
     while (start < words.length) {
+      if (start > 0 && hang === null) hang = Math.min(indent + (await leadOf(words)), 0.75 * maxWidth);
+      const left = start === 0 ? indent : (hang as number);
+      const width = maxWidth - left;
       let end = words.length;
       if (start === 0 && (await advanceOf(words)) <= width) end = words.length;
       else {
@@ -819,7 +834,7 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
         end = low;
       }
       lines.push(await shape(words.slice(start, end)));
-      indents.push(indent);
+      indents.push(left);
       start = end;
     }
   }
