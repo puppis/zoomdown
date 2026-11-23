@@ -19,6 +19,7 @@ import {
   type CellAlignment,
   type ListItem,
   NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
+  RELATIVE_STEP, type StepMode,
   elementStep, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, span, stepValue, textReference,
 } from './ast';
 
@@ -226,6 +227,8 @@ function spans(tokens: Token[], outer: SpanStyle = PLAIN): InlineSpan[] {
 export class MarkupParser {
   readonly blockMarkdown: MarkdownIt;
   readonly markdown: MarkdownIt;
+  /** How the document being parsed numbers its steps (`layout.steps`). */
+  private _steps: StepMode = 'explicit';
 
   constructor() {
     this.blockMarkdown = new MarkdownIt('commonmark', { html: false });
@@ -249,7 +252,8 @@ export class MarkupParser {
   }
 
   /** Parse a string; infer the unique unreferenced root unless specified. */
-  parse(source: string, options: { root?: string | null; basePath?: string; styles?: StyleSheet } = {}): MarkupDocument {
+  parse(source: string, options: { root?: string | null; basePath?: string; styles?: StyleSheet; steps?: StepMode } = {}): MarkupDocument {
+    this._steps = options.steps ?? 'explicit';
     // Keep source line numbers intact when discarding author comments.
     source = source.replace(/<!--[\s\S]*?-->/g, (match) => '\n'.repeat((match.match(/\n/g) ?? []).length));
     const lines = source.split(/\r?\n/);
@@ -282,7 +286,7 @@ export class MarkupParser {
     }
     if (!slides.length) throw new MarkupError('The document contains no slides');
     const document = new MarkupDocument(slides, (options.root ?? '').replace(/^#/, ''), options.basePath ?? '', styles);
-    return new ASTTransformer().validate(document);
+    return new ASTTransformer({ steps: this._steps }).validate(document);
   }
 
   /**
@@ -372,6 +376,19 @@ export class MarkupParser {
     throw new MarkupError('Unclosed ::: container', start + 1);
   }
 
+  /**
+   * The step of a directive: its `step=N`, or, with sequential steps, NaN for a step that follows
+   * the source (`step=+`, or none), settled once the slide is read. `missing` is what a directive
+   * without a step is told otherwise.
+   */
+  private _directiveStep(attrs: Attributes, line: number, missing: string): number {
+    if (attrs.step === '+' || !('step' in attrs)) {
+      if (this._steps === 'sequential') return NaN;
+      throw new MarkupError(attrs.step === '+' ? RELATIVE_STEP : missing, line);
+    }
+    return stepValue(attrs, 'step', line);
+  }
+
   private _body(lines: string[], firstLine: number, prefix = ''): SlideItem[] {
     const items: SlideItem[] = [];
     let index = 0;
@@ -386,10 +403,10 @@ export class MarkupParser {
         const [, kind, value] = directive;
         if (kind === 'next' || kind === 'skip_next') {
           const attrs = parseAttributes(value, line, { commas: true });
-          const keys = Object.keys(attrs);
-          if (keys.length !== 1 || keys[0] !== 'step') throw new MarkupError(`${kind} directives require only step=N`, line);
-          const step = stepValue(attrs, 'step', line);
-          items.push(kind === 'next' ? new NextSpec(step, line) : new SkipNextSpec(step, line));
+          const only = `${kind} directives require only step=N`;
+          if (Object.keys(attrs).some((key) => key !== 'step')) throw new MarkupError(only, line);
+          const step = this._directiveStep(attrs, line, only);
+          items.push(kind === 'next' ? new NextSpec(step, line, attrs) : new SkipNextSpec(step, line, attrs));
         } else if (ATTACHMENTS.has(kind)) {
           // Attachments list the elements they decorate before the first comma: [[blob: #a #b #c, #id, buff=0.4]].
           const trimmed = value.trim();
@@ -434,12 +451,10 @@ export class MarkupParser {
           const attrs = parseAttributes(match[2], line, { commas: true });
           if (kind === 'include' || kind === 'subslide') items.push(new IncludeSpec(match[1], attrs, line));
           else {
-            const keys = Object.keys(attrs);
             const extra = kind === 'show' ? 'enter' : 'exit';
-            if (!keys.includes('step') || keys.some((key) => key !== 'step' && key !== extra && !TIMING_ATTRS.has(key))) {
-              throw new MarkupError(`${kind} directives take step=N and optionally run_time, lag and ${extra}`, line);
-            }
-            items.push(new EventSpec(kind as 'show' | 'hide', match[1], stepValue(attrs, 'step', line), line, attrs));
+            const takes = `${kind} directives take step=N and optionally run_time, lag and ${extra}`;
+            if (Object.keys(attrs).some((key) => key !== 'step' && key !== extra && !TIMING_ATTRS.has(key))) throw new MarkupError(takes, line);
+            items.push(new EventSpec(kind as 'show' | 'hide', match[1], this._directiveStep(attrs, line, takes), line, attrs));
           }
         } else if (kind === 'iframe') {
           const match = /^(\S+?),?(\s.*)?$/s.exec(value.trim());
@@ -451,22 +466,21 @@ export class MarkupParser {
           const match = /^#?([\w.-]+)(.*)$/s.exec(value);
           if (!match) throw new MarkupError('Expected a referenced #id', line);
           const attrs = parseAttributes(match[2], line, { commas: true });
-          if (!('step' in attrs)) throw new MarkupError(`${kind} requires step=N`, line);
-          items.push(new ActionSpec(kind, match[1], stepValue(attrs, 'step', line), attrs, line));
+          items.push(new ActionSpec(kind, match[1], this._directiveStep(attrs, line, `${kind} requires step=N`), attrs, line));
         } else if (kind === 'effect') {
           const match = /^([\w-]+)\s+#?([\w.-]+)(.*)$/s.exec(value);
           if (!match) throw new MarkupError('Expected [[effect: name #id, step=N ...]]', line);
           const attrs = parseAttributes(match[3], line, { commas: true });
-          if (!('step' in attrs)) throw new MarkupError('effect requires step=N', line);
+          const step = this._directiveStep(attrs, line, 'effect requires step=N');
           attrs.name = match[1];
-          items.push(new ActionSpec('effect', match[2], stepValue(attrs, 'step', line), attrs, line));
+          items.push(new ActionSpec('effect', match[2], step, attrs, line));
         } else if (kind === 'transform') {
           const match = /^#?([\w.-]+)\s*->\s*#?([\w.-]+)(.*)$/s.exec(value);
           if (!match) throw new MarkupError('Expected [[transform: #from -> #to, step=N ...]]', line);
           const attrs = parseAttributes(match[3].replace(/^[ ,]+/, ''), line, { commas: true });
-          if (!('step' in attrs)) throw new MarkupError('transform requires step=N', line);
+          const step = this._directiveStep(attrs, line, 'transform requires step=N');
           attrs.to = match[2];
-          items.push(new ActionSpec('transform', match[1], stepValue(attrs, 'step', line), attrs, line));
+          items.push(new ActionSpec('transform', match[1], step, attrs, line));
         } else if (SHAPES.has(kind)) {
           // A shape needs an id only to be referenced, as any other element.
           const attrs = parseAttributes(value, line, { commas: true });
@@ -732,6 +746,9 @@ function resolveLast(item: ElementSpec | IncludeSpec | CodeSlideSpec, last: stri
 
 /** Validate a component tree and compile fragment state into animation steps. */
 export class ASTTransformer {
+  /** `steps`: how the slides number their steps (`layout.steps`), settled while validating. */
+  constructor(private readonly options: { steps?: StepMode } = {}) {}
+
   validate(document: MarkupDocument): MarkupDocument {
     const slides = new Map<string, SlideSpec>();
     const parents = new Map<string, string>();
@@ -753,12 +770,15 @@ export class ASTTransformer {
         // The element written last in this scope, which `#LAST` names: arrows, lines and
         // attachments, which nothing can reference, and subslides are passed over.
         let last: string | null = null;
+        // The step of the item before, which the next one counts from (sequential steps, on the slide itself).
+        let previous = 0;
         const where = scope ? 'in its group' : 'on its slide';
         for (const item of items) {
           if (item instanceof ElementSpec) {
             applyStyles(item, styles);
             if (item.id === 'LAST') throw new MarkupError(RESERVED_LAST, item.line);
             resolveLast(item, last, where);
+            if (!scope) previous = this._sequence(item, previous);
             if (!IDENTIFIER.test(item.id) || elements.has(item.id)) {
               throw new MarkupError(`Invalid or duplicate element ID ${JSON.stringify(item.id)} in ${slide.id}`, item.line);
             }
@@ -779,10 +799,12 @@ export class ASTTransformer {
             if (scope) throw new MarkupError('Groups cannot contain includes or subslides', item.line);
             applyStyles(item, styles);
             resolveLast(item, last, where);
+            previous = this._sequence(item, previous);
             this._checkChild(item, slide, slides, parents);
             // An include is referenced by the id of the slide it includes.
             if (item instanceof IncludeSpec) last = item.target;
           } else if (scope) throw new MarkupError('Groups cannot contain directives', item.line);
+          else previous = this._sequence(item, previous);
         }
       };
       visit(slide.items, '');
@@ -901,6 +923,49 @@ export class ASTTransformer {
     return new MarkupDocument([...slides.values()], root, document.basePath, {}, roots);
   }
 
+  /**
+   * Settle the step of an item of a slide from `previous`, the step of the item before it (0 at
+   * the top of the slide), and return the step the item after it counts from. With sequential
+   * steps, an element or a directive without `step` takes `previous`, `step=+` is the click after
+   * it, and an include without a step is visited at that click; `hide=+` is the click after the
+   * element's own step. Captions (`step=-1`) and static elements (`focus_only`) without a step are
+   * left out of the count. Without sequential steps, `+` has nothing to count from.
+   */
+  private _sequence(item: SlideItem, previous: number): number {
+    const sequential = this.options.steps === 'sequential';
+    if (item instanceof ElementSpec) {
+      const attrs = item.attributes;
+      if (!sequential) {
+        if (attrs.step === '+' || attrs.hide === '+') throw new MarkupError(RELATIVE_STEP, item.line);
+        return previous;
+      }
+      let next = previous;
+      if (attrs.step === '+') attrs.step = String((next = previous + 1));
+      else if (attrs.step === undefined) {
+        if (attrs.focus_only !== 'true' && previous > 0) attrs.step = String(previous);
+      } else if (attrs.step !== '-1') next = stepValue(attrs, 'step', item.line);
+      if (attrs.hide === '+') attrs.hide = String(Math.max(0, Number(attrs.step ?? '0')) + 1);
+      return next;
+    }
+    if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
+      const attrs = item.attributes;
+      if (attrs.step !== undefined && attrs.step !== '+') return stepValue(attrs, 'step', item.line);
+      if (!sequential) {
+        if (attrs.step === '+') throw new MarkupError(RELATIVE_STEP, item.line);
+        return previous;
+      }
+      attrs.step = String(previous + 1);
+      return previous + 1;
+    }
+    // A directive: NaN when its step follows the source (parsed with sequential steps).
+    if (Number.isNaN(item.step)) {
+      const step = item.attributes.step === '+' ? previous + 1 : previous;
+      (item as { step: number }).step = step;
+      item.attributes.step = String(step);
+    }
+    return item.step;
+  }
+
   /** The attributes an element of this kind takes, or null when it takes any (an artwork or element of the deck's own). */
   static allowedAttributes(item: ElementSpec): Set<string> | null {
     let allowed: Set<string> | null;
@@ -961,6 +1026,11 @@ export class ASTTransformer {
     const decoration = CONNECTIONS.has(item.kind) || ATTACHMENTS.has(item.kind);
     if (!['text', 'image', 'math', 'code', 'group', 'iframe', 'icon', 'table', 'chart', 'custom'].includes(item.kind) && !SHAPES.has(item.kind) && !decoration) {
       throw new MarkupError(`Unknown element kind ${JSON.stringify(item.kind)}`, item.line);
+    }
+    if (scope) {
+      for (const key of ['step', 'hide', 'focus_only', 'play']) {
+        if (key in item.attributes) throw new MarkupError(`Group members cannot use ${key}; apply it to the group`, item.line);
+      }
     }
     const allowed = ASTTransformer.allowedAttributes(item);
     if (allowed) this._checkAttrs(item.attributes, allowed, item.line);
@@ -1105,11 +1175,6 @@ export class ASTTransformer {
     }
     if ('muted' in item.attributes && !['true', 'false'].includes(item.attributes.muted)) throw new MarkupError('muted must be true or false', item.line);
     if (item.kind === 'code' && 'math' in item.attributes && !['true', 'false'].includes(item.attributes.math)) throw new MarkupError('math must be true or false', item.line);
-    if (scope) {
-      for (const key of ['step', 'hide', 'focus_only', 'play']) {
-        if (key in item.attributes) throw new MarkupError(`Group members cannot use ${key}; apply it to the group`, item.line);
-      }
-    }
     if ('anchor' in item.attributes) ASTTransformer._checkAnchorFor(item, item.attributes.anchor, item.line);
     if (item.kind === 'brace' && 'side' in item.attributes && !(item.attributes.side in BRACE_SIDES)) {
       throw new MarkupError('Brace side must be left, right, top or bottom', item.line);

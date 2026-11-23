@@ -586,6 +586,13 @@ elements. A `show`/`hide` directive may carry its own `run_time` and `lag`. Numb
 and need not be consecutive. Only the root is visible at the start; each descendant fades in on its
 first entry and stays visible afterwards.
 
+With `layout.steps: sequential` steps follow the source: an element or a directive without `step`
+takes the step of the element before it (0 at the top of the slide), `step=+` is the click after
+that one, an explicit `step=N` is taken by the elements after it without a step, `hide=+` is the
+click after the element's own step, and a child without `step` is visited at the click after the
+element before it. Captions (`step=-1`) and `focus_only` decorations without a step are left out
+of the count; group members take no step. `+` is refused without sequential steps.
+
 `[[next: step=N]]` advances automatically once step N (and the child visits it triggers) has
 finished. `[[skip_next: step=N]]` omits exactly one following event: a fragment step, a child visit
 (with its whole subtree) or the return to the parent, even across numeric gaps. `step=0` applies
@@ -678,7 +685,7 @@ A deck is black text on a white canvas unless `background` and `layout.color` sa
 Prose is set in the bundled Latin Modern Roman and code in Latin Modern Mono (the LaTeX text and
 typewriter faces) unless `layout.font` or `layout.codeFont` name other families, and formula sizes
 are calibrated so that a `font_size` means the same em for text, code and math. `layout` takes `fontSize`, `headingSize`, `codeSize`, `color`, `font`, `codeFont`, `margin`,
-`gap`, `lineGap`, `lineHeight` (unset; see [Text](#text)), `paragraphSpacing`, `listIndent`, `animationTime`, `defaultSlideSize` and `textAnchor`. `presenter` takes
+`gap`, `lineGap`, `lineHeight` (unset; see [Text](#text)), `paragraphSpacing`, `listIndent`, `animationTime`, `defaultSlideSize`, `textAnchor` and `steps` (`explicit`, or `sequential`: see [Fragments and click steps](#fragments-and-click-steps)). `presenter` takes
 `transitionTime`, `transition` (`zoom` or `cut`), `padding`, `pauseOnEntry`, `pauseOnReturn`, `showSlideBorders`,
 `slideBorderColor`, `slideBorderWidth`, `showSlideGrid`, `revealOnEntry` (default true: children fade in
 when first entered; false shows them from the start) and `reversePlayback` (default true: the

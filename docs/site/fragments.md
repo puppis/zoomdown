@@ -72,6 +72,54 @@ The rest appears on the visit {x=-2.6 y=0 width=5.2 font_size=16}
 :::
 ```
 
+## Steps that follow the source
+
+With `steps: sequential` under `layout:` in the front matter, an element needs a step only where a
+click happens: an element without `step` takes the step of the element before it in the source,
+so the lines of a paragraph, the items of a list and the shapes of a figure written after
+something appear with it.
+
+| Written | Means |
+| --- | --- |
+| no `step` | the step of the element before (0 at the top of the slide: shown from the start) |
+| `step=+` | the click after the step of the element before |
+| `step=N` | click `N`, as always; the elements after it without a step take `N` too |
+| `step=0` | shown from the start, and the elements after it without a step as well |
+| `hide=+` | gone at the click after the element's own step |
+
+```markdown
+---
+layout:
+  steps: sequential
+---
+
+::: slide {#rounds}
+
+Round with pivot r {step=+}
+
+- every node sends a request
+- the pivot answers
+
+[deadlock!]{.dead step=+ hide=+}
+
+The next round starts. {step=+}
+
+:::
+```
+
+The heading and the two items appear at click 1, the warning at click 2 and gone at click 3,
+where the last line appears. Inserting a click is adding one `step=+`: the clicks after it move
+on by themselves.
+
+Captions (`step=-1`) and static decorations (`focus_only`) without a step stand apart: the element
+after them counts from the one before them. A group takes a step as a whole, and its members none.
+A child without `step` is visited at the click after the element before it (`step=+`), so the
+children written one after the other are visited at successive clicks, and the element written
+after a child counts from its visit. Directives follow the same rule: `[[show]]`, `[[hide]]`,
+`[[animate]]`, `[[effect]]`, `[[transform]]`, `[[move_along]]`, `[[next]]` and `[[skip_next]]`
+without `step` take the step of the element before them, and `step=+` the click after it. Without
+`steps: sequential`, `+` has nothing to count from and is refused.
+
 ## Timing
 
 <a class="try" href="tour.html#slide=anchors">Open in the tour ↗</a>

@@ -12,7 +12,7 @@ import { dashPattern, dashSegments, sketch, sketchSeed, type FillStyle, type Out
 import { BRIDGE_PATHS, strokePolylines, type BridgePath, type Point2 } from '../bridges';
 import { Spline, bendCubic, curveMobject, drawPath, lineCubic, loopCubic, throughPoints, viaPoints, waveCubics, type TipKind, type Vec } from '../curves';
 import { artworkFromModule, makeIcon, type ArtworkModule, type ArtworkOptions, type IconName } from '../icons';
-import { ICON_KINDS } from './ast';
+import { ICON_KINDS, type StepMode } from './ast';
 import { effectFromModule, type EffectModule, type EffectOptions } from '../animations';
 import { chartFromModule, chartDataFromJson, CHART_TYPES, type ChartModule } from '../charts';
 import { directiveFromModule, type DirectiveModule, type DirectiveOptions } from '../directives';
@@ -92,6 +92,13 @@ export interface LayoutConfigOptions {
   animationTime?: number;
   defaultSlideSize?: readonly [number, number];
   textAnchor?: 'left-baseline' | 'top-left' | 'center';
+  /**
+   * How the elements of a slide get their steps: `explicit` (the default), where an element
+   * without `step` is shown from the start, or `sequential`, where it takes the step of the
+   * element before it in the source, `step=+` is the click after that one and `hide=+` the click
+   * after the element's own.
+   */
+  steps?: StepMode;
 }
 
 /** Defaults for deterministic text flow within fixed slide coordinates. */
@@ -113,6 +120,7 @@ export class LayoutConfig {
   readonly animationTime: number;
   readonly defaultSlideSize: readonly [number, number];
   readonly textAnchor: 'left-baseline' | 'top-left' | 'center';
+  readonly steps: StepMode;
 
   constructor(options: LayoutConfigOptions = {}) {
     this.fontSize = options.fontSize ?? 28;
@@ -133,6 +141,8 @@ export class LayoutConfig {
     this.animationTime = options.animationTime ?? DEFAULT_ANIMATION_TIME;
     this.defaultSlideSize = options.defaultSlideSize ?? Slide.defaultSize;
     this.textAnchor = options.textAnchor ?? 'left-baseline';
+    this.steps = options.steps ?? 'explicit';
+    if (this.steps !== 'explicit' && this.steps !== 'sequential') throw new Error('steps must be explicit or sequential');
     resolveSize(null, null, this.defaultSlideSize);
     if (!TEXT_ANCHORS.has(this.textAnchor)) throw new Error('textAnchor must be left-baseline, top-left or center');
     for (const key of ['fontSize', 'headingSize', 'codeSize', 'animationTime'] as const) {

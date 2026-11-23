@@ -816,6 +816,16 @@ slide pauses; a step that also visits children plays the parent's changes first.
 visited at their `step` or, without one, after the last numbered step in source order. Elements
 are drawn in source order, whichever click shows each.
 
+### Sequential steps
+
+With `layout.steps: sequential`, steps follow the source: an element or a directive without
+`step` takes the step of the element before it (0 at the top of the slide), `step=+` is the click
+after that one, an explicit `step=N` (`step=0` included) is taken by the elements after it without
+a step, and `hide=+` is the click after the element's own step. A child without `step` is visited
+at the click after the element before it. Captions (`step=-1`) and `focus_only` decorations
+without a step are left out of the count, and group members take no step. `+` is refused without
+sequential steps. See [Steps that follow the source](fragments.html#steps-that-follow-the-source).
+
 ### [[show]] and [[hide]]
 
 ```markdown
@@ -1045,6 +1055,7 @@ matter in the same way.
 | `animationTime` | 0.35 | the default `run_time` of fades and effects |
 | `defaultSlideSize` | `[16, 9]` | the canvas of slides without `width` or `height` |
 | `textAnchor` | `left-baseline` | the default anchor of text (`top-left` or `center` possible) |
+| `steps` | `explicit` | `sequential`: an element without `step` takes the step of the element before it, and `step=+` and `hide=+` count from it; see [Sequential steps](#sequential-steps) |
 
 ### presenter
 

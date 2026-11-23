@@ -128,6 +128,7 @@ and the options' folders come before the front matter's.
 | `animationTime` | 0.35 | duration of fades |
 | `defaultSlideSize` | `[16, 9]` | canvas of slides without `width`/`height` |
 | `textAnchor` | `left-baseline` | default anchor of text (`top-left` or `center` possible) |
+| `steps` | `explicit` | `sequential`: steps follow the source, an element without `step` taking the step of the element before it and `step=+` the click after, see [Steps that follow the source](fragments.html#steps-that-follow-the-source) |
 
 ## presenter
 

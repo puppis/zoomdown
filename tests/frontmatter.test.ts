@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseSettings, resolveSettings, splitFrontMatter } from '../src/markup/frontmatter.mjs';
 import { defaultTitle, loadMarkupDeck, markupDeck } from '../src/markup/deck';
+import type { MarkupSlide } from '../src/markup/slide';
 import { deckFolders, deckSettings, resolveDeckPath } from '../bin/zoomdown.mjs';
 
 /** Files in memory, by URL, read and joined as a browser would. */
@@ -73,6 +74,13 @@ describe('a deck and its front matter', () => {
     expect(deck.presenter.transitionTime).toBe(1.5);
     expect(markupDeck({ source, title: 'Given in code' }).title).toBe('Given in code');
     expect(() => markupDeck({ source: '---\nextends: shared.yaml\n---\nx' })).toThrow(/loadMarkupDeck/);
+  });
+
+  it('numbers the steps of its slides as its layout says', async () => {
+    const body = '::: slide {#a}\n[one]{#one step=+}\n\n[two]{#two}\n:::';
+    const slide = (await markupDeck({ source: `---\nlayout: { steps: sequential }\n---\n${body}` }).deck()) as MarkupSlide;
+    expect(slide.animationSteps.map((step) => step.number)).toEqual([1]);
+    await expect(Promise.resolve().then(() => markupDeck({ source: body }).deck())).rejects.toThrow(/steps: sequential/);
   });
 
   it('is read with the files it extends when the deck is opened by its URL', async () => {

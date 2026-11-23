@@ -124,7 +124,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 
 | Attribute | On | Meaning |
 | --- | --- | --- |
-| `step`, `hide` | elements, children (`step`) | reveal and hide clicks; visit step for children |
+| `step`, `hide` | elements, children (`step`) | reveal and hide clicks; visit step for children; with `layout.steps: sequential`, `+` is the click after the element before |
 | `run_time`, `lag`, `rate` | fades and animations | duration, delay, rate function |
 | `enter`, `exit` | elements | `fade`, `grow`, `write`, `create`, `draw` / `fade`, `shrink`, `uncreate`, or the name of an effect of the deck's own |
 | `tremble`, `tremble_amplitude`, `tremble_rate` | shapes, icons, connections, attachments, math, groups, tables, charts | `true`, `N` or `N-M`: vibration over a range of steps, its size and frequency |

@@ -450,7 +450,7 @@ export function markupDeck(options: MarkupDeckOptions): ResolvedDeck {
       });
       // Errors name the imported file a line came from.
       MarkupError.describe = (line) => describeOrigin(expanded.origins[line - 1], line);
-      const document = new MarkupParser().parse(expanded.source, { root: options.root, basePath, styles: normalizeStyles(options.styles) });
+      const document = new MarkupParser().parse(expanded.source, { root: options.root, basePath, styles: normalizeStyles(options.styles), steps: layout.steps });
       // Slide classes: the module given, the bundled ones, and `Name.ts` in the slides folders for what is still missing.
       const namespace: SlideNamespace = { ...(options.classes ?? options.imports ?? {}), ...(options.slideModules ?? {}) };
       for (const slide of document.slides) {

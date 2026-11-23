@@ -128,12 +128,12 @@ export class EventSpec {
 
 /** Automatically advance after a numbered slide-local step completes. */
 export class NextSpec {
-  constructor(readonly step: number, readonly line = 1) {}
+  constructor(readonly step: number, readonly line = 1, readonly attributes: Attributes = {}) {}
 }
 
 /** Omit the next navigation event after a numbered slide-local step. */
 export class SkipNextSpec {
-  constructor(readonly step: number, readonly line = 1) {}
+  constructor(readonly step: number, readonly line = 1, readonly attributes: Attributes = {}) {}
 }
 
 /** The animation directives: `animate`, `effect`, `transform`, `move_along`. */
@@ -744,6 +744,12 @@ export function cssColor(style: string, line: number): string {
 
 /** The step of an element's own appearance: a nonnegative integer, or -1 for a member shown before its slide is first visited. */
 export const EARLY_STEP = -1;
+
+/** How the elements of a slide get their steps (`layout.steps`): numbered one by one, or following the source. */
+export type StepMode = 'explicit' | 'sequential';
+
+/** What `step=+` or `hide=+` without sequential steps is told. */
+export const RELATIVE_STEP = 'step=+ and hide=+ count from the element before, which needs sequential steps: steps: sequential under layout: in the front matter';
 
 export function elementStep(attrs: Attributes, line: number): number {
   if (attrs.step === '-1') return EARLY_STEP;
