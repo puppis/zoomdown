@@ -202,6 +202,16 @@ describe('the flow after a placed element', () => {
     expect(left(element(s, 'n'))).toBeCloseTo(left(one) + 0.6, 9);
   });
 
+  it('keeps a block aligned with an item\'s text under the item, and the next blocks with it', async () => {
+    const s = await slide('', '- one {#i}\n\nUnder its text {#t left-aligned:#LAST.text}\n\nAnd on {#n}');
+    const item = element(s, 'i');
+    const text = left(item) + column(item);
+    expect(left(element(s, 't'))).toBeCloseTo(text, 9);
+    expect(baseline(s, 'i') - baseline(s, 't')).toBeCloseTo(await spacing(), 9);
+    expect(left(element(s, 'n'))).toBeCloseTo(text, 9);
+    expect(baseline(s, 't') - baseline(s, 'n')).toBeCloseTo(await spacing(), 9);
+  });
+
   it('takes from the flow only the axes no option sets, and a direction keeps centering', async () => {
     const s = await slide('', 'Placed {#p x=-3 y=2}\n\nOwn x {#a x=1}\n\n[Reference]{#q x=4 y=-3}\n\nAligned {#b left-aligned:#p}\n\nCentered under {#c below:#b}');
     // An x of its own makes a column of its own, which the flow fills from where it is, not under #p.
@@ -227,10 +237,45 @@ describe('the flow after a placed element', () => {
     expect(element(s, 'hl').getCenter()[0]).toBeCloseTo(element(s, 'b').getCenter()[0], 9);
   });
 
-  it('wraps text within the width left right of its column', async () => {
-    const long = 'every concerned node sends a request to the pivot and waits for its answer before going on with the next round {#w}';
-    const s = await slide('', `Placed {#p x=2 y=2}\n\n${long}`);
-    expect(left(element(s, 'w'))).toBeCloseTo(left(element(s, 'p')), 9);
-    expect(element(s, 'w').getRight()[0]).toBeLessThanOrEqual(8 - 0.65 + 1e-6);
+  it('wraps text at the width its column\'s first block gives, or at the flow\'s', async () => {
+    const long = 'every concerned node sends a request to the pivot and waits for its answer before going on with the next round';
+    const s = await slide('', `Placed {#p x=2 y=2 width=5}\n\n${long} {#w}\n\n${long} {#v}`);
+    for (const id of ['w', 'v']) {
+      expect(left(element(s, id))).toBeCloseTo(left(element(s, 'p')), 9);
+      expect(element(s, id).getRight()[0]).toBeLessThanOrEqual(left(element(s, 'p')) + 5 + 1e-6);
+    }
+    // With no width, the column wraps as the flow does, as a chain of below:#LAST left-aligned:#LAST did.
+    const own = await slide('', `Placed {#p x=2 y=2}\n\n${long} {#w buff=0.3}`);
+    const chained = await slide('', `Placed {#p x=2 y=2}\n\n${long} {#w below:#LAST left-aligned:#LAST buff=0.3}`);
+    expect(element(own, 'w').getWidth()).toBeCloseTo(element(chained, 'w').getWidth(), 9);
+  });
+});
+
+describe('a buff of its own on a block that flows', () => {
+  const bounds = (obj: Mobject) => [obj.getLeft()[0], obj.getBottom()[1], obj.getRight()[0], obj.getTop()[1]];
+
+  it('is the space after the block before, as below:#LAST left-aligned:#LAST buff= gives it', async () => {
+    for (const [after, buff] of [['Next paragraph {#n BUFF}', '0.6'], ['```text {#n BUFF}\ncode\n```', '0.4'], ['- an item {#n BUFF}', '0.15']]) {
+      const head = 'The head {#h x=-3 y=2 width=6}\n\n';
+      const own = await slide('', head + after.replace('BUFF', `buff=${buff}`));
+      const chained = await slide('', head + after.replace('BUFF', `below:#LAST left-aligned:#LAST buff=${buff}`));
+      const [a, b] = [bounds(element(own, 'n')), bounds(element(chained, 'n'))];
+      a.forEach((value, k) => expect(value).toBeCloseTo(b[k], 9));
+    }
+  });
+
+  it('does nothing at the start of the flow', async () => {
+    const plain = await slide('', 'First {#a}');
+    const spaced = await slide('', 'First {#a buff=1}');
+    expect(top(element(spaced, 'a'))).toBeCloseTo(top(element(plain, 'a')), 9);
+  });
+
+  it('needs an element that flows down', () => {
+    const parse = (body: string) => new MarkupParser().parse(`::: slide {#s}\n${body}\n:::`);
+    expect(() => parse('Text {buff=0.3}')).not.toThrow();
+    expect(() => parse('Text {x=1 buff=0.3}')).not.toThrow();
+    expect(() => parse('Text {y=1 buff=0.3}')).toThrow(/buff requires a relative direction, or an element that flows down/);
+    expect(() => parse('Text {#a x=0 y=0}\n\nMore {baseline-aligned:#a buff=0.3}')).toThrow(/buff requires/);
+    expect(() => parse('[[rectangle: x=1 width=1 height=1 buff=0.3]]')).toThrow(/buff requires/);
   });
 });

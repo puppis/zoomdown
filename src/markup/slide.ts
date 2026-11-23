@@ -54,8 +54,8 @@ interface FlowNode {
   flowY: boolean;
   /** The element the flow places it after, or null at the start of the flow. */
   after: FlowNode | null;
-  /** What the flow knows of it once it is placed: its column's left edge, its bottom and its lines. */
-  next: { left: number; bottom: number; lines: TextLines | null; tight: boolean } | null;
+  /** What the flow knows of it once it is placed: its column's left edge and width, its bottom and its lines. */
+  next: { left: number; width: number; bottom: number; lines: TextLines | null; tight: boolean } | null;
 }
 
 /** The blocks the flow goes on after wherever they are placed; pictures and drawings it passes over. */
@@ -386,9 +386,11 @@ export class MarkupSlide extends Slide {
       const attrs = item.attributes;
       const previous = node.after?.next ?? null;
       const column = previous ? previous.left : scope.left;
-      // Text that flows in a column right of the flow's left edge wraps within the width left to it.
-      if (node.flowX && item instanceof ElementSpec && item.kind === 'text' && !('width' in attrs) && Math.abs(column - scope.left) > 1e-9) {
-        const made = await located(item.line, () => this.renderer.make(item, Math.max(scope.left + scope.width - column - indent, 0.5)));
+      // A column is as wide as its first block says: text that flows in it without a width of its own
+      // wraps at that width, less its indent, or at the flow's.
+      const columnWidth = previous ? previous.width : scope.width;
+      if (node.flowX && item instanceof ElementSpec && item.kind === 'text' && !('width' in attrs) && Math.abs(columnWidth - scope.width) > 1e-9) {
+        const made = await located(item.line, () => this.renderer.make(item, Math.max(columnWidth - indent, 0.5)));
         for (const member of node.obj.getFamily()) if (member instanceof StyledLine) member.dispose();
         node.obj = made;
         this._register(item, made, scope.local);
@@ -399,7 +401,15 @@ export class MarkupSlide extends Slide {
         if (previous === null) return;
         const lines = textLines(obj);
         let shift: number;
-        if (lines && previous.lines) {
+        if (node.flowY && 'buff' in attrs) {
+          // A buff of its own is the space after the block before, as below: gives it: between two
+          // texts, from the font's reach of the last line to that of the first, plus the lines' gap.
+          const buff = Number(attrs.buff);
+          if (lines && previous.lines) {
+            const lead = Math.max(0, previous.lines.interline - previous.lines.ascent - previous.lines.descent);
+            shift = previous.lines.last - previous.lines.descent - lead - buff - lines.ascent - lines.first;
+          } else shift = previous.bottom - buff - obj.getTop()[1];
+        } else if (lines && previous.lines) {
           // Between the two texts' lines, the gap of two lines of type and the extra part of the
           // paragraph spacing, by the larger interline: of one size, their baselines are
           // `paragraphSpacing` interlines apart; a heading keeps its descent clear without spreading
@@ -443,9 +453,17 @@ export class MarkupSlide extends Slide {
         const delta: [number, number, number] = [now[0] - made[0], now[1] - made[1], 0];
         if (delta[0] || delta[1]) for (const loose of looseOutlines(obj)) loose.shift(delta);
       }
-      // An element in the flow passes on the column it was given, though it sets its own x or alignment;
-      // one placed out of it starts a column at its left edge, less the indent a list gave it.
-      node.next = { left: node.flowY ? column : obj.getLeft()[0] - indent, bottom: obj.getBottom()[1], lines: textLines(obj), tight: node.tight };
+      // The next block goes on at this one's left edge, less the indent a list gave it: aligned with
+      // it, as left-aligned:#LAST.text aligns this one. One that flows down with an x of its own
+      // stands in a column of its own and passes on the column it was given.
+      const ownColumn = node.flowY && 'x' in attrs;
+      node.next = {
+        left: ownColumn ? column : obj.getLeft()[0] - indent,
+        // A block placed out of the flow starts a column as wide as it says; one in the flow passes on
+        // the width of the column it is in, though it has a width of its own.
+        width: node.flowY ? columnWidth : 'width' in attrs ? Number(attrs.width) + indent : scope.width,
+        bottom: obj.getBottom()[1], lines: textLines(obj), tight: node.tight,
+      };
       if (item instanceof ElementSpec) turn(item, obj);
     }
     // The pairs of elements that arrows and lines join, which blobs follow.

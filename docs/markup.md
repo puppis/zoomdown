@@ -443,7 +443,9 @@ without coordinates flow downward from the top-left margin (or from `flow_top` a
 the slide), each after the block written before it wherever that one is placed: under it, at its
 left edge (text, formulas, listings, tables, charts and groups; pictures, drawings, a block placed
 by its right end or its middle, a `step=-1` caption placed out of the flow and an overlay of the
-block are passed over), lists keeping their bullets in one column. Text with only `x` stands in a
+block are passed over), lists keeping their bullets in one column, `buff=` alone setting the space
+after the block before as `below:` does, and the paragraphs of a column wrapping at the `width` of
+the block placed at its top. Text with only `x` stands in a
 column of its own that the flow fills from where it stands; an explicit `y` or a vertical
 constraint sets the height and keeps the flow's left edge; any other element, or text anchored at
 its center, defaults an omitted axis to zero. `dx` and `dy` shift the final

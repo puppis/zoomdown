@@ -1327,7 +1327,9 @@ export class ASTTransformer {
         throw new MarkupError(`Conflicting ${coordinate} positioning constraints`, item.line);
       }
     }
-    if ('buff' in attrs && !keys.some((key) => key in NEIGHBORS)) throw new MarkupError('buff requires a relative direction', item.line);
+    if ('buff' in attrs && !keys.some((key) => key in NEIGHBORS) && !ASTTransformer._flowsDown(item)) {
+      throw new MarkupError('buff requires a relative direction, or an element that flows down after the block before it (no y nor vertical alignment)', item.line);
+    }
     for (const key of keys.filter((key) => POSITION_REFERENCES.has(key))) {
       const reference = attrs[key];
       if (!reference.startsWith('#') || !IDENTIFIER.test(reference.slice(1))) {
@@ -1341,6 +1343,19 @@ export class ASTTransformer {
         throw new MarkupError('baseline-aligned must reference text, math or code', item.line);
       }
     }
+  }
+
+  /**
+   * Whether the flow sets an element's height, after the block before it: nothing sets its y or a
+   * vertical alignment, and it is no point-defined shape nor, placed by a coordinate, anything but
+   * text anchored off its center.
+   */
+  private static _flowsDown(item: ElementSpec | IncludeSpec | CodeSlideSpec): boolean {
+    const attrs = item.attributes;
+    if ('y' in attrs || 'at' in attrs || Object.keys(attrs).some((key) => VERTICAL_POSITION.has(key) || key in NEIGHBORS)) return false;
+    if (!(item instanceof ElementSpec)) return !('x' in attrs);
+    if (item.kind === 'polyline' || item.kind === 'polygon') return false;
+    return !('x' in attrs) || (TEXT_LIKE.has(item.kind) && attrs.anchor !== 'center');
   }
 
   private static _change(action: StepChange['action'], target: string, attrs: Attributes): StepChange {

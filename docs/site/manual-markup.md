@@ -718,8 +718,9 @@ baselines of two lines of one paragraph), the items of a list written without bl
 interline apart, and a text and any other block (a table, a shape, an image) keep the space two
 paragraphs have between their lines. Two blocks that are not text are `layout.gap` (0.35) apart. Text wraps at that width; images and tables take it unless they say
 otherwise. Nested list items indent. A block without a position goes on after the block written
-before it, wherever that one is placed: under it, at its left edge (its column), wrapping within
-the width left to the right margin. The block before is text, a formula, a listing, a table, a
+before it, wherever that one is placed: under it, at its left edge (its column), wrapping at the
+`width` of the block placed at the column's top, else at the flow's; `buff=` alone sets the space
+after the block before, as `below:` measures it. The block before is text, a formula, a listing, a table, a
 chart or a group, or anything that flowed down; pictures and drawings placed at a point, a block
 placed by its right end or its middle, a `step=-1` caption placed out of the flow and an element
 placed against the next one are passed over. A text block with only `x` stands in a column of its
@@ -744,7 +745,7 @@ omitted coordinate is the flow position, unless `anchor=center`; for any other e
 | `below:#id`, `above:#id`, `left-of:#id`, `right-of:#id` | put the element next to `#id` on that side, centered on it across the other axis, at distance `buff` (`layout.gap` by default); one direction at most. Between two texts, side by side they share the first baseline, and one below the other they are a line apart: the gap between their lines (font ascent and descent, not ink) is the line gap plus `buff` |
 | `left-aligned:#id`, `right-aligned:#id`, `top-aligned:#id`, `bottom-aligned:#id` | align that edge with the edge of `#id` |
 | `baseline-aligned:#id` | align the first baselines; both elements must be text, formulas or listings |
-| `buff` | the distance of a direction; requires one |
+| `buff` | the distance of a direction, or alone, the space after the block before of a block that flows down |
 | `x` or `y` with a reference | overrides the axis the reference leaves centered |
 
 A reference names an element of the same slide and scope that is not a connection or an

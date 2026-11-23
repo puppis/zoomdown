@@ -63,17 +63,24 @@ and goes on under it, at its left edge, with no position of its own.
   the flow (`step=-1`), and an element placed against the one that follows (an overlay written
   before what it marks). The first block of a slide or a group starts the flow at `flow_top`
   and `flow_left`.
-- **Options win, axis by axis**: `x` alone puts the block in a column of its own, which the flow
-  fills from where it stands, as before, not under the block before; a horizontal alignment
-  (`left-aligned:#q`) keeps it under the block before, aligned with `#q`. A `y` or a vertical
+- **Options win, axis by axis**: the default is as if `below` and `left-aligned` the block before
+  were written, and what is written replaces either. `x` alone puts the block in a column of its
+  own, which the flow fills from where it stands, as before, not under the block before; a
+  horizontal alignment (`left-aligned:#q`, `left-aligned:#LAST.text`) keeps it under the block
+  before, aligned with `#q`, and the blocks after it go on at that edge. A `y` or a vertical
   alignment sets its height, and its left edge stays the flow's. A direction (`below:#x`,
   `right-of:#x`) or `at=` places it entirely, as before: `below:#x` alone still centers it under
-  `#x`.
+  `#x`; add `left-aligned:#LAST` to keep the left edge.
+- **Spacing**: `buff=` alone sets the space after the block before, as `below:` measures it, so
+  `{buff=0.45}` places a block where `{below:#LAST left-aligned:#LAST buff=0.45}` did whenever
+  the block before is the one `#LAST` names (not a picture or an include, which the flow passes
+  over). At the start of the flow it does nothing.
 - **Lists stay lists**: the items line up under one another, nested items indent, and the blocks
   that continue an item go under its text. `left-aligned:#LAST.text` puts the next block under the
   text of the item before instead.
-- **Wrapping**: a paragraph that flows in a column right of the flow's left edge wraps within the
-  width left to the right margin (or to its group's width), unless it has a `width`.
+- **Wrapping**: a column is as wide as the block that starts it says: the paragraphs that flow in
+  it without a `width` of their own wrap at the `width` of the block placed at its top, or at the
+  flow's when that block has none.
 
 `flow_top` and `flow_left` on a slide move the start of its flow: `flow_top` is the distance from
 the slide's top edge to the top of the first flowing block, `flow_left` the distance from its left
