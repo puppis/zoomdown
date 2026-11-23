@@ -77,6 +77,28 @@ Spaces after a line end without `\\` collapse into one, as Markdown has it. In a
 text, so a continuation aligned under it is not indented. An indent leaves a quarter of the width
 at least.
 
+Spaces that keep their width indent the start of any line, a paragraph's or a list item's
+first one too: `&nbsp;`, `&ensp;` and `&emsp;`, or the characters themselves (a no-break, en or
+em space), and a formula of space alone. A phantom is as wide as what it hides, so
+`$\phantom{\Rightarrow}$ or` under `$\Rightarrow$ either` starts *or* under *either*; other space,
+such as `$\quad$` or `$\hspace{2em}$`, is as wide as it is typeset. A plain space after such a
+start counts, as between words. Plain spaces after a list marker still only separate it from
+the text. A list of pseudocode keeps its indentation:
+
+```zoomdown {height=4}
+::: slide {#pseudocode width=16 height=4}
+
+::: {.group x=-7 y=1.7 anchor=top-left width=14 font_size=22}
+1. **if** ($a < b$) {
+2. &emsp;&emsp;forward $M$ to $L_i$
+3. } **else** {
+4. $\phantom{MM}$find $p$ and forward $M$ to $p$
+5. }
+:::
+
+:::
+```
+
 ## Columns
 
 Pieces of text align across lines with `&&` between them, as in a table without rules or in a

@@ -1,8 +1,8 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { Rectangle, type Group, type Mobject } from 'manim-web';
+import { Rectangle, VMobject, renderLatexToSVG, type Group, type Mobject } from 'manim-web';
 import { MarkupParser } from '../src/markup/parser';
 import { GroupSpec, type ElementSpec, type InlineSpan } from '../src/markup/ast';
-import { LayoutConfig } from '../src/markup/renderer';
+import { LayoutConfig, MarkupRenderer } from '../src/markup/renderer';
 import { buildTable } from '../src/markup/table';
 import { StyledLine, inlineRows, inlineWords, layoutParagraph, textLines, textResolutionScale, type MathPiece } from '../src/markup/text';
 import { CANVAS_CALLS, element, installFakeCanvas, slide } from './helpers/slides';
@@ -262,5 +262,89 @@ describe('no-break spaces before a formula at the start of a line', () => {
     const space = 0.5 * ((28 * 4) / 3 / 96);
     expect(indented[1] - plain[1]).toBeCloseTo(5 * space, 6);
     expect(indented[2] - plain[2]).toBeCloseTo(5 * space, 6);
+  });
+});
+
+describe('space that keeps its width at the start of a list item or a paragraph', () => {
+  /** One em of prose `points` large, in logical units, and a character of the fake font, spaces of every kind too: half of it. */
+  const emOf = (points: number) => ((points * 4) / 3) / 96;
+  /**
+   * Where a text starts to draw: the left of its lines of text with ink and of its formulas, in
+   * the slide (a line of text reports its edges in its group otherwise, until it is drawn).
+   */
+  const inkLeft = (obj: Mobject) => Math.min(...obj.getFamily()
+    .filter((part) => (part instanceof StyledLine ? part.runs.some((run) => run.text.trim()) : part instanceof VMobject && part.hasOwnPoints()))
+    .map((part) => part.getBounds().min.x));
+  /** How far in from its marker each item of a list in a group starts to draw. */
+  const offsets = (obj: Mobject) => ((obj as Group).children as Group[]).map((item) => {
+    const [label, body] = item.children as Mobject[];
+    return inkLeft(body) - label.getLeft()[0];
+  });
+
+  it('indent a list item by its width, &nbsp;, em and en spaces and a formula of space alone, and not plain spaces after the marker', async () => {
+    const s = await slide('', [
+      '::: {.group #algorithm x=-7.5 y=3 anchor=top-left width=15 font_size=24}',
+      '1. **if** ($a < b$) {',
+      '2. &nbsp;&nbsp;&nbsp;&nbsp;forward $M$ to $L_i$',
+      '3. } **else** {',
+      '4. $\\phantom{MMM}$find $p$',
+      '5.   forward $M$ to $R$',
+      '6.  forward',
+      '7.    forward',
+      ':::',
+    ].join('\n'));
+    const [column, ...rest] = offsets(element(s, 'algorithm'));
+    const space = emOf(24) / 2;
+    // The phantom takes the room of what it hides, as a formula is wide: by its ink.
+    const phantom = (await new MarkupRenderer().mathPiece('MMM', '#000000', 24)).advance;
+    expect(phantom).toBeGreaterThan(3 * emOf(24));
+    expect(rest.map((offset) => offset - column)).toEqual([4 * space, 0, phantom, 2 * space, space, 0].map((expected) => expect.closeTo(expected, 6)));
+  });
+
+  it('keep their width at the start of a paragraph placed by its left, a formula of space alone too', async () => {
+    const s = await slide('', [
+      'Upon receiving {#plain x=0 y=2 anchor=left font_size=28}',
+      '&nbsp;&nbsp;&nbsp;&nbsp;Upon receiving {#kept x=0 y=1 anchor=left font_size=28}',
+      '$\\quad$Upon receiving {#quad x=0 y=0 anchor=left font_size=28}',
+    ].join('\n\n'));
+    const start = inkLeft(element(s, 'plain'));
+    expect(inkLeft(element(s, 'kept')) - start).toBeCloseTo(4 * (emOf(28) / 2), 6);
+    expect(inkLeft(element(s, 'quad')) - start).toBeCloseTo(emOf(28), 6);
+    // Each starts where it is placed, its space first.
+    for (const id of ['plain', 'kept', 'quad']) expect(element(s, id).getLeft()[0]).toBeCloseTo(0, 6);
+  });
+
+  it('leave a block whose first line starts with ink where it was, its other lines indented as before', async () => {
+    const s = await slide('', 'Upon m: \\\\\n&nbsp;&nbsp;if new: \\\\\n$\\quad$forward {#p x=0 y=0 anchor=left font_size=28}');
+    const [first, second, third] = ((element(s, 'p') as Group).children as Mobject[]).map(inkLeft);
+    expect(element(s, 'p').getLeft()[0]).toBeCloseTo(first, 9);
+    expect(second - first).toBeCloseTo(2 * (emOf(28) / 2), 6);
+    expect(third - first).toBeCloseTo(emOf(28), 6);
+  });
+
+  it('count a plain space after them, so that a phantom under what it hides lines the next word up', async () => {
+    const s = await slide('', '$\\Rightarrow$ either \\\\\n$\\phantom{\\Rightarrow}$ or {#p x=0 y=0 anchor=left font_size=28}');
+    /** Where the words of a line start: its first line of text with ink. */
+    const words = (line: Mobject) => Math.min(...line.getFamily().filter((part) => part instanceof StyledLine && part.runs.some((run) => run.text.trim())).map((part) => part.getBounds().min.x));
+    const [either, or] = ((element(s, 'p') as Group).children as Mobject[]).map(words);
+    // A line that starts with a formula is placed by its ink, one that starts with text by its
+    // canvas, which has 2 pixels around the ink; the lead takes the place of the text's ink.
+    expect(or - either).toBeCloseTo(2 / (96 * textResolutionScale()), 6);
+  });
+
+  it('gives a phantom the width of what it hides, other space the width it is typeset to, and a formula with ink the width of its ink as before', async () => {
+    const renderer = new MarkupRenderer();
+    const typeset = async (latex: string) => ((await renderLatexToSVG(latex, { displayMode: true })).width / 1000) * emOf(24);
+    const advance = async (latex: string) => (await renderer.mathPiece(latex, '#000000', 24)).advance;
+    for (const latex of ['\\phantom{MMM}', '\\hphantom{x+y}', '\\quad', '\\hspace{2em}']) expect((await renderer.mathPiece(latex, '#000000', 24)).blank, latex).toBe(true);
+    expect(await advance('\\phantom{MMM}')).toBeCloseTo(await advance('MMM'), 9);
+    expect(await advance('\\hphantom{x+y}')).toBeCloseTo(await advance('x+y'), 9);
+    expect(await advance('\\phantom{\\Rightarrow}')).toBeCloseTo(await advance('\\Rightarrow'), 9);
+    for (const latex of ['\\quad', '\\hspace{2em}']) expect(await advance(latex), latex).toBeCloseTo(await typeset(latex), 9);
+    expect(await advance('\\quad')).toBeCloseTo(emOf(24), 9);
+    const ink = await renderer.mathPiece('MMM', '#000000', 24);
+    expect(ink.blank).toBeUndefined();
+    expect(ink.advance).toBeCloseTo(ink.mobject.getWidth(), 9);
+    expect(ink.advance).toBeLessThan(await typeset('MMM'));
   });
 });

@@ -484,6 +484,8 @@ export interface MathPiece {
   advance: number;
   ascent: number;
   descent: number;
+  /** A formula of space alone (`\phantom{MMM}`, `\quad`): it draws nothing, and its advance is its typeset width. */
+  blank?: boolean;
 }
 
 /** Makes the mobject of an inline formula at a size and a color. */
@@ -629,7 +631,10 @@ interface ShapedLine {
   parts: Array<{ kind: 'text'; line: StyledLine } | { kind: 'math'; piece: MathPiece }>;
   advance: number;
   keepIndent: boolean;
-  /** The width of the spaces that keep it (`&nbsp;`, `&emsp;`, …) at the start of the line, which have no ink. */
+  /**
+   * The width of what starts the line without ink: spaces that keep their width (`&nbsp;`, `&emsp;`,
+   * …) and formulas of space alone (`$\phantom{MMM}$`).
+   */
   lead: number;
 }
 
@@ -681,15 +686,22 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       }
     }
     const first = words[0]?.[0];
-    // A line is placed by its ink, which its leading kept spaces do not have; it keeps their width.
+    // A line is placed by its ink, which its leading kept spaces and formulas of space alone do not
+    // have; it keeps their width, and that of a plain space after them, which then separates words
+    // as anywhere in a line (plain spaces that start the line are gone already).
     let lead = 0;
-    const opening = segments(words)[0];
-    if (opening && 'prose' in opening) {
-      for (const atom of opening.prose) {
-        const spaces = KEPT_SPACES.exec(atom.content)?.[0];
-        if (!spaces) break;
+    opening: for (const segment of segments(words)) {
+      if ('math' in segment) {
+        const piece = await mathFor(segment.math);
+        if (!piece.blank) break;
+        lead += piece.advance;
+        continue;
+      }
+      for (const atom of segment.prose) {
+        const spaces = isBlank(atom.content) ? atom.content : KEPT_SPACES.exec(atom.content)?.[0];
+        if (!spaces) break opening;
         lead += measureRun({ text: spaces, bold: atom.bold, italic: atom.italic, color: defaultColor, mono: atom.kind === 'code', href: null }, px, fontFamily).advance / pxPerWorld;
-        if (spaces.length < atom.content.length) break;
+        if (spaces.length < atom.content.length) break opening;
       }
     }
     return { parts, advance, keepIndent: Boolean(first && first.kind === 'code' && !first.content.trim()), lead };
@@ -813,6 +825,7 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
   }
   const visible = lines.filter((line): line is ShapedLine => line !== null);
   if (!visible.length) return new Group();
+  const preserveIndent = visible.some((line) => line.keepIndent);
   // Place parts along each line's baseline at y = 0, then measure extents.
   const lineGroups: Array<Group | null> = [];
   // Where a line that starts with kept spaces is placed from: where it starts to draw, less their width.
@@ -843,13 +856,21 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       }
     }
     // Its parts that draw: kept spaces alone before a formula are a part with no ink, whose box
-    // stands at the pen and would count their width twice.
+    // stands at the pen and would count their width twice, and a formula of space alone has none.
     let start: number | null = null;
     if (line.lead) {
-      const inked = line.parts.filter((part) => part.kind === 'math' || part.line.runs.some((run) => run.text.trim()));
+      const inked = line.parts.filter((part) => (part.kind === 'math' ? !part.piece.blank : part.line.runs.some((run) => run.text.trim())));
       if (inked.length) start = Math.min(...inked.map((part) => (part.kind === 'math' ? part.piece.mobject : part.line).getLeft()[0])) - line.lead;
     }
     const group = new Group(...members);
+    // The line's box starts with its lead, so that a block whose lines all have one, a list item's
+    // or a paragraph's single line, keeps it: a blank line of text, a box of transparent pixels,
+    // marks where it starts. A block whose lines keep the indent of their code has none.
+    if (start !== null && !preserveIndent && group.getLeft()[0] > start + 1e-9) {
+      const mark = new StyledLine({ runs: [{ text: '\u00a0', bold: false, italic: false, color: defaultColor, mono: false, href: null }], fontSize, fontFamily, baseColor: defaultColor });
+      mark.placeOrigin(start + mark.originInset, 0);
+      group.add(mark);
+    }
     const width = maxWidth - indents[number];
     let factor = 1;
     if (line.advance > width + 1e-6) {
@@ -862,7 +883,6 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
   }
   const box = lineBox(ascent, descent);
   const spacing = box.spacing;
-  const preserveIndent = visible.some((line) => line.keepIndent);
   const present = lineGroups.filter((g): g is Group => g !== null);
   const commonLeft = Math.min(...present.map((group) => group.getLeft()[0]));
   lineGroups.forEach((group, number) => {

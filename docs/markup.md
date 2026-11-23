@@ -142,8 +142,10 @@ underlines it without making it a link; inside a paragraph a `[text]{…}` span 
 `underline` (a strike or an underline covers the spaces between its words, not inline math). HTML
 entities give spaces Markdown would collapse: `&nbsp;` (a space that never breaks a line), `&ensp;`,
 `&emsp;` (an em) and `&thinsp;` keep their width, so `WWW,&nbsp;&nbsp;Wikipedia` sets two spaces
-between the words, at the start of a line too; only plain spaces, tabs and line ends separate words
-and collapse.
+between the words, at the start of a line too, a paragraph's or a list item's first one included,
+as entities or as the characters themselves; only plain spaces, tabs and line ends separate words
+and collapse. A formula of space alone indents a line it starts: `$\phantom{X}$` is as wide as
+`$X$`, and `$\quad$` or `$\hspace{2em}$` as wide as it is typeset.
 
 The interline, the distance between the baselines of two lines of a paragraph, is the font's reach
 above and below the baseline plus `layout.lineGap` (0.12). `layout.lineHeight` replaces it with a

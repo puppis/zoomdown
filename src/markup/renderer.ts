@@ -35,7 +35,7 @@ import {
   polylinePoints, span,
 } from './ast';
 import { MarkupParser } from './parser';
-import { MONOSPACE, baselineY, layoutParagraph, markLines, textLines, type MathPiece } from './text';
+import { MONOSPACE, PX_PER_WORLD_BASE, baselineY, layoutParagraph, markLines, textLines, type MathPiece } from './text';
 import { layoutCode } from './code';
 import { DEFAULT_TEXT_FONT } from '../fonts';
 import { LatexError, applyLatexColors, compileMacros, expandMacros, latexErrorOf, plainMacros, preprocessLatex, type Macro, type MacroDefinition } from './latex';
@@ -146,6 +146,10 @@ export class LayoutConfig {
 }
 
 export type AnyMobject = Mobject & { markupBaselineFraction?: number };
+/** A formula that draws nothing, with the width MathJax typeset it to, in thousandths of an em. */
+type TypesetMobject = Mobject & { markupTypesetWidth?: number };
+/** Whether a formula draws anything. */
+const hasInk = (tex: Mobject) => tex.getFamily().some((member) => member instanceof VMobject && member.hasOwnPoints());
 
 /** Hand-drawn options of an element with `sketch=true`, or null when it is drawn crisply. */
 export function sketchOptions(
@@ -848,6 +852,19 @@ export class MarkupRenderer {
     (obj as AnyMobject).markupBaselineFraction = fraction;
     const top = obj.getTop()[1];
     const bottom = obj.getBottom()[1];
+    // A formula of space alone has no ink to measure. A phantom takes the room of what it hides,
+    // which a formula's ink measures, so that `$\phantom{X}$` is as wide as `$X$`; other space,
+    // `\quad` or `\hspace{…}`, is as wide as it is typeset, in thousandths of its em, the prose's.
+    const typeset = (obj as TypesetMobject).markupTypesetWidth;
+    if (typeset !== undefined) {
+      let advance = (typeset / 1000) * (((fontSize * 4) / 3) / PX_PER_WORLD_BASE);
+      const shown = latex.replace(/\\h?phantom(?![A-Za-z])/g, '');
+      if (shown !== latex) {
+        const visible = await this._mathTex(shown, color, fontSize).catch(() => null);
+        if (visible && hasInk(visible)) advance = visible.getWidth();
+      }
+      return { mobject: obj, advance, ascent: 0, descent: 0, blank: true };
+    }
     return { mobject: obj, advance: obj.getWidth(), ascent: Math.max(0, top), descent: Math.max(0, -bottom) };
   }
 
@@ -860,11 +877,13 @@ export class MarkupRenderer {
     const tex = new MathTex({ latex: processed, color, fontSize: fontSize * MATH_SIZE_RATIO, ...macros });
     await tex.waitForRender();
     // MathJax shows an error in place of the formula, which the engine leaves out: nothing is drawn.
-    if (!tex.getFamily().some((member) => member instanceof VMobject && member.hasOwnPoints())) {
+    if (!hasInk(tex)) {
       const source = Array.isArray(processed) ? processed.join('') : processed;
       const rendered = await renderLatexToSVG(source, { displayMode: true, ...macros }).catch(() => null);
       const message = rendered && latexErrorOf(rendered.svgString);
       if (message) throw new LatexError(`${message} in $${Array.isArray(latex) ? latex[latex.length - 1] : latex}$`);
+      // Without an error it is space alone, `\phantom{MMM}` or `\quad`: its typeset width, in thousandths of an em.
+      if (rendered) (tex as TypesetMobject).markupTypesetWidth = rendered.width;
     }
     applyLatexColors(tex);
     return tex;
