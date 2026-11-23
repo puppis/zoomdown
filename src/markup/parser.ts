@@ -389,6 +389,74 @@ export class MarkupParser {
     return stepValue(attrs, 'step', line);
   }
 
+  /**
+   * An include, and the line under its tile when it has one: `verdict="…"` becomes a text of the
+   * slide written right after the include, `#target-verdict`.
+   */
+  private _include(items: SlideItem[], target: string, attrs: Attributes, line: number): void {
+    items.push(new IncludeSpec(target, attrs, line));
+    if (!('verdict' in attrs)) return;
+    const source = attrs.verdict;
+    delete attrs.verdict;
+    let content: InlineSpan[];
+    try {
+      content = this.parseInlineSpans(source, line);
+    } catch (error) {
+      throw new MarkupError(String((error as Error).message).replace(/^Line \d+: /, ''), line);
+    }
+    const verdict = new ElementSpec(`${target}-verdict`, 'text', content, {}, '', line);
+    verdict.verdictOf = target;
+    items.push(verdict);
+  }
+
+  /**
+   * The includes of a `::: tiles {cols=N}` container, placed as a grid: the first where the
+   * container says (its position), each next one right of the one before, top-aligned, and the
+   * first of each row below the first of the row before (below its verdict when it has one), all
+   * `buff` apart (`layout.gap` by default) and as large as the container's `width` or `height`
+   * says unless they say it themselves. Without `cols`, the tiles make one row.
+   */
+  private _tiles(members: SlideItem[], attrs: Attributes, line: number): SlideItem[] {
+    const POSITION = [...LAYOUT].filter((key) => !['width', 'height', 'angle', 'class', 'buff'].includes(key));
+    for (const key of Object.keys(attrs)) {
+      if (key !== 'cols' && key !== 'buff' && key !== 'width' && key !== 'height' && !POSITION.includes(key)) {
+        throw new MarkupError(`Tiles take cols, buff, width, height and a position, not ${key}=`, line);
+      }
+    }
+    const cols = 'cols' in attrs ? Number(attrs.cols) : Infinity;
+    if (!(Number.isInteger(cols) && cols >= 1) && cols !== Infinity) throw new MarkupError('cols must be a positive integer', line);
+    const includes = members.filter((item): item is IncludeSpec => item instanceof IncludeSpec);
+    for (const item of members) {
+      if (!(item instanceof IncludeSpec) && !(item instanceof ElementSpec && item.verdictOf !== null)) {
+        throw new MarkupError('Tiles contain includes only, each with its verdict if it has one', 'line' in item ? item.line : line);
+      }
+    }
+    if (!includes.length) throw new MarkupError('Tiles contain at least one include', line);
+    const verdictOf = (target: string) => members.find((item): item is ElementSpec => item instanceof ElementSpec && item.verdictOf === target);
+    includes.forEach((item, i) => {
+      const own = item.attributes;
+      for (const key of POSITION) {
+        if (key in own) throw new MarkupError(`Tiles place their includes: give the position (${key}=) to the tiles container`, item.line);
+      }
+      if (!('width' in own) && !('height' in own)) {
+        if ('width' in attrs) own.width = attrs.width;
+        else if ('height' in attrs) own.height = attrs.height;
+      }
+      if ('buff' in attrs && i > 0) own.buff = attrs.buff;
+      if (i === 0) {
+        for (const key of POSITION) if (key in attrs) own[key] = attrs[key];
+      } else if (i % cols !== 0) {
+        own['right-of'] = `#${includes[i - 1].target}`;
+        own['top-aligned'] = `#${includes[i - 1].target}`;
+      } else {
+        const head = includes[i - cols];
+        own.below = `#${verdictOf(head.target)?.id ?? head.target}`;
+        own['left-aligned'] = `#${head.target}`;
+      }
+    });
+    return members;
+  }
+
   private _body(lines: string[], firstLine: number, prefix = ''): SlideItem[] {
     const items: SlideItem[] = [];
     let index = 0;
@@ -437,7 +505,7 @@ export class MarkupParser {
           const attrs = parseAttributes(match[2], line, { commas: true });
           if (!('id' in attrs)) throw new MarkupError('A PDF child requires an explicit #id', line);
           const { id, ...placement } = attrs;
-          items.push(new IncludeSpec(id, { ...placement, src: match[1] }, line));
+          this._include(items, id, { ...placement, src: match[1] }, line);
         } else if (kind === 'import') {
           throw new MarkupError('File imports are resolved before parsing: load the document through markupDeck or expandImports', line);
         } else if (kind === 'subslide' && !value.trim().startsWith('#')) {
@@ -449,7 +517,7 @@ export class MarkupParser {
           const match = /^#?([\w.-]+)(.*)$/s.exec(value);
           if (!match) throw new MarkupError('Expected a referenced #id', line);
           const attrs = parseAttributes(match[2], line, { commas: true });
-          if (kind === 'include' || kind === 'subslide') items.push(new IncludeSpec(match[1], attrs, line));
+          if (kind === 'include' || kind === 'subslide') this._include(items, match[1], attrs, line);
           else {
             const extra = kind === 'show' ? 'enter' : 'exit';
             const takes = `${kind} directives take step=N and optionally run_time, lag and ${extra}`;
@@ -510,8 +578,15 @@ export class MarkupParser {
       }
       const container = CONTAINER.exec(lines[index]);
       if (container) {
+        const tiles = /^tiles(?:\s+(\{.*\}))?\s*$/.exec(container[1]);
+        if (tiles) {
+          const end = MarkupParser._containerEnd(lines, index);
+          items.push(...this._tiles(this._body(lines.slice(index + 1, end), line + 1, prefix), tiles[1] ? parseAttributes(tiles[1], line) : {}, line));
+          index = end + 1;
+          continue;
+        }
         const kind = /^\{\s*\.(element|group)(?:\s|\})/.exec(container[1])?.[1];
-        if (!kind) throw new MarkupError('Only ::: {.element ...} and ::: {.group ...} containers are supported inside slides', line);
+        if (!kind) throw new MarkupError('Only ::: {.element ...}, ::: {.group ...} and ::: tiles containers are supported inside slides', line);
         const attrs = parseAttributes(container[1], line);
         const end = MarkupParser._containerEnd(lines, index);
         if (kind === 'group') {
@@ -772,12 +847,18 @@ export class ASTTransformer {
         let last: string | null = null;
         // The step of the item before, which the next one counts from (sequential steps, on the slide itself).
         let previous = 0;
+        // The item written before, which an include without a position goes right of when it is an include.
+        let before: SlideItem | null = null;
         const where = scope ? 'in its group' : 'on its slide';
         for (const item of items) {
           if (item instanceof ElementSpec) {
             applyStyles(item, styles);
             if (item.id === 'LAST') throw new MarkupError(RESERVED_LAST, item.line);
             resolveLast(item, last, where);
+            // A verdict hangs under its tile, unless its style places it.
+            if (item.verdictOf !== null && !Object.keys(item.attributes).some((key) => key === 'x' || key === 'y' || key === 'at' || POSITION_REFERENCES.has(key))) {
+              item.attributes.below = `#${item.verdictOf}`;
+            }
             if (!scope) previous = this._sequence(item, previous);
             if (!IDENTIFIER.test(item.id) || elements.has(item.id)) {
               throw new MarkupError(`Invalid or duplicate element ID ${JSON.stringify(item.id)} in ${slide.id}`, item.line);
@@ -794,11 +875,17 @@ export class ASTTransformer {
               for (const key of INHERITED_ATTRS) if (key in item.attributes) passed[key] = item.attributes[key];
               visit(item.items, item.id, passed);
             }
-            if (!CONNECTIONS.has(item.kind) && !ATTACHMENTS.has(item.kind)) last = item.id;
+            // #LAST names what was written: a verdict is part of its include.
+            if (!CONNECTIONS.has(item.kind) && !ATTACHMENTS.has(item.kind) && item.verdictOf === null) {
+              last = item.id;
+              before = item;
+            }
           } else if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
             if (scope) throw new MarkupError('Groups cannot contain includes or subslides', item.line);
             applyStyles(item, styles);
             resolveLast(item, last, where);
+            if (item instanceof IncludeSpec && before instanceof IncludeSpec) ASTTransformer._row(item, before);
+            before = item;
             previous = this._sequence(item, previous);
             this._checkChild(item, slide, slides, parents);
             // An include is referenced by the id of the slide it includes.
@@ -888,6 +975,7 @@ export class ASTTransformer {
         if (scope === '') for (const [id, item] of framed) if (!members.has(id)) members.set(id, item);
         positionOrder(members);
       }
+      ASTTransformer._verdictSteps(slide);
       this.plan(slide);
     }
     const complete = new Set<string>();
@@ -934,6 +1022,8 @@ export class ASTTransformer {
   private _sequence(item: SlideItem, previous: number): number {
     const sequential = this.options.steps === 'sequential';
     if (item instanceof ElementSpec) {
+      // A verdict takes the click after its tile's visit, whatever the steps.
+      if (item.verdictOf !== null) return previous;
       const attrs = item.attributes;
       if (!sequential) {
         if (attrs.step === '+' || attrs.hide === '+') throw new MarkupError(RELATIVE_STEP, item.line);
@@ -964,6 +1054,49 @@ export class ASTTransformer {
       item.attributes.step = String(step);
     }
     return item.step;
+  }
+
+  /**
+   * An include written right after another one, without a position of its own, goes on the same
+   * row: right of it, top-aligned, `buff` apart (`layout.gap` by default), and as large as it when
+   * it gives no size.
+   */
+  private static _row(item: IncludeSpec, before: IncludeSpec): void {
+    const attrs = item.attributes;
+    if (Object.keys(attrs).some((key) => key === 'x' || key === 'y' || key === 'at' || POSITION_REFERENCES.has(key))) return;
+    attrs['right-of'] = `#${before.target}`;
+    attrs['top-aligned'] = `#${before.target}`;
+    if (!('width' in attrs) && !('height' in attrs)) {
+      if ('width' in before.attributes) attrs.width = before.attributes.width;
+      else if ('height' in before.attributes) attrs.height = before.attributes.height;
+    }
+  }
+
+  /**
+   * The verdict of a tile appears at the click after its visit. The visits without a step are
+   * numbered first, as the plan numbers them (after the last numbered step, in source order), and
+   * written down, so that the verdicts' own clicks do not move them.
+   */
+  private static _verdictSteps(slide: SlideSpec): void {
+    const verdicts = slide.items.filter((item): item is ElementSpec => item instanceof ElementSpec && item.verdictOf !== null);
+    if (!verdicts.length) return;
+    let last = 0;
+    for (const item of slide.items) {
+      if (item instanceof ElementSpec) {
+        if (item.verdictOf !== null) continue;
+        last = Math.max(last, elementStep(item.attributes, item.line));
+        if ('hide' in item.attributes) last = Math.max(last, stepValue(item.attributes, 'hide', item.line));
+      } else if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
+        if ('step' in item.attributes) last = Math.max(last, stepValue(item.attributes, 'step', item.line));
+      } else last = Math.max(last, item.step);
+    }
+    const visits = new Map<string, number>();
+    for (const item of slide.items) {
+      if (!(item instanceof IncludeSpec) && !(item instanceof CodeSlideSpec)) continue;
+      if (!('step' in item.attributes)) item.attributes.step = String((last += 1));
+      if (item instanceof IncludeSpec) visits.set(item.target, Number(item.attributes.step));
+    }
+    for (const verdict of verdicts) verdict.attributes.step = String((visits.get(verdict.verdictOf as string) as number) + 1);
   }
 
   /** The attributes an element of this kind takes, or null when it takes any (an artwork or element of the deck's own). */

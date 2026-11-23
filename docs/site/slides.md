@@ -68,6 +68,57 @@ same thing; `subslide` also places [code-authored children](#code-authored-child
 An include referring to an **undefined** slide draws a red placeholder rather than failing, and
 the placeholder is never a stop, so a deck keeps running while a slide is still unwritten.
 
+## Rows and grids of tiles
+
+An include written right after another include, with no position of its own (no `x`, `y`, `at`
+nor relative constraint), goes on the same row: right of it, top-aligned, `buff` apart
+(`layout.gap` by default), and as wide as it unless it gives a `width` or `height` itself.
+Directives, arrows and lines written between them do not break the row; text does.
+
+```markdown
+[[include: #bitcoin x=-7.7 y=0.9 anchor=top-left width=2.6]]
+[[include: #double-spending buff=0.6]]
+[[include: #pow buff=0.6]]
+```
+
+A `::: tiles` container lays its includes out as a grid of `cols` columns: the first tile where
+the container's position says, each next one right of the one before, and the first of each row
+under the first of the row before (under its verdict when it has one), all `buff` apart and as
+large as the container's `width` or `height` unless they say it themselves. Without `cols` the
+tiles make one row. The includes inside take no position of their own.
+
+```markdown
+::: tiles {cols=3 x=-7 y=3 anchor=top-left width=3.5 buff=0.5}
+[[include: #mining]]
+[[include: #forks]]
+[[include: #attacks]]
+[[include: #rewards]]
+:::
+```
+
+### The line under a tile
+
+`verdict="…"` on an include writes a line under its tile, centered, wrapped at the tile's width,
+that appears at the click after the tile's visit: what the child taught, once it has been seen.
+It is a text of the parent, `#child-verdict`, styled by the deck's `verdict` style (color, size,
+`width`, and a position that replaces the place under the tile); its text may hold emphasis and
+formulas. The visits of a slide whose tiles have verdicts are numbered first, so the verdicts'
+clicks come after them; with [sequential steps](fragments.html#steps-that-follow-the-source) the
+verdicts stand outside the count, the element after an include counting from its visit.
+
+```markdown
+[[include: #bitcoin x=-7.7 y=0.9 anchor=top-left width=2.6 verdict="a public ledger of transactions"]]
+[[include: #double-spending buff=0.6 verdict="a shared ledger is not enough"]]
+```
+
+### Captions sized by their tile
+
+With `captionSize` under `layout:`, a caption of a tile (a `step=-1` text, see
+[Before the visit](fragments.html#before-the-visit-step-1)) without a `font_size` of its own or of
+a class is that many points of the parent, whatever the tile's width: in a 16-wide child shown 2.6
+wide, `captionSize: 26` makes it 26 × 16 / 2.6 = 160 points of the child. The style of its role
+(`heading`, `h1`) gives way to it.
+
 ## Visit order
 
 Children without `step` are visited in source order after all numbered steps of the parent.

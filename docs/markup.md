@@ -41,6 +41,13 @@ every construct of this page live, each next to the listing that produced it; op
   (one dimension keeps the child's aspect, two letterbox it), `angle` rotates it in radians.
   Without `width` and `height` the viewport is at most six units wide. `[[subslide: #id]]` is the
   same as `[[include: #id]]`; with a class name it places a code-authored child.
+- An include written right after another include, without a position, goes right of it,
+  top-aligned, `buff` apart (`layout.gap` by default) and as wide; `::: tiles {cols=N}` places its
+  includes as a grid from the container's position, `width` and `buff`. `verdict="…"` on an
+  include writes a line under its tile (`#child-verdict`, the `verdict` style), wrapped at the
+  tile's width and shown at the click after the visit. `layout.captionSize` sizes the `step=-1`
+  captions of a tile that have no `font_size` of their own or of a class: that many points of the
+  parent, whatever the tile's width.
 - `title="…"` names the slide in the outline; otherwise its first heading, then its ID, is used.
 - An include referring to an undefined slide draws a red placeholder rather than failing; the
   placeholder is never a stop, so the deck keeps running while the slide is still unwritten.
@@ -685,7 +692,7 @@ A deck is black text on a white canvas unless `background` and `layout.color` sa
 Prose is set in the bundled Latin Modern Roman and code in Latin Modern Mono (the LaTeX text and
 typewriter faces) unless `layout.font` or `layout.codeFont` name other families, and formula sizes
 are calibrated so that a `font_size` means the same em for text, code and math. `layout` takes `fontSize`, `headingSize`, `codeSize`, `color`, `font`, `codeFont`, `margin`,
-`gap`, `lineGap`, `lineHeight` (unset; see [Text](#text)), `paragraphSpacing`, `listIndent`, `animationTime`, `defaultSlideSize`, `textAnchor` and `steps` (`explicit`, or `sequential`: see [Fragments and click steps](#fragments-and-click-steps)). `presenter` takes
+`gap`, `lineGap`, `lineHeight` (unset; see [Text](#text)), `paragraphSpacing`, `listIndent`, `animationTime`, `defaultSlideSize`, `textAnchor`, `steps` (`explicit`, or `sequential`: see [Fragments and click steps](#fragments-and-click-steps)) and `captionSize` (unset). `presenter` takes
 `transitionTime`, `transition` (`zoom` or `cut`), `padding`, `pauseOnEntry`, `pauseOnReturn`, `showSlideBorders`,
 `slideBorderColor`, `slideBorderWidth`, `showSlideGrid`, `revealOnEntry` (default true: children fade in
 when first entered; false shows them from the start) and `reversePlayback` (default true: the

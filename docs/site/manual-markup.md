@@ -131,6 +131,19 @@ and the relative references, plus:
 | `angle` | radians | 0 | rotation of the child's viewport |
 | `step` | integer ≥ 1 | after the numbered steps, in source order | the step at which the child is visited; children without a step are visited after the last numbered one, in order |
 | `start_here`, `only_this`, `return_to_parent`, `skip_return`, `transition`, `preview` | as for slides | | the same flags, set from the parent's side |
+| `verdict` | inline text | none | a line under the tile, `#child-verdict`, centered and wrapped at the tile's width, shown at the click after the visit; styled by the `verdict` style, which may place it elsewhere (includes only) |
+
+An include written right after another include (directives, arrows and lines between them do not
+count) without a position of its own goes right of it, top-aligned, `buff` apart (`layout.gap` by
+default), and as wide as it unless it gives a size. A `::: tiles {cols=N}` container places the
+includes inside it as a grid: the first where the container's position says (`x`, `y`, `at`,
+`anchor`, `dx`, `dy`, the relative references), each next one right of the one before, the first
+of each row under the first of the row before (under its verdict when it has one), all `buff`
+apart and as large as the container's `width` or `height` unless they give a size; the includes
+take no position of their own, and without `cols` the tiles make one row. With
+`layout.captionSize`, a `step=-1` text of the child without a `font_size` of its own or of a class
+is that many points of the parent: its size is `captionSize` times the child's width over the
+tile's. See [Rows and grids of tiles](slides.html#rows-and-grids-of-tiles).
 
 A child may be included once in the whole deck. A `[[subslide: Name]]` with a class name takes
 the same attributes; the class comes from the module `classes` names in the front matter or
@@ -1056,6 +1069,7 @@ matter in the same way.
 | `defaultSlideSize` | `[16, 9]` | the canvas of slides without `width` or `height` |
 | `textAnchor` | `left-baseline` | the default anchor of text (`top-left` or `center` possible) |
 | `steps` | `explicit` | `sequential`: an element without `step` takes the step of the element before it, and `step=+` and `hide=+` count from it; see [Sequential steps](#sequential-steps) |
+| `captionSize` | unset | the size of the captions of tiles (`step=-1` text without a `font_size` of its own or of a class), in points of the parent, whatever the tile's width |
 
 ### presenter
 

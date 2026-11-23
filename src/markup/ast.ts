@@ -80,6 +80,9 @@ export class ElementSpec {
     readonly list: ListItem | null = null,
   ) {}
 
+  /** The slide whose tile this text is the verdict of (`verdict=` on an include), or null. */
+  verdictOf: string | null = null;
+
   /** Explicit local coordinates, interpreted using the element's anchor. */
   get position(): [number, number, number] | null {
     if (!('x' in this.attributes) && !('y' in this.attributes)) return null;
@@ -431,7 +434,7 @@ export function normalizeStyles(styles: Record<string, string | Record<string, u
 /** The style roles an item receives automatically, most generic first. */
 export function styleRoles(item: ElementSpec | IncludeSpec | CodeSlideSpec): string[] {
   if (!(item instanceof ElementSpec)) return ['include'];
-  if (item.kind === 'text') return item.level ? ['heading', `h${item.level}`] : ['body'];
+  if (item.kind === 'text') return item.level ? ['heading', `h${item.level}`] : item.verdictOf ? ['body', 'verdict'] : ['body'];
   if (SHAPES.has(item.kind)) return ['shape', item.kind];
   if (item.kind === 'icon') return ['shape', 'icon', `icon-${item.source}`];
   if (CONNECTIONS.has(item.kind)) return ['connection', item.kind];
@@ -448,6 +451,14 @@ export function styledKeys(item: ElementSpec | IncludeSpec | CodeSlideSpec): Rea
   return STYLED_KEYS.get(item) ?? new Set();
 }
 
+/** The attributes each element took from the styles of its role (`heading`, `body`, `h1`, …), no class setting them. */
+const ROLE_KEYS = new WeakMap<object, Set<string>>();
+
+/** The attributes `item` took from the style of its role (`heading`, `body`, …), not from a class or itself. */
+export function roleStyledKeys(item: ElementSpec | IncludeSpec | CodeSlideSpec): ReadonlySet<string> {
+  return ROLE_KEYS.get(item) ?? new Set();
+}
+
 export function applyStyles(item: ElementSpec | IncludeSpec | CodeSlideSpec, styles: StyleSheet): void {
   const attrs = item.attributes;
   // Styles may be applied more than once (when parsing and when validating): the keys add up.
@@ -457,6 +468,7 @@ export function applyStyles(item: ElementSpec | IncludeSpec | CodeSlideSpec, sty
   delete attrs.class;
   const layers: Attributes[] = [];
   for (const role of styleRoles(item)) if (styles[role]) layers.push(styles[role]);
+  const roles = layers.length;
   for (const name of classes) {
     const style = styles[name];
     if (!style) throw new MarkupError(`Unknown style class .${name}`, item.line);
@@ -464,11 +476,15 @@ export function applyStyles(item: ElementSpec | IncludeSpec | CodeSlideSpec, sty
   }
   const merged: Attributes = {};
   for (const layer of layers) Object.assign(merged, layer);
+  const fromClasses = new Set(layers.slice(roles).flatMap((layer) => Object.keys(layer)));
+  const fromRoles = ROLE_KEYS.get(item) ?? new Set<string>();
+  ROLE_KEYS.set(item, fromRoles);
   for (const [key, value] of Object.entries(merged)) {
     if (key === 'id' || key === 'class') continue;
     if (!(key in attrs)) {
       attrs[key] = value;
       styled.add(key);
+      if (!fromClasses.has(key)) fromRoles.add(key);
     }
   }
 }

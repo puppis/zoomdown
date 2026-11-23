@@ -129,6 +129,7 @@ and the options' folders come before the front matter's.
 | `defaultSlideSize` | `[16, 9]` | canvas of slides without `width`/`height` |
 | `textAnchor` | `left-baseline` | default anchor of text (`top-left` or `center` possible) |
 | `steps` | `explicit` | `sequential`: steps follow the source, an element without `step` taking the step of the element before it and `step=+` the click after, see [Steps that follow the source](fragments.html#steps-that-follow-the-source) |
+| `captionSize` | unset | size of the captions of tiles (`step=-1` text without a `font_size` of its own or of a class), in points of the parent whatever the tile's width, see [Captions sized by their tile](slides.html#captions-sized-by-their-tile) |
 
 ## presenter
 

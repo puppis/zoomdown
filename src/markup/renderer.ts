@@ -99,6 +99,12 @@ export interface LayoutConfigOptions {
    * after the element's own.
    */
   steps?: StepMode;
+  /**
+   * The size of the captions of tiles (`step=-1` text without a `font_size` of its own or of a
+   * class), in points of the parent the tile stands in, whatever the tile's width. Unset by
+   * default: captions take the size of their kind.
+   */
+  captionSize?: number;
 }
 
 /** Defaults for deterministic text flow within fixed slide coordinates. */
@@ -121,6 +127,7 @@ export class LayoutConfig {
   readonly defaultSlideSize: readonly [number, number];
   readonly textAnchor: 'left-baseline' | 'top-left' | 'center';
   readonly steps: StepMode;
+  readonly captionSize: number | null;
 
   constructor(options: LayoutConfigOptions = {}) {
     this.fontSize = options.fontSize ?? 28;
@@ -143,6 +150,8 @@ export class LayoutConfig {
     this.textAnchor = options.textAnchor ?? 'left-baseline';
     this.steps = options.steps ?? 'explicit';
     if (this.steps !== 'explicit' && this.steps !== 'sequential') throw new Error('steps must be explicit or sequential');
+    this.captionSize = options.captionSize ?? null;
+    if (this.captionSize !== null && !(Number.isFinite(this.captionSize) && this.captionSize > 0)) throw new Error('captionSize must be finite and positive');
     resolveSize(null, null, this.defaultSlideSize);
     if (!TEXT_ANCHORS.has(this.textAnchor)) throw new Error('textAnchor must be left-baseline, top-left or center');
     for (const key of ['fontSize', 'headingSize', 'codeSize', 'animationTime'] as const) {
@@ -1038,12 +1047,12 @@ export class MarkupRenderer {
     return tex;
   }
 
-  /** Create one local mobject; connections follow anchor layout. */
-  async make(element: ElementSpec, maxWidth: number): Promise<Mobject> {
+  /** Create one local mobject; connections follow anchor layout. `fontSize` wins over the element's own size (a caption's, from its tile). */
+  async make(element: ElementSpec, maxWidth: number, options: { fontSize?: number } = {}): Promise<Mobject> {
     const attrs = element.attributes;
     const defaultSize = element.kind === 'code' ? this.layout.codeSize
       : element.level ? this.layout.headingSize / (1 + 0.12 * Math.max(0, element.level - 1)) : this.layout.fontSize;
-    const size = numberValue(attrs, 'font_size', element.line, defaultSize) as number;
+    const size = options.fontSize ?? numberValue(attrs, 'font_size', element.line, defaultSize) as number;
     const width = numberValue(attrs, 'width', element.line, maxWidth) as number;
     const color = attrs.color ? parseColor(attrs.color) : this.layout.color;
     let obj: Mobject;

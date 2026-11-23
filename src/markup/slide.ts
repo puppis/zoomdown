@@ -21,7 +21,7 @@ import {
   ATTACHMENTS, CONNECTIONS, EFFECT_NAMES, ENTER_STYLES, EXIT_STYLES, NEIGHBORS, TEXT_LIKE, VERTICAL_POSITION,
   ActionSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, MarkupDocument, MarkupError, NextSpec,
   SkipNextSpec, SlideItem, SlideSpec, StepChange, childKey, connectionEnd, numberValue, parseAt, parseColor, parseTremble, positionTargets,
-  elementStep,
+  elementStep, roleStyledKeys,
   stepValue,
 } from './ast';
 import { LatexError, type MacroDefinition } from './latex';
@@ -130,6 +130,8 @@ export class MarkupSlide extends Slide {
   readonly flowTop: number;
   /** The distance from the slide's left edge to the left edge of its flow (`flow_left`, the layout margin by default). */
   readonly flowLeft: number;
+  /** The width of the tile that shows this slide in its parent, in the parent's units, or null for a slide no parent includes. */
+  tileWidth: number | null = null;
 
   constructor(spec: SlideSpec, options: { renderer: MarkupRenderer; locate?: (line: number) => SourceLocation }) {
     const heading = spec.items.find((item): item is ElementSpec => item instanceof ElementSpec && item.level > 0);
@@ -268,7 +270,10 @@ export class MarkupSlide extends Slide {
         explicit = 'x' in item.attributes || 'y' in item.attributes;
         position = [Number(item.attributes.x ?? 0), Number(item.attributes.y ?? 0), 0];
       } else {
-        obj = item instanceof GroupSpec ? await this._buildGroup(item, scope.width) : await located(item.line, () => this.renderer.make(item, Math.max(scope.width - indent, 0.5)));
+        // A verdict wraps at its tile's width, unless it has a width of its own.
+        const tile = item.verdictOf !== null && viewportOf ? this._tile(items, item.verdictOf, viewportOf) : null;
+        const wrap = tile ? tile.getWidth() : Math.max(scope.width - indent, 0.5);
+        obj = item instanceof GroupSpec ? await this._buildGroup(item, scope.width) : await located(item.line, () => this.renderer.make(item, wrap, { fontSize: this._captionSize(item) }));
         if (list?.marker) textColumns[list.depth] = (obj as ListItemMobject).markupTextColumn ?? layout.listIndent;
         this._register(item, obj, scope.local);
         elements.set(item.id, item);
@@ -349,7 +354,8 @@ export class MarkupSlide extends Slide {
           break;
         }
       }
-      if (node.item.attributes.step !== '-1' || node.flowY) before.push(node);
+      // A verdict hangs under its tile, out of the flow.
+      if ((node.item.attributes.step !== '-1' || node.flowY) && !(node.item instanceof ElementSpec && node.item.verdictOf !== null)) before.push(node);
     }
     // An offset applies once the item is placed by flow, coordinates or references, and before
     // anything placed against it, which so sees it where it is drawn.
@@ -390,7 +396,7 @@ export class MarkupSlide extends Slide {
       // wraps at that width, less its indent, or at the flow's.
       const columnWidth = previous ? previous.width : scope.width;
       if (node.flowX && item instanceof ElementSpec && item.kind === 'text' && !('width' in attrs) && Math.abs(columnWidth - scope.width) > 1e-9) {
-        const made = await located(item.line, () => this.renderer.make(item, Math.max(columnWidth - indent, 0.5)));
+        const made = await located(item.line, () => this.renderer.make(item, Math.max(columnWidth - indent, 0.5), { fontSize: this._captionSize(item) }));
         for (const member of node.obj.getFamily()) if (member instanceof StyledLine) member.dispose();
         node.obj = made;
         this._register(item, made, scope.local);
@@ -522,6 +528,24 @@ export class MarkupSlide extends Slide {
   }
 
   /** Record an element's object for its id, its source line and its link; a second call replaces it in place. */
+  /** The viewport of the tile of slide `target` among `items`, or null when it is not included there. */
+  private _tile(items: SlideItem[], target: string, viewportOf: (index: number, item: IncludeSpec | CodeSlideSpec) => Mobject): Mobject | null {
+    const index = items.findIndex((other) => other instanceof IncludeSpec && other.target === target);
+    return index < 0 ? null : viewportOf(index, items[index] as IncludeSpec);
+  }
+
+  /**
+   * The size of a caption of this slide's tile (a `step=-1` text), when `layout.captionSize` sets
+   * one and the caption has no `font_size` of its own or of a class: that many points of the
+   * parent, the tile's width standing for the slide's.
+   */
+  private _captionSize(item: ElementSpec): number | undefined {
+    const size = this.renderer.layout.captionSize;
+    if (size === null || this.tileWidth === null || item.kind !== 'text' || item.attributes.step !== '-1') return undefined;
+    if ('font_size' in item.attributes && !roleStyledKeys(item).has('font_size')) return undefined;
+    return (size * this.width) / this.tileWidth;
+  }
+
   private _register(item: ElementSpec, obj: Mobject, local: Map<string, Mobject>): void {
     if (item.attributes.href) LINKED_OBJECTS.set(obj, item.attributes.href);
     SOURCE_OBJECTS.set(obj, this.locate(item.line));
@@ -819,6 +843,7 @@ export class SlideBuilder {
           angle: numberValue(attrs, 'angle', item.line, 0) ?? 0,
         });
         if (parent instanceof MarkupSlide) parent.components.set(childKey(index, item), child);
+        if (child instanceof MarkupSlide) child.tileWidth = width ?? ((height as number) * child.width) / child.height;
         if (child.viewport) SOURCE_OBJECTS.set(child.viewport as unknown as Mobject, child.placement);
       }
     }

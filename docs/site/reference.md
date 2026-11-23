@@ -16,7 +16,7 @@ This page is the short reference, one line per construct. [The markup language, 
 | Syntax | Purpose |
 | --- | --- |
 | `::: slide {#id attrs} … :::` | a slide; attrs: `title`, `width`, `height`, `flow_top`, `flow_left`, `start_here`, `only_this`, `return_to_parent`, `skip_return`, `transition`, `preview` |
-| `[[include: #slide, placement, step, start_here, only_this, return_to_parent, skip_return, transition, preview]]` | a child slide placed in this one; `subslide: #id` is the same |
+| `[[include: #slide, placement, step, verdict, start_here, only_this, return_to_parent, skip_return, transition, preview]]` | a child slide placed in this one; `subslide: #id` is the same; without a position, right after another include, it goes on its row; `verdict="…"` writes a line under the tile ([Rows and grids of tiles](slides.html#rows-and-grids-of-tiles)) |
 | `[[subslide: ClassName, placement, step, …]]` | a code-authored child ([Code-authored slides](code-slides.html)) |
 | `[[pdf: file.pdf #id, placement, step, preview, …]]` | a PDF placed in the slide: its pages as children, cut through one after the other ([PDFs, flat decks and forests](documents.html#a-pdf-inside-a-slide)) |
 | `[[import: path.zd]]` | splices a Markdown file in, between slides or inside one |
@@ -25,6 +25,7 @@ This page is the short reference, one line per construct. [The markup language, 
 | `::: notes {step=N} … :::` | the presenter's notes of a slide, or of one step, shown on the companion tablet only ([Presenter notes](slides.html#presenter-notes)) |
 | `::: {.element attrs} … :::` | attributes for one paragraph, heading, image, formula, table or listing |
 | `::: {.group #id attrs} … :::` | a group of elements in local coordinates |
+| `::: tiles {cols, buff, width, height, placement} … :::` | includes laid out as a grid of tiles ([Rows and grids of tiles](slides.html#rows-and-grids-of-tiles)) |
 | `<!-- … -->` | discarded |
 
 Attributes are space- or comma-separated `key=value` pairs; quoted values may contain spaces and
