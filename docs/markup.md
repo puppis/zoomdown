@@ -440,9 +440,13 @@ is `center`, for groups their `origin`. `anchor=` chooses another point: `center
 `left`, `right`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, or `left-baseline` /
 `right-baseline` for text-like elements (`layout.textAnchor` changes the text default). Blocks
 without coordinates flow downward from the top-left margin (or from `flow_top` and `flow_left` on
-the slide); text with only `x` keeps flowing at
-that edge, while an explicit `y` or a vertical constraint leaves the flow; any other element, or
-text anchored at its center, defaults an omitted axis to zero. `dx` and `dy` shift the final
+the slide), each after the block written before it wherever that one is placed: under it, at its
+left edge (text, formulas, listings, tables, charts and groups; pictures, drawings, a block placed
+by its right end or its middle, a `step=-1` caption placed out of the flow and an overlay of the
+block are passed over), lists keeping their bullets in one column. Text with only `x` stands in a
+column of its own that the flow fills from where it stands; an explicit `y` or a vertical
+constraint sets the height and keeps the flow's left edge; any other element, or text anchored at
+its center, defaults an omitted axis to zero. `dx` and `dy` shift the final
 position of any positioned element. `angle` then turns it by that many radians, counterclockwise,
 about its anchor (the one `anchor=` or `at=` names, else the default above): the flow keeps the
 room of the upright element, later references see the box around it as drawn, and arrows and

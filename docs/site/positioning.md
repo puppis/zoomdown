@@ -33,9 +33,47 @@ by its lines, as in LaTeX: two paragraphs (separated by a blank line) have their
 `layout.paragraphSpacing` interlines apart (1.5 by default), a little more than two lines of one
 paragraph; the items of a list written without blank lines are one interline apart; a text and
 any other block (a table, a shape, an image) keep the space two paragraphs have between their
-lines. Two blocks that are not text are `layout.gap` apart. Text with only `x` keeps flowing at that left edge; an explicit `y`, an `at=` or a
-vertical constraint leaves the flow. Elements that leave the flow do not reserve space, so later
-blocks move up. A center-anchored element with one missing coordinate defaults that axis to zero.
+lines. Two blocks that are not text are `layout.gap` apart. A center-anchored element with one
+missing coordinate defaults that axis to zero.
+
+### After a placed block
+
+A block without a position goes on after the block written before it, wherever that one is
+placed: under it, at its left edge, with the spacing above. So a column needs a position only at
+its top, and everything written after it follows, without `below:#LAST left-aligned:#LAST`:
+
+```zoomdown {height=4}
+::: slide {#after-placed width=16 height=4}
+
+The right column starts here {#head x=1 y=1.4 width=6.5 color=BLUE}
+
+and goes on under it, at its left edge, with no position of its own.
+
+- a list keeps its bullets in one column,
+  - and its nested items indented.
+
+:::
+```
+
+- **What counts as the block before**: text, a formula, a listing, a table, a chart or a group,
+  however it is placed, or anything that flowed down before. Pictures and drawings placed at a
+  point (images, icons, shapes, includes), which stand beside or behind the text, are passed over;
+  so are a block placed by its right end or its middle (`anchor=right-baseline`,
+  `at=center:(…)`: a corner link, a centered label), a caption of the parent's view placed out of
+  the flow (`step=-1`), and an element placed against the one that follows (an overlay written
+  before what it marks). The first block of a slide or a group starts the flow at `flow_top`
+  and `flow_left`.
+- **Options win, axis by axis**: `x` alone puts the block in a column of its own, which the flow
+  fills from where it stands, as before, not under the block before; a horizontal alignment
+  (`left-aligned:#q`) keeps it under the block before, aligned with `#q`. A `y` or a vertical
+  alignment sets its height, and its left edge stays the flow's. A direction (`below:#x`,
+  `right-of:#x`) or `at=` places it entirely, as before: `below:#x` alone still centers it under
+  `#x`.
+- **Lists stay lists**: the items line up under one another, nested items indent, and the blocks
+  that continue an item go under its text. `left-aligned:#LAST.text` puts the next block under the
+  text of the item before instead.
+- **Wrapping**: a paragraph that flows in a column right of the flow's left edge wraps within the
+  width left to the right margin (or to its group's width), unless it has a `width`.
 
 `flow_top` and `flow_left` on a slide move the start of its flow: `flow_top` is the distance from
 the slide's top edge to the top of the first flowing block, `flow_left` the distance from its left

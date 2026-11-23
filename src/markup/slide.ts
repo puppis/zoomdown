@@ -20,12 +20,12 @@ import { BRIDGE_PATHS, findBridges, withBridges, type BridgePath } from '../brid
 import {
   ATTACHMENTS, CONNECTIONS, EFFECT_NAMES, ENTER_STYLES, EXIT_STYLES, NEIGHBORS, TEXT_LIKE, VERTICAL_POSITION,
   ActionSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, MarkupDocument, MarkupError, NextSpec,
-  SkipNextSpec, SlideItem, SlideSpec, StepChange, childKey, connectionEnd, numberValue, parseAt, parseColor, parseTremble, positionOrder, positionTargets,
+  SkipNextSpec, SlideItem, SlideSpec, StepChange, childKey, connectionEnd, numberValue, parseAt, parseColor, parseTremble, positionTargets,
   elementStep,
   stepValue,
 } from './ast';
 import { LatexError, type MacroDefinition } from './latex';
-import { textLines, type TextLines } from './text';
+import { StyledLine, textLines, type TextLines } from './text';
 import { ASTTransformer } from './parser';
 import {
   LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, elementAnchor, looseOutlines, placeRelative, referenced, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject,
@@ -35,6 +35,45 @@ import {
 export type SlideNamespace = Record<string, unknown>;
 
 /** Build what the item on `line` draws: an error in one of its formulas names that line. */
+/** An element, an include or a subslide of one scope, as the layout places it. */
+interface FlowNode {
+  index: number;
+  item: ElementSpec | IncludeSpec | CodeSlideSpec;
+  obj: Mobject;
+  /** The indent a list gives it, right of its column. */
+  indent: number;
+  explicit: boolean;
+  position: [number, number, number] | null;
+  /** Placed at its own points or at a coordinate's point, which the flow does not change. */
+  fixed: boolean;
+  textLike: boolean;
+  anchor: string;
+  tight: boolean;
+  /** Whether the flow sets its horizontal and its vertical position: no option of its own does. */
+  flowX: boolean;
+  flowY: boolean;
+  /** The element the flow places it after, or null at the start of the flow. */
+  after: FlowNode | null;
+  /** What the flow knows of it once it is placed: its column's left edge, its bottom and its lines. */
+  next: { left: number; bottom: number; lines: TextLines | null; tight: boolean } | null;
+}
+
+/** The blocks the flow goes on after wherever they are placed; pictures and drawings it passes over. */
+const FLOW_BLOCKS = new Set(['text', 'math', 'code', 'table', 'chart', 'group']);
+
+/** The anchors on an element's left side, by which a block placed out of the flow starts a column. */
+const LEFT_ANCHORS = new Set(['left', 'top-left', 'bottom-left', 'left-baseline', 'origin']);
+
+/** Whether an element is placed by an anchor of its own off its left side, named by anchor= or at=: it stands aside. */
+function placedAside(item: ElementSpec | IncludeSpec | CodeSlideSpec): boolean {
+  const named = ('at' in item.attributes ? parseAt(item.attributes.at, item.line).anchor : null) ?? item.attributes.anchor;
+  return named !== undefined && named !== null && !LEFT_ANCHORS.has(named);
+}
+
+/** The options that set an element's horizontal position (a direction sets both), and its vertical one. */
+const SETS_X = (key: string) => key in NEIGHBORS || key === 'left-aligned' || key === 'right-aligned';
+const SETS_Y = (key: string) => key in NEIGHBORS || key === 'top-aligned' || key === 'bottom-aligned' || key === 'baseline-aligned';
+
 async function located<T>(line: number, build: () => Promise<T>): Promise<T> {
   try {
     return await build();
@@ -199,21 +238,20 @@ export class MarkupSlide extends Slide {
     viewportOf: ((index: number, item: IncludeSpec | CodeSlideSpec) => Mobject) | null,
   ): Promise<void> {
     const layout = this.renderer.layout;
-    let cursor = scope.top;
-    // What the flow placed last: where it ends, and its lines when it is text. Paragraphs follow
-    // one another with their baselines `layout.paragraphSpacing` interlines apart, as in LaTeX; a
-    // text and any other block keep the space two paragraphs have between their lines; two other
-    // blocks keep `layout.gap`.
-    let previous: { bottom: number; lines: TextLines | null; tight: boolean } | null = null;
+    // What the flow knows of the element it goes on after: where its column starts (its left edge,
+    // less the indent a list gave it), where it ends, and its lines when it is text. Paragraphs
+    // follow one another with their baselines `layout.paragraphSpacing` interlines apart, as in
+    // LaTeX; a text and any other block keep the space two paragraphs have between their lines;
+    // two other blocks keep `layout.gap`.
     const paragraphGap = (lines: TextLines) => Math.max(0, layout.paragraphSpacing * lines.interline - lines.ascent - lines.descent);
     const elements = new Map<string, ElementSpec>();
-    const verticalKeys = new Set([...Object.keys(NEIGHBORS), ...VERTICAL_POSITION, 'at']);
     // Where the text of the last item of each depth starts, right of its marker's left edge: the
     // blocks that continue an item (indented under it in the source) flow under its text.
     const textColumns: number[] = [];
     const pointShapes = ['polyline', 'polygon', 'arc'];
     // Where an element with outlines it does not draw stood when it was made, so that they follow it.
     const madeAt = new Map<Mobject, [number, number, number]>();
+    const nodes: FlowNode[] = [];
     for (const [index, item] of items.entries()) {
       if (item instanceof EventSpec || item instanceof ActionSpec || item instanceof NextSpec || item instanceof SkipNextSpec) continue;
       if (item instanceof ElementSpec && (CONNECTIONS.has(item.kind) || ATTACHMENTS.has(item.kind))) continue;
@@ -232,10 +270,7 @@ export class MarkupSlide extends Slide {
       } else {
         obj = item instanceof GroupSpec ? await this._buildGroup(item, scope.width) : await located(item.line, () => this.renderer.make(item, Math.max(scope.width - indent, 0.5)));
         if (list?.marker) textColumns[list.depth] = (obj as ListItemMobject).markupTextColumn ?? layout.listIndent;
-        if (item.attributes.href) LINKED_OBJECTS.set(obj, item.attributes.href);
-        SOURCE_OBJECTS.set(obj, this.locate(item.line));
-        this.elements.set(item.id, obj);
-        scope.local.set(item.id, obj);
+        this._register(item, obj, scope.local);
         elements.set(item.id, item);
         if (looseOutlines(obj).length) madeAt.set(obj, obj.getCenter() as [number, number, number]);
         if (obj instanceof IframeHost) obj.slide = this;
@@ -254,71 +289,67 @@ export class MarkupSlide extends Slide {
         }
       }
       const attrs = item.attributes;
-      const flows = !Object.keys(attrs).some((key) => verticalKeys.has(key));
-      const anchor = elementAnchor(item, layout.textAnchor);
+      const keys = Object.keys(attrs);
       const textLike = item instanceof ElementSpec && TEXT_LIKE.has(item.kind);
-      const tightItem = item instanceof ElementSpec && Boolean(item.list?.tight);
-      const flowPlacement = () => {
-        obj.moveTo([scope.left + indent + obj.getWidth() / 2, cursor - obj.getHeight() / 2, 0]);
-        if (previous === null) return;
-        const lines = textLines(obj);
-        let shift: number;
-        if (lines && previous.lines) {
-          // Between the two texts' lines, the gap of two lines of type and the extra part of the
-          // paragraph spacing, by the larger interline: of one size, their baselines are
-          // `paragraphSpacing` interlines apart; a heading keeps its descent clear without spreading
-          // the paragraph after it. The items of a tight list, with no blank line between them,
-          // follow one another as lines.
-          const spacing = previous.tight && tightItem ? 1 : layout.paragraphSpacing;
-          const lead = Math.max(0, previous.lines.interline - previous.lines.ascent - previous.lines.descent, lines.interline - lines.ascent - lines.descent);
-          const gap = (spacing - 1) * Math.max(previous.lines.interline, lines.interline) + lead;
-          shift = previous.lines.last - previous.lines.descent - gap - lines.ascent - lines.first;
-        } else if (lines) shift = previous.bottom - paragraphGap(lines) - lines.ascent - lines.first;
-        else if (previous.lines) shift = previous.lines.last - previous.lines.descent - paragraphGap(previous.lines) - obj.getTop()[1];
-        else shift = previous.bottom - layout.gap - obj.getTop()[1];
-        obj.shift([0, shift, 0]);
-      };
-      const advance = () => {
-        previous = { bottom: obj.getBottom()[1], lines: textLines(obj), tight: tightItem };
-        cursor = previous.bottom - layout.gap;
-      };
-      if (!explicit) {
-        flowPlacement();
-        if (flows) advance();
-      } else if (item instanceof ElementSpec && pointShapes.includes(item.kind) && item.position === null) {
-        // Already at its own coordinates.
-      } else if (textLike && anchor !== 'center') {
-        // Text keeps its flow position on an omitted axis; the named anchor lands on the given one
-        // (a nested list item keeps its indentation to the right of the given x).
-        flowPlacement();
-        for (const [key, axis] of [['x', 0], ['y', 1]] as const) {
-          if (key in attrs) {
-            const delta: [number, number, number] = [0, 0, 0];
-            delta[axis] = Number(attrs[key]) + (axis === 0 ? indent : 0) - anchorPoint(obj, anchor)[axis];
-            obj.shift(delta);
-          }
-        }
-        if (!('y' in attrs) && flows) advance();
-      } else {
-        // The anchor lands on the given point, an omitted axis defaulting to zero.
-        const point = anchorPoint(obj, anchor);
-        const target = position as [number, number, number];
-        obj.shift([target[0] - point[0], target[1] - point[1], 0]);
-      }
+      const anchor = elementAnchor(item, layout.textAnchor);
+      // Point-defined shapes stand at their points, and an element placed by a coordinate that is no
+      // text (or text anchored at its center) at its anchor's point, an omitted axis at zero: the
+      // flow places neither. Anything else takes from the flow each axis no option sets.
+      const fixed = item instanceof ElementSpec && pointShapes.includes(item.kind) && item.position === null && explicit;
+      const flowing = !fixed && (!explicit || (textLike && anchor !== 'center'));
+      nodes.push({
+        index, item, obj, indent, explicit, position, fixed, textLike, anchor, tight: Boolean(list?.tight),
+        flowX: flowing && !('x' in attrs) && !('at' in attrs) && !keys.some(SETS_X),
+        flowY: flowing && !('y' in attrs) && !('at' in attrs) && !keys.some(SETS_Y),
+        after: null, next: null,
+      });
     }
-    // Elements and, at the top level, includes are placed relative to one another in one order:
-    // an include is a reference by the id of the slide it includes, and its frame is what it measures.
-    const placed = new Map<string, ElementSpec | IncludeSpec>(elements);
-    const frames = new Map<IncludeSpec | CodeSlideSpec, Mobject>();
-    if (viewportOf) {
-      for (const [index, item] of items.entries()) {
-        if (!(item instanceof IncludeSpec || item instanceof CodeSlideSpec)) continue;
-        frames.set(item, viewportOf(index, item));
-        if (item instanceof IncludeSpec && !placed.has(item.target)) {
-          placed.set(item.target, item);
-          scope.local.set(item.target, frames.get(item) as Mobject);
+    // A reference names an element or, at the top level and when no element has that id, an include
+    // by the slide it shows; code-authored children are no references.
+    const named = new Map<string, FlowNode>();
+    for (const node of nodes) if (node.item instanceof ElementSpec) named.set(node.item.id, node);
+    for (const node of nodes) {
+      if (!(node.item instanceof IncludeSpec) || named.has(node.item.target)) continue;
+      named.set(node.item.target, node);
+      scope.local.set(node.item.target, node.obj);
+    }
+    const references = (node: FlowNode) => [...positionTargets(node.item)].map((id) => named.get(id)).filter((target): target is FlowNode => target !== undefined);
+    // Whether `from` is placed, through references and the flow, from `to`.
+    const reaches = (from: FlowNode, to: FlowNode): boolean => {
+      const seen = new Set<FlowNode>();
+      const stack = [from];
+      while (stack.length) {
+        const node = stack.pop() as FlowNode;
+        if (node === to) return true;
+        if (seen.has(node)) continue;
+        seen.add(node);
+        stack.push(...references(node), ...(node.after ? [node.after] : []));
+      }
+      return false;
+    };
+    // An element that flows down goes on after the block written before it (text, a formula, a
+    // listing, a table, a chart or a group), however that one is placed, or after whatever flowed
+    // down before it. Pictures and drawings placed out of the flow (images, icons, shapes, includes)
+    // stand beside or behind it and are passed over, as is a block placed by its right end or its
+    // middle (a corner link, a centered label), and a caption of the parent's view (step=-1)
+    // placed out of the flow, shown before the slide is visited, and an element placed against it
+    // (an overlay written before what it marks). An element with an x of its own stands in a column
+    // of its own: it goes on after the last element that flowed down, as the flow always did. An
+    // element whose height is set keeps the flow's left edge: it follows nothing.
+    const before: FlowNode[] = [];
+    for (const node of nodes) {
+      if (node.flowY) {
+        const ownColumn = 'x' in node.item.attributes;
+        for (let k = before.length - 1; k >= 0; k -= 1) {
+          const candidate = before[k];
+          const block = candidate.item instanceof ElementSpec && FLOW_BLOCKS.has(candidate.item.kind);
+          if (!candidate.flowY && (ownColumn || !block || placedAside(candidate.item))) continue;
+          if (reaches(candidate, node)) continue;
+          node.after = candidate;
+          break;
         }
       }
+      if (node.item.attributes.step !== '-1' || node.flowY) before.push(node);
     }
     // An offset applies once the item is placed by flow, coordinates or references, and before
     // anything placed against it, which so sees it where it is drawn.
@@ -340,11 +371,71 @@ export class MarkupSlide extends Slide {
       SOURCE_OBJECTS.set(holder, this.locate(item.line));
       if (item.attributes.href) LINKED_OBJECTS.set(holder, item.attributes.href);
     };
-    for (const identifier of positionOrder(placed)) {
-      const item = placed.get(identifier) as ElementSpec | IncludeSpec;
-      const obj = item instanceof IncludeSpec ? (frames.get(item) as Mobject) : (scope.local.get(identifier) as Mobject);
-      if (item instanceof IncludeSpec) placeRelative(item, obj, scope.local, layout.gap);
-      else placeRelative(item, obj, scope.local, layout.gap, layout.textAnchor);
+    // Each element is placed once what it is placed from is: the elements it references and the one
+    // it flows after, in the order of the source otherwise.
+    const placed = new Set<FlowNode>();
+    while (placed.size < nodes.length) {
+      const node = nodes.find((candidate) => !placed.has(candidate) && references(candidate).every((target) => placed.has(target)) && (!candidate.after || placed.has(candidate.after)));
+      if (!node) {
+        const stuck = nodes.find((candidate) => !placed.has(candidate)) as FlowNode;
+        const name = stuck.item instanceof IncludeSpec ? stuck.item.target : stuck.item instanceof ElementSpec ? stuck.item.id : '?';
+        throw new MarkupError(`Relative positioning cycle involving #${name}`, stuck.item.line);
+      }
+      placed.add(node);
+      const { item, indent } = node;
+      const attrs = item.attributes;
+      const previous = node.after?.next ?? null;
+      const column = previous ? previous.left : scope.left;
+      // Text that flows in a column right of the flow's left edge wraps within the width left to it.
+      if (node.flowX && item instanceof ElementSpec && item.kind === 'text' && !('width' in attrs) && Math.abs(column - scope.left) > 1e-9) {
+        const made = await located(item.line, () => this.renderer.make(item, Math.max(scope.left + scope.width - column - indent, 0.5)));
+        for (const member of node.obj.getFamily()) if (member instanceof StyledLine) member.dispose();
+        node.obj = made;
+        this._register(item, made, scope.local);
+      }
+      const obj = node.obj;
+      const flowPlacement = () => {
+        obj.moveTo([column + indent + obj.getWidth() / 2, (previous ? previous.bottom - layout.gap : scope.top) - obj.getHeight() / 2, 0]);
+        if (previous === null) return;
+        const lines = textLines(obj);
+        let shift: number;
+        if (lines && previous.lines) {
+          // Between the two texts' lines, the gap of two lines of type and the extra part of the
+          // paragraph spacing, by the larger interline: of one size, their baselines are
+          // `paragraphSpacing` interlines apart; a heading keeps its descent clear without spreading
+          // the paragraph after it. The items of a tight list, with no blank line between them,
+          // follow one another as lines.
+          const spacing = previous.tight && node.tight ? 1 : layout.paragraphSpacing;
+          const lead = Math.max(0, previous.lines.interline - previous.lines.ascent - previous.lines.descent, lines.interline - lines.ascent - lines.descent);
+          const gap = (spacing - 1) * Math.max(previous.lines.interline, lines.interline) + lead;
+          shift = previous.lines.last - previous.lines.descent - gap - lines.ascent - lines.first;
+        } else if (lines) shift = previous.bottom - paragraphGap(lines) - lines.ascent - lines.first;
+        else if (previous.lines) shift = previous.lines.last - previous.lines.descent - paragraphGap(previous.lines) - obj.getTop()[1];
+        else shift = previous.bottom - layout.gap - obj.getTop()[1];
+        obj.shift([0, shift, 0]);
+      };
+      if (!node.explicit) flowPlacement();
+      else if (node.fixed) {
+        // Already at its own coordinates.
+      } else if (node.textLike && node.anchor !== 'center') {
+        // Text keeps its flow position on an omitted axis; the named anchor lands on the given one
+        // (a nested list item keeps its indentation to the right of the given x).
+        flowPlacement();
+        for (const [key, axis] of [['x', 0], ['y', 1]] as const) {
+          if (key in attrs) {
+            const delta: [number, number, number] = [0, 0, 0];
+            delta[axis] = Number(attrs[key]) + (axis === 0 ? indent : 0) - anchorPoint(obj, node.anchor)[axis];
+            obj.shift(delta);
+          }
+        }
+      } else {
+        // The anchor lands on the given point, an omitted axis defaulting to zero.
+        const point = anchorPoint(obj, node.anchor);
+        const target = node.position as [number, number, number];
+        obj.shift([target[0] - point[0], target[1] - point[1], 0]);
+      }
+      if (item instanceof ElementSpec) placeRelative(item, obj, scope.local, layout.gap, layout.textAnchor);
+      else placeRelative(item, obj, scope.local, layout.gap);
       offset(item, obj);
       const made = madeAt.get(obj);
       if (made) {
@@ -352,14 +443,10 @@ export class MarkupSlide extends Slide {
         const delta: [number, number, number] = [now[0] - made[0], now[1] - made[1], 0];
         if (delta[0] || delta[1]) for (const loose of looseOutlines(obj)) loose.shift(delta);
       }
+      // An element in the flow passes on the column it was given, though it sets its own x or alignment;
+      // one placed out of it starts a column at its left edge, less the indent a list gave it.
+      node.next = { left: node.flowY ? column : obj.getLeft()[0] - indent, bottom: obj.getBottom()[1], lines: textLines(obj), tight: node.tight };
       if (item instanceof ElementSpec) turn(item, obj);
-    }
-    // Code-authored children are no references, nor is an include whose id an element has; they follow the rest.
-    for (const [item, frame] of frames) {
-      if (item instanceof CodeSlideSpec || placed.get(item.target) !== item) {
-        placeRelative(item, frame, scope.local, layout.gap);
-        offset(item, frame);
-      }
     }
     // The pairs of elements that arrows and lines join, which blobs follow.
     const edges: [string, string][] = [];
@@ -414,6 +501,14 @@ export class MarkupSlide extends Slide {
     }
     if ('opacity' in spec.attributes) applyOpacity(group, Number(spec.attributes.opacity));
     return group;
+  }
+
+  /** Record an element's object for its id, its source line and its link; a second call replaces it in place. */
+  private _register(item: ElementSpec, obj: Mobject, local: Map<string, Mobject>): void {
+    if (item.attributes.href) LINKED_OBJECTS.set(obj, item.attributes.href);
+    SOURCE_OBJECTS.set(obj, this.locate(item.line));
+    this.elements.set(item.id, obj);
+    local.set(item.id, obj);
   }
 
   /** The object an animation directive addresses: a slide element or an included child's viewport. */

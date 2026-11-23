@@ -717,9 +717,15 @@ LaTeX: the baselines of two paragraphs (blocks separated by a blank line) are
 baselines of two lines of one paragraph), the items of a list written without blank lines one
 interline apart, and a text and any other block (a table, a shape, an image) keep the space two
 paragraphs have between their lines. Two blocks that are not text are `layout.gap` (0.35) apart. Text wraps at that width; images and tables take it unless they say
-otherwise. Nested list items indent. A block with an explicit `y`, an `at`, or a vertical
-relative reference (`below`, `above`, `top-aligned`, `bottom-aligned`, `baseline-aligned`)
-leaves the flow; a text block with only `x` keeps its flow line and moves horizontally.
+otherwise. Nested list items indent. A block without a position goes on after the block written
+before it, wherever that one is placed: under it, at its left edge (its column), wrapping within
+the width left to the right margin. The block before is text, a formula, a listing, a table, a
+chart or a group, or anything that flowed down; pictures and drawings placed at a point, a block
+placed by its right end or its middle, a `step=-1` caption placed out of the flow and an element
+placed against the next one are passed over. A text block with only `x` stands in a column of its
+own, filled by the flow from where it stands. An explicit `y` or a vertical alignment sets the
+height, keeping the flow's left edge; a direction (`below`, `above`, `left-of`, `right-of`) or
+`at` places the element entirely.
 
 ### Coordinates and anchors
 
