@@ -230,3 +230,24 @@ describe('names local to their blocks (rule D)', () => {
     expect(() => items('::: graph\ntop (0,0)\n:::')).toThrow(/A node may not be named after an anchor: top/);
   });
 });
+
+describe('a timeline\'s direction and spacing', () => {
+  const at = (body: string, id: string) => byId(items(body), id).attributes;
+
+  it('lets time flow down, left or up, the names at the start of each lifeline', () => {
+    expect(at('::: timeline {#t processes="p q" length=4 direction=down x=-2 y=3 spacing=2}\n:::', 't.q')).toMatchObject({ from: '(0,3)', to: '(0,-1)' });
+    expect(at('::: timeline {#t processes="p q" length=4 direction=down x=-2 y=3}\n:::', 't.p-name').at).toBe('bottom:(-2,3.2)');
+    expect(at('::: timeline {#t processes="p" length=4 direction=left x=2 y=0}\n:::', 't.p')).toMatchObject({ from: '(2,0)', to: '(-2,0)' });
+    expect(at('::: timeline {#t processes="p" length=4 direction=left x=2 y=0}\n:::', 't.p-name').at).toBe('left:(2.2,0)');
+    expect(at('::: timeline {#t processes="p" length=4 direction=up}\n:::', 't.p-name').at).toBe('top:(0,-0.2)');
+    // Events and messages follow the direction.
+    expect(at('::: timeline {#t processes="p q" length=4 direction=down}\np@1 {#e}\n:::', 't.e')).toMatchObject({ x: '0', y: '-1' });
+    expect(() => items('::: timeline {processes="p" length=4 direction=sideways}\n:::')).toThrow(/direction must be right, left, down or up/);
+  });
+
+  it('takes one spacing, or one gap between each two lifelines', () => {
+    const list = items('::: timeline {#t processes="p q r" length=4 spacing="1.2 1.4"}\n:::');
+    expect(['t.p', 't.q', 't.r'].map((id) => byId(list, id).attributes.from)).toEqual(['(0,0)', '(0,-1.2)', '(0,-2.6)']);
+    expect(() => items('::: timeline {processes="p q r" length=4 spacing="1 2 3"}\n:::')).toThrow(/one between each two lifelines \(2 here\)/);
+  });
+});

@@ -262,8 +262,10 @@ anchor after it is an error. The events need no `buff=` on the messages that joi
 A message or an event line ends with an optional `"label"`, style names written bare
 (`marker`, `snap`: the same as `{.marker}`) and `{attributes}` (`{color=RED step=+}`). The block
 takes `processes` (names of letters, digits and `_`), `length` (the time the lifelines span) and
-`width` (their length in units; either one alone gives both), `spacing` (1) between lifelines,
-`x`, `y` (the left end of the top lifeline, time 0), `#id`, and `step` and `hide`, which step it
+`width` (their length in units; either one alone gives both), `spacing` between lifelines (1;
+or a list, one gap between each two: `spacing="1.2 1.4"`), `direction` (time flowing `right`, the
+default, `left`, `down` or `up`, the lifelines following one another across it and each name at the
+start of its lifeline), `x`, `y` (the start of the first lifeline, time 0), `#id`, and `step` and `hide`, which step it
 [as a whole, line by line](fragments.html#blocks-step-as-a-whole). Its parts are elements of the slide
 whose names are [local to the block](#names-local-to-a-block): the lifelines `#id.p`, the names
 `#id.p-name`, an event or a line with an `#e` of its own `#id.e`, and the line `k` of the block

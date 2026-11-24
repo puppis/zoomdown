@@ -270,8 +270,9 @@ default), `label_buff`/`sublabel_buff` (0.1) away, at `font_size` and `sublabel_
 the shape's color unless `label_color`/`sublabel_color` say otherwise; the shape alone places the
 whole and is what connections reach.
 
-`::: timeline {processes="p q" length=10}` draws a space-time diagram: a horizontal lifeline per
-process from `x`, `y` over `width` units, `spacing` apart, names at their left (`$p$`, or a line
+`::: timeline {processes="p q" length=10}` draws a space-time diagram: a lifeline per process from
+`x`, `y` over `width` units, time flowing right or as `direction=left|down|up` says, `spacing`
+apart (one gap or a list), names at their start (`$p$`, or a line
 `p: name`); lines `p@1 -> q@3 "m"` draw messages (`--` a line), `q@2 "label"` events (dots), and
 any other element may write `p@t` for the point of `p` at time `t`; where an event stands there,
 `p@t` names the event (`p@t.top` one of its anchors), so messages and arrows stop at its border. `::: graph {x y scale}` draws

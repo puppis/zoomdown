@@ -601,7 +601,7 @@ export class MarkupParser {
    * (`q@2 "label"`, a dot) and any element, in which `p@t` is the point of process `p` at time `t`.
    */
   private _timeline(body: string[], line: number, attrs: Attributes, prefix: string): SlideItem[] {
-    MarkupParser._drawingAttrs(attrs, ['id', 'processes', 'length', 'width', 'spacing', 'x', 'y', 'step', 'hide'], 'timeline', line, ['lifeline', 'process', 'message', 'event']);
+    MarkupParser._drawingAttrs(attrs, ['id', 'processes', 'length', 'width', 'spacing', 'direction', 'x', 'y', 'step', 'hide'], 'timeline', line, ['lifeline', 'process', 'message', 'event']);
     const processes = (attrs.processes ?? '').trim().split(/\s+/).filter(Boolean);
     if (!processes.length) throw new MarkupError('A timeline needs its processes: processes="p q …"', line);
     for (const [i, name] of processes.entries()) {
@@ -616,9 +616,34 @@ export class MarkupParser {
     if (!(span > 0 && extent > 0)) throw new MarkupError("A timeline's length and width must be positive", line);
     const x0 = numberValue(attrs, 'x', line, 0) as number;
     const y0 = numberValue(attrs, 'y', line, 0) as number;
-    const spacing = numberValue(attrs, 'spacing', line, 1) as number;
+    // Time flows right (the default), left, down or up from x, y, the start of the first lifeline;
+    // the lifelines follow one another across it, `spacing` apart: one gap, or one per pair.
+    const direction = attrs.direction ?? 'right';
+    if (!['right', 'left', 'down', 'up'].includes(direction)) throw new MarkupError('direction must be right, left, down or up', line);
+    const gaps = (attrs.spacing ?? '1').trim().split(/[\s,]+/).map(Number);
+    if (gaps.some((gap) => !Number.isFinite(gap) || gap < 0)) throw new MarkupError('spacing takes nonnegative numbers', line);
+    if (gaps.length !== 1 && gaps.length !== processes.length - 1) {
+      throw new MarkupError(`spacing takes one gap, or one between each two lifelines (${processes.length - 1} here)`, line);
+    }
+    const offsets = processes.map((_, i) => (gaps.length === 1 ? i * gaps[0] : gaps.slice(0, i).reduce((sum, gap) => sum + gap, 0)));
     const number = (value: number) => String(Number(value.toFixed(9)));
-    const point = (process: string, time: number) => `(${number(x0 + (time * extent) / span)},${number(y0 - processes.indexOf(process) * spacing)})`;
+    const at = (process: string, time: number): [number, number] => {
+      const along = (time * extent) / span;
+      const across = offsets[processes.indexOf(process)];
+      if (direction === 'right') return [x0 + along, y0 - across];
+      if (direction === 'left') return [x0 - along, y0 - across];
+      if (direction === 'down') return [x0 + across, y0 - along];
+      return [x0 + across, y0 + along];
+    };
+    const point = (process: string, time: number) => `(${at(process, time).map(number).join(',')})`;
+    // A process's name stands at the start of its lifeline, 0.2 before it.
+    const nameAt = (process: string) => {
+      const [x, y] = at(process, 0);
+      if (direction === 'right') return `right:(${number(x - 0.2)},${number(y)})`;
+      if (direction === 'left') return `left:(${number(x + 0.2)},${number(y)})`;
+      if (direction === 'down') return `bottom:(${number(x)},${number(y + 0.2)})`;
+      return `top:(${number(x)},${number(y - 0.2)})`;
+    };
     const base = `${prefix}${attrs.id ?? `timeline-${line}`}`;
     const who = `(${processes.join('|')})`;
     const time = '(-?\\d+(?:\\.\\d+)?)';
@@ -654,12 +679,11 @@ export class MarkupParser {
       items.push(MarkupParser._part(id, kind, spans, own, role, attrs, at));
     };
     for (const process of processes) {
-      const y = number(y0 - processes.indexOf(process) * spacing);
       if (GROUP_ANCHORS.has(process)) throw new MarkupError(`A process may not be named after an anchor: ${process}`, line);
       make(`${base}.${process}`, 'line', [], this._drawn({ from: point(process, 0), to: point(process, span) }, []), 'lifeline', line);
       (items[items.length - 1] as ElementSpec).localName = process;
       const name = this.parseInlineSpans(names.get(process) ?? `$${process}$`, line);
-      make(`${base}.${process}-name`, 'text', name, this._drawn({ at: `right:(${number(x0 - 0.2)},${y})` }, []), 'process', line);
+      make(`${base}.${process}-name`, 'text', name, this._drawn({ at: nameAt(process) }, []), 'process', line);
       (items[items.length - 1] as ElementSpec).localName = `${process}-name`;
     }
     body.forEach((text, k) => {

@@ -724,10 +724,11 @@ A -> B "3" {bend=20}
 :::
 ```
 
-A timeline draws a horizontal lifeline per process (`processes`, names of letters, digits and
-`_`), time flowing right from `x`, `y` (the left end of the top lifeline) over `width` units for
-`length` units of time (either alone gives both), `spacing` (1) apart, each name at its left
-(`$p$`, or the text of a line `p: name`). Its lines draw messages `p@1 -> q@3` (an arrow; `--` a
+A timeline draws a lifeline per process (`processes`, names of letters, digits and `_`), time
+flowing from `x`, `y` (the start of the first lifeline) over `width` units for `length` units of
+time (either alone gives both), `right` by default or as `direction` says (`left`, `down`, `up`),
+the lifelines `spacing` apart (1, or a list of the gaps between each two), each name at the start
+of its lifeline (`$p$`, or the text of a line `p: name`). Its lines draw messages `p@1 -> q@3` (an arrow; `--` a
 line), events `q@2` (a dot, its label the dot's sublabel), and any element, where `p@t` is the
 point of `p` at time `t`, or, where an event stands, that event (`p@t.top` one of its anchors):
 messages and arrows then end at its border. A graph's lines draw nodes `A (x,y)` (a circle, or the `rectangle`,
