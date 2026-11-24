@@ -1,4 +1,5 @@
 {
-  // Save when the window loses focus, so switching to the browser shows the latest text.
-  "save_on_focus_lost": true
+  // Nothing in this package saves a deck: the browser follows when you save it yourself. (Earlier
+  // versions set this to true; the file stays so that copying the package over one turns it off.)
+  "save_on_focus_lost": false
 }

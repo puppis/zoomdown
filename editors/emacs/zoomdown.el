@@ -16,11 +16,11 @@
 ;; The same three commands are also on C-M-b, C-M-j and C-M-p (Ctrl+Alt+B, J, P), the keys
 ;; of the other editor setups, in deck buffers only; `zoomdown-ctrl-alt-keys' turns that off.
 ;;
-;; plus highlighting of slide containers, directives and attributes, and an
-;; idle autosave (`zoomdown-autosave-mode') so the browser follows your typing.
-;; The preview is started with an editor command for the inverse search: E, or
-;; Alt+click on an element, in the browser brings Emacs to the source line
-;; (through the Emacs server, started if needed; see `zoomdown-inverse-search').
+;; plus highlighting of slide containers, directives and attributes. Nothing here
+;; saves the deck: the browser follows when you save it yourself. The preview is
+;; started with an editor command for the inverse search: E, or Alt+click on an
+;; element, in the browser brings Emacs to the source line (through the Emacs
+;; server, started if needed; see `zoomdown-inverse-search').
 ;;
 ;; Install: (add-to-list 'load-path "/path/to/ZoomDown/editors/emacs")
 ;;          (require 'zoomdown)
@@ -77,14 +77,6 @@ Reads the shell's startup files, where nvm and npm usually add their folders to 
 (defcustom zoomdown-build-directory "build"
   "Folder, relative to the deck, where `zoomdown-build' writes the export."
   :type 'string)
-
-(defcustom zoomdown-autosave t
-  "Whether `zoomdown-mode' saves the buffer after `zoomdown-autosave-delay' idle seconds."
-  :type 'boolean)
-
-(defcustom zoomdown-autosave-delay 1
-  "Idle seconds before an edited deck is saved."
-  :type 'number)
 
 (defcustom zoomdown-ctrl-alt-keys t
   "Whether deck buffers also bind C-M-b, C-M-j and C-M-p to preview, jump and build.
@@ -150,12 +142,12 @@ With `zoomdown-inverse-search', the browser's E key and Alt+click open lines her
 ;;;###autoload
 (defun zoomdown-jump ()
   "Show the stop of the current line in the browser (forward search).
-Saves the buffer first, so the preview shows what you see; the deck must be served
-by `zoomdown-preview' or `zoomdown serve'."
+The deck must be served by `zoomdown-preview' or `zoomdown serve', which show it as
+last saved; with unsaved changes the message says so."
   (interactive)
   (let ((file (or (buffer-file-name) (user-error "Save the deck to a file first")))
-        (line (save-restriction (widen) (line-number-at-pos))))
-    (when (buffer-modified-p) (let ((inhibit-message t)) (save-buffer)))
+        (line (save-restriction (widen) (line-number-at-pos)))
+        (note (if (buffer-modified-p) " (unsaved changes: the preview shows the deck as last saved)" "")))
     (let ((process (start-process-shell-command
                     "zoomdown-jump" " *zoomdown jump*"
                     (format "%s jump %s %d" (zoomdown--command) (shell-quote-argument file) line))))
@@ -164,7 +156,7 @@ by `zoomdown-preview' or `zoomdown serve'."
        (lambda (proc _event)
          (unless (process-live-p proc)
            (if (zerop (process-exit-status proc))
-               (message "ZoomDown: line %d sent to the preview" line)
+               (message "ZoomDown: line %d sent to the preview%s" line note)
              (message "ZoomDown: %s" (string-trim (with-current-buffer (process-buffer proc) (buffer-string))))))
          (when (buffer-live-p (process-buffer proc))
            (with-current-buffer (process-buffer proc) (erase-buffer))))))))
@@ -185,26 +177,6 @@ by `zoomdown-preview' or `zoomdown serve'."
     (if (and buffer (get-buffer-process buffer))
         (interrupt-process (get-buffer-process buffer))
       (message "No preview server is running"))))
-
-(defvar zoomdown--autosave-timer nil)
-
-(defun zoomdown--autosave ()
-  "Save every modified deck buffer."
-  (dolist (buffer (buffer-list))
-    (with-current-buffer buffer
-      (when (and (derived-mode-p 'zoomdown-mode) zoomdown-autosave-mode
-                 (buffer-file-name) (buffer-modified-p))
-        (let ((inhibit-message t)) (save-buffer))))))
-
-(define-minor-mode zoomdown-autosave-mode
-  "Save the deck after `zoomdown-autosave-delay' idle seconds, so the preview follows typing."
-  :lighter " ⟳"
-  (when zoomdown--autosave-timer
-    (cancel-timer zoomdown--autosave-timer)
-    (setq zoomdown--autosave-timer nil))
-  (when (cl-some (lambda (b) (buffer-local-value 'zoomdown-autosave-mode b)) (buffer-list))
-    (setq zoomdown--autosave-timer
-          (run-with-idle-timer zoomdown-autosave-delay t #'zoomdown--autosave))))
 
 (defvar zoomdown-mode-map
   (let ((map (make-sparse-keymap)))
@@ -227,8 +199,7 @@ by `zoomdown-preview' or `zoomdown serve'."
       (define-key map (kbd "C-M-b") #'zoomdown-preview)
       (define-key map (kbd "C-M-j") #'zoomdown-jump)
       (define-key map (kbd "C-M-p") #'zoomdown-build)
-      (use-local-map map)))
-  (when zoomdown-autosave (zoomdown-autosave-mode 1)))
+      (use-local-map map))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.zd\\'" . zoomdown-mode))

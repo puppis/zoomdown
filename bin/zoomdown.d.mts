@@ -23,6 +23,8 @@ export class ReloadWatch {
   concerns(file: string): boolean;
   reset(): Promise<ReloadWatch>;
 }
+/** Whether a preview ignores a change to a file in a watched folder: packages, Git files, exports, by its path below the root that holds it. */
+export function ignoredByPreview(file: string, roots: string[]): boolean;
 export function startPreview(options: Record<string, unknown>): Promise<{ server: unknown; url: string; port: number; deckPath: string; kind: string; watchRoots: string[] }>;
 /** Build a deck into a static folder, or with `oneFile` into one `offline.html`; resolves with the page written. Throws on errors. */
 export function buildDeck(options: Record<string, unknown>): Promise<{ target: string }>;

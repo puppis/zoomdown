@@ -133,10 +133,10 @@ extend the player by name, one file each; [Extending a deck](extending.html) lis
 
 ## Set up your editor
 
-Editing is most comfortable when the browser follows your typing. The `editors/` folder of the
+The browser follows you at every save of the deck. The `editors/` folder of the
 repository has ready-made setups for **VS Code, Sublime Text, Emacs, Vim/Neovim and JetBrains
-IDEs**: they save after a second of idle typing, bind the preview, the jump from a source line
-to its stop and the single-file export to shortcuts, let the player open a stop's source line
+IDEs**: they bind the preview, the jump from a source line to its stop and the single-file export
+to shortcuts, let the player open a stop's source line
 in the editor (E, or Alt + click on an element), and highlight the dialect inside Markdown.
 [Editors](editors.html) explains each one.
 

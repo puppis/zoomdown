@@ -1,19 +1,21 @@
 ---
 title: Editors
-description: Edit a deck and see it in the browser as you type, jump between a source line and its stop in both directions, or export the deck with a shortcut; ready-made setups for VS Code, Sublime Text, Emacs, Vim/Neovim and JetBrains IDEs, with syntax highlighting.
+description: Edit a deck and see it in the browser at every save, jump between a source line and its stop in both directions, or export the deck with a shortcut; ready-made setups for VS Code, Sublime Text, Emacs, Vim/Neovim and JetBrains IDEs, with syntax highlighting.
 ---
 
 ## The loop
 
 ZoomDown's preview server does the heavy lifting: start it once on a deck and it opens the
-browser, watches the deck folder, reloads the page whenever a file is saved and puts the player
-back at the stop you were looking at. Editing therefore needs only two things from an editor:
+browser, watches the deck and every file it loads, reloads the page whenever one of them is
+saved and puts the player back at the stop you were looking at. Saving is yours: no setup below
+saves a deck, so the browser follows when you save, and not before. Editing therefore needs only
+three shortcuts from an editor: one starts the preview server for the deck of the current file,
+one shows the stop of the current line in the browser, the third exports the deck as a single
+HTML file into a `build/` folder next to it. All three take the deck as it was last saved.
 
-1. **Save without thinking about it.** Every setup below saves the deck after a second of idle
-   typing (or when the editor loses focus), so the browser follows you.
-2. **Three shortcuts.** One starts the preview server for the deck of the current file, one
-   shows the stop of the current line in the browser, the third exports the deck as a single
-   HTML file into a `build/` folder next to it.
+The setups of version 0.8.12 and earlier did save decks by themselves. Where you copied one,
+copy it again over the old files (the whole folder, in Sublime Text), and take the two
+`files.autoSave` lines out of the VS Code settings.
 
 ```bash
 zoomdown serve path/to/slides.zd --editor code   # opens http://127.0.0.1:8000/
@@ -55,8 +57,8 @@ the editor's problems panel.
 
 **If the browser opens on a page that refuses to connect**, read the build panel or terminal:
 the server prints the address it actually listens on, `http://127.0.0.1:8000/` or the next free
-port when a previous preview still holds 8000. Stopping that previous preview (Tools ▸ Cancel
-Build in Sublime Text, closing the task terminal in VS Code, `C-c C-k` in Emacs, closing the
+port when a previous preview still holds 8000. Stopping that previous preview ("ZoomDown: Stop
+the preview" in Sublime Text's Command Palette, closing the task terminal in VS Code, `C-c C-k` in Emacs, closing the
 terminal split in Vim, the stop button of the tool window in JetBrains) frees the port; a server
 also stops on its own when the program that started it ends.
 
@@ -66,8 +68,9 @@ While the preview server runs, the editor and the browser follow each other, as 
 and a PDF viewer do with SyncTeX:
 
 - **Forward search**, editor → browser: `zoomdown jump <file> <line>` (also `file:line`) moves
-  the player to the stop that shows that line. The setups below bind it to a key and save the
-  file first, so the browser shows what you see. The stop chosen is the one at which everything
+  the player to the stop that shows that line. The setups below bind it to a key; with unsaved
+  changes, Sublime Text, Emacs and Vim add to their message that the browser shows the deck as it
+  was last saved. The stop chosen is the one at which everything
   written up to that line has appeared: a line inside a slide's text goes to the slide, the line
   of an element with `step=3` to its third step, a line after an `[[include: …]]` to the return
   from that child, and a line of an imported file to the slide it belongs to. The command finds
@@ -89,7 +92,7 @@ and a PDF viewer do with SyncTeX:
   configuring; the server prints what it will run. Without an editor the player says so in its
   header when you press E.
 
-Both directions work on saved files: after an edit the browser reloads at the same stop, and a
+Both directions work on saved files: after a save the browser reloads at the same stop, and a
 jump sent during the reload is picked up when the page is back.
 
 **When a jump does nothing**, run the same command in a terminal, `zoomdown jump path/to/slides.zd 42`:
@@ -108,7 +111,7 @@ message in Emacs, the task terminal in VS Code.
 | Highlighting | `editors/vscode/zoomdown-markup/`: copy the folder into `~/.vscode/extensions/` and reload the window; it opens `.zd` files as Markdown and injects the dialect into Markdown files |
 | Tasks | `editors/vscode/tasks.json`: copy to `.vscode/tasks.json` in the deck's workspace |
 | Shortcuts | `editors/vscode/keybindings.json`: paste its entries into your `keybindings.json` (Command Palette ▸ "Open Keyboard Shortcuts (JSON)"); they act in `.zd` files |
-| Settings | `editors/vscode/settings.json`: `files.autoSave: afterDelay` with a 600 ms delay, and `files.associations` mapping `*.zd` to Markdown, which also does without the extension |
+| Settings | `editors/vscode/settings.json`: copy to `.vscode/settings.json` in the deck's workspace: `files.associations` mapping `*.zd` to Markdown, which also does without the extension, and `task.saveBeforeRun: never`, since VS Code otherwise saves every file before it runs a task |
 
 Then, with the deck open: **Ctrl+Alt+B** (⌘⌥B on macOS) starts the preview in a dedicated
 terminal (B as in browser), **Ctrl+Alt+J** (⌘⌥J) shows the stop of the cursor line in the
@@ -129,28 +132,28 @@ folder). It provides:
   whose first line opens a slide or styles block, select it automatically, others (a deck kept
   as `.md` with front matter, say) through View ▸ Syntax. The keys and the build system below
   act in this syntax only, so other Markdown files keep Sublime Text's own.
-- A build system with three variants: **Ctrl+Alt+B** starts the preview in the build panel
-  (Tools ▸ Cancel Build stops it), **Ctrl+Alt+P** exports one HTML file (also Ctrl+B / ⌘B,
-  since ZoomDown is the build system of its syntax), and "Build folder" writes the static
-  folder export. On macOS use **⌘⌥B**, **⌘⌥J** and **⌘⌥P**: Sublime Text reads a
+- **Ctrl+Alt+B** starts the preview in the build panel ("ZoomDown: Stop the preview" in the
+  Command Palette stops it) and **Ctrl+Alt+P** exports one HTML file. On macOS use **⌘⌥B**, **⌘⌥J** and **⌘⌥P**: Sublime Text reads a
   Control+Option combination through the character that Option types on your layout, which
   is the letter itself only on a US keyboard.
 - **Ctrl+Alt+J** (⌘⌥J) shows the stop of the cursor line in the browser; E or Alt+click in the browser
   brings Sublime Text to the line (the preview is started with `--editor` pointing at the `subl`
   launcher of the running Sublime Text, wherever it is installed).
-- Command Palette entries ("ZoomDown: Preview deck", "Jump to this line in the browser", "Build
-  HTML file", "Build static folder").
-- `save_on_focus_lost`, so switching to the browser saves the deck first. For saving while you
-  type, add a plugin such as *auto-save* from Package Control.
+- Command Palette entries ("ZoomDown: Preview deck", "Stop the preview", "Jump to this line in the
+  browser", "Build HTML file", "Build static folder").
+- A build system, so Ctrl+B / ⌘B exports one HTML file as well, with the variants "Preview" and
+  "Build folder" under Tools ▸ Build With…. A build is Sublime Text's own command and saves the
+  open files first while Tools ▸ Save All on Build is checked; the keys and the Command Palette
+  entries above do not go through it and never save.
 
-The build system's target is `zoomdown_exec`, a small plugin in the package: it asks your login
+Everything runs through `zoomdown_exec`, a small plugin in the package: it asks your login
 shell (the one in `$SHELL`) for its `PATH` once and runs the command with it, so `zoomdown` is
 found even when Sublime Text was launched from the Dock, a launcher or a menu, which otherwise
 gives it the bare system `PATH`. If the command still is not found, check that a terminal finds it
 (`which zoomdown`), run "ZoomDown: Re-read the shell PATH" from the Command Palette after
 installing it, or write its absolute path (or `node /path/to/ZoomDown/bin/zoomdown.mjs`) into the
 `command` setting of `Packages/User/ZoomDown.sublime-settings`. The Sublime console (View ▸ Show
-Console) prints what the plugin found. Tools ▸ Cancel Build stops the preview server.
+Console) prints what the plugin found.
 
 ## Emacs
 
@@ -167,9 +170,8 @@ file (the same three also on **C-M-b**, **C-M-j** and **C-M-p**, that is Ctrl+Al
 in the other editors, in deck buffers only; `zoomdown-ctrl-alt-keys` set to nil keeps those keys
 for `backward-sexp` and friends), **C-c C-k** stops the server. E or Alt+click in the browser brings Emacs to the line: the
 preview is started with an `emacsclient` command for this Emacs session (`zoomdown-inverse-search`,
-on by default, starts the Emacs server when it is not running). `zoomdown-autosave-mode` (on by
-default) saves the deck after one idle second; `zoomdown-command`, `zoomdown-build-directory`,
-`zoomdown-autosave` and `zoomdown-autosave-delay` are customizable. The mode finds the command
+on by default, starts the Emacs server when it is not running). `zoomdown-command` and
+`zoomdown-build-directory` are customizable. The mode finds the command
 by itself: on Emacs's own path, else in the checkout the package was loaded from (its
 `bin/zoomdown.mjs` run with `node`), else on the path of your login shell, which a graphical Emacs
 often does not inherit; `zoomdown-command` overrides all of that, for example with
@@ -184,14 +186,13 @@ Copy `editors/vim/plugin/`, `editors/vim/ftdetect/` and `editors/vim/after/` int
 styles block get the mappings **\<leader\>zb** (`:ZoomDownPreview`, in a terminal split),
 **\<leader\>zj** (`:ZoomDownJump`, the stop of the cursor line in the browser) and
 **\<leader\>zp** (`:ZoomDownBuild`), plus Ctrl+Alt+B, J and P where the terminal or GUI
-delivers them (Neovim in a modern terminal, gvim, MacVim). Such buffers are saved after
-`updatetime` idle milliseconds (lowered to one second) and highlight the dialect through
+delivers them (Neovim in a modern terminal, gvim, MacVim), and highlight the dialect through
 `after/syntax/markdown.vim`. E or Alt+click in
 the browser brings Vim to the line through its server: Neovim always has one, Vim needs
 `+clientserver` and a name (`vim --servername DECK`; gvim and MacVim name themselves), and
 without one the preview starts without inverse search. The plugin finds the command on Vim's
 path, else runs the checkout's own `bin/zoomdown.mjs` with `node`, else asks your login shell;
-`g:zoomdown_command` overrides it, and `g:zoomdown_autosave = 0` turns the idle save off.
+`g:zoomdown_command` overrides it.
 
 ## JetBrains IDEs
 
@@ -202,8 +203,10 @@ this line** and **Build HTML**, each acting on the current file; assign them key
 Settings ▸ Keymap ▸ External Tools (Ctrl+Alt+B, J and P match the other editors; the IDE will
 ask about its own uses of the first and the last, Go to Implementation and Extract Parameter). The preview passes `--editor jetbrains`, which runs the first
 IDE launcher found on the `PATH` (`idea`, `webstorm`, `pycharm`, …; Tools ▸ Create Command-line
-Launcher creates one); replace it with your IDE's name in the XML to be sure. JetBrains IDEs save files automatically when they lose focus and after idle time
-(Settings ▸ Appearance & Behavior ▸ System Settings ▸ Autosave). To open decks as Markdown, add
+Launcher creates one); replace it with your IDE's name in the XML to be sure. The tools save nothing themselves, but a
+JetBrains IDE saves open files on its own, when it loses focus, after idle time and possibly before it
+runs a tool; Settings ▸ Appearance & Behavior ▸ System Settings ▸ Autosave turns off what can be
+turned off. To open decks as Markdown, add
 `*.zd` to the Markdown file type (Settings ▸ Editor ▸ File Types ▸ Markdown ▸ File name
 patterns). For highlighting, install the TextMate Bundles plugin and add
 `editors/vscode/zoomdown-markup` as a bundle.
@@ -213,8 +216,8 @@ patterns). For highlighting, install the TextMate Bundles plugin and add
 The ingredients are the same everywhere: a command that runs `zoomdown serve <file> --editor …`
 (with your editor's name, or a command containing `{file}` and `{line}`), one that runs
 `zoomdown jump <file> <line>` with the cursor line, and one that runs
-`zoomdown build <file> -o build --one-file` from the file's directory, an autosave after a short
-idle delay, and Markdown highlighting for `.zd` files. The VS Code grammar is a plain TextMate grammar that most
+`zoomdown build <file> -o build --one-file` from the file's directory, and Markdown highlighting
+for `.zd` files. The VS Code grammar is a plain TextMate grammar that most
 editors can load, and the browser reports mistakes with their line number. An editor that can
 send an HTTP request needs no command for the forward search: `POST /__zoomdown/sync/jump` on
 the preview's address with a JSON body `{"file": "/absolute/path.zd", "line": 42}` (or the same

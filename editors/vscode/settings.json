@@ -1,7 +1,6 @@
 {
   "files.associations": { "*.zd": "markdown" },
-  "files.autoSave": "afterDelay",
-  "files.autoSaveDelay": 600,
+  "task.saveBeforeRun": "never",
   "[markdown]": {
     "editor.wordWrap": "on",
     "editor.quickSuggestions": { "other": false, "comments": false, "strings": false }

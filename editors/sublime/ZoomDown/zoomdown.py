@@ -80,10 +80,52 @@ def editor_template():
     return '"%s" {file}:{line}' % subl_path()
 
 
-class ZoomdownExecCommand(ExecCommand):
-    """`exec` with the login shell's PATH and the configurable zoomdown command."""
+UNSAVED = ' (unsaved changes: the deck is taken as last saved)'
 
-    def run(self, cmd=None, **kwargs):
+TASKS = {
+    'preview': lambda path: ['zoomdown', 'serve', path],
+    'build': lambda path: ['zoomdown', 'build', path, '-o', os.path.join(os.path.dirname(path), 'build'), '--one-file'],
+    'folder': lambda path: ['zoomdown', 'build', path, '-o', os.path.join(os.path.dirname(path), 'build')],
+}
+
+
+class ZoomdownRunCommand(sublime_plugin.WindowCommand):
+    """Preview or export the deck of the active file, as it was last saved.
+
+    The keys and the Command Palette run `zoomdown_exec` through this rather than through Sublime
+    Text's own `build`, which saves files before it runs anything (Tools > Save All on Build).
+    """
+
+    def run(self, task='preview'):
+        view = self.window.active_view()
+        path = view.file_name() if view else None
+        if not path:
+            sublime.status_message('ZoomDown: save the deck to a file first')
+            return
+        self.window.run_command('zoomdown_exec', {'cmd': TASKS[task](path), 'working_dir': os.path.dirname(path)})
+        if view.is_dirty():
+            sublime.status_message('ZoomDown: started' + UNSAVED)
+
+
+class ZoomdownExecCommand(ExecCommand):
+    """`exec` with the login shell's PATH and the configurable zoomdown command.
+
+    `kill` stops what it started, the preview also after an export took its place in the panel.
+    """
+
+    preview = None
+
+    def running(self):
+        return [proc for proc in {self.proc, self.preview} if proc is not None and proc.poll()]
+
+    def is_enabled(self, kill=False, **kwargs):
+        return bool(self.running()) if kill else True
+
+    def run(self, cmd=None, kill=False, **kwargs):
+        if kill:
+            for proc in self.running():
+                proc.kill()
+            return
         if cmd:
             if cmd[0] == 'zoomdown':
                 cmd = zoomdown_command() + list(cmd[1:])
@@ -92,6 +134,8 @@ class ZoomdownExecCommand(ExecCommand):
                 cmd = cmd + ['--editor', editor_template()]
         kwargs.setdefault('path', login_shell_path())
         super().run(cmd=cmd, **kwargs)
+        if cmd and 'serve' in cmd:
+            self.preview = self.proc
 
 
 def log(message):
@@ -105,7 +149,7 @@ def log(message):
 
 
 class ZoomdownJumpCommand(sublime_plugin.TextCommand):
-    """Forward search: save, then show the stop of the cursor line in the running preview.
+    """Forward search: show the stop of the cursor line in the running preview.
 
     Everything slow (reading the login shell's PATH, running the command) happens off the UI
     thread; the outcome goes to the status bar, the console and ZoomDown.log in the cache folder,
@@ -118,13 +162,12 @@ class ZoomdownJumpCommand(sublime_plugin.TextCommand):
         if not path:
             sublime.status_message('ZoomDown: save the deck to a file first')
             return
-        if view.is_dirty():
-            view.run_command('save')
         line = view.rowcol(view.sel()[0].begin())[0] + 1
+        note = UNSAVED if view.is_dirty() else ''
         log('jump requested for %s:%d' % (path, line))
-        sublime.set_timeout_async(lambda: self._send(path, line), 0)
+        sublime.set_timeout_async(lambda: self._send(path, line, note), 0)
 
-    def _send(self, path, line):
+    def _send(self, path, line, note):
         command = zoomdown_command() + ['jump', path, str(line)]
         shown = ' '.join(command)
         try:
@@ -133,7 +176,7 @@ class ZoomdownJumpCommand(sublime_plugin.TextCommand):
             output = result.stdout.decode('utf-8', 'replace').strip()
             if result.returncode == 0:
                 log('jump sent: %s' % output)
-                sublime.status_message('ZoomDown: line %d sent to the preview' % line)
+                sublime.status_message('ZoomDown: line %d sent to the preview%s' % (line, note))
                 return
             problem = output or 'the command failed with status %d' % result.returncode
         except Exception as error:  # noqa: BLE001

@@ -217,23 +217,24 @@ export class ReloadWatch {
     this.extra = extra;
     this.libraries = [];
     this.base = new Set([deckPath]);
-    this.opened = new Set(this.base);
+    this.opened = new Set();
+    this.reading = 0;
   }
 
   /** Read the deck's settings: the files it extends and its library folders. */
   async load() {
-    let extended = [];
-    let libraries = [];
+    const reading = ++this.reading;
     try {
       const folders = await deckFolders(this.deckPath);
-      extended = (await deckSettings(this.deckPath)).extended;
-      libraries = LIBRARY_KINDS.filter(({ key }) => key !== 'paths').flatMap(({ key }) => folders[key] ?? []);
+      const { extended } = await deckSettings(this.deckPath);
+      // A save may come as several changes; what the last one reads counts.
+      if (reading !== this.reading) return this;
+      this.base = new Set([this.deckPath, ...extended]);
+      this.libraries = LIBRARY_KINDS.filter(({ key }) => key !== 'paths').flatMap(({ key }) => folders[key] ?? []);
     } catch {
-      // Front matter being edited may not parse: keep watching the deck itself, and what pages open.
+      // Settings saved half-written may not parse: keep watching what was there, so that the next
+      // save of the deck, or of a file it extends, reloads.
     }
-    this.base = new Set([this.deckPath, ...extended]);
-    this.libraries = libraries;
-    this.opened = new Set(this.base);
     return this;
   }
 
@@ -255,13 +256,29 @@ export class ReloadWatch {
   /** Whether a change to `file` concerns the deck. */
   concerns(file) {
     const under = (folder) => file === folder || file.startsWith(folder + sep);
-    return this.opened.has(file) || this.libraries.some(under) || this.extra.some(under);
+    return this.base.has(file) || this.opened.has(file) || this.libraries.some(under) || this.extra.some(under);
   }
 
-  /** Start the list again, after a reload: the pages will open what they need anew. */
+  /**
+   * Start the list again, as a reload is sent: the pages will open what they need anew. It is
+   * emptied at once, so that nothing a page opens while the settings are read anew is lost.
+   */
   reset() {
+    this.opened = new Set();
     return this.load();
   }
+}
+
+/**
+ * Whether a preview ignores a change to `file`, for all that it lies in a watched folder: the
+ * packages, Git's files, and exports, which go into a `build` or `dist` folder, inside one of
+ * `roots`. What those folders hold is told by the path below the root, so a deck kept under a
+ * folder of such a name reloads like any other.
+ */
+export function ignoredByPreview(file, roots) {
+  const root = roots.find((candidate) => file.startsWith(candidate + sep));
+  if (!root) return /[\\/](node_modules|\.git)[\\/]/.test(file);
+  return /(^|[\\/])(node_modules|\.git|build|dist)([\\/]|$)/.test(relative(root, file));
 }
 
 /**
@@ -326,10 +343,12 @@ export async function startPreview(options) {
         const inside = loaded ? loaded.concerns(file) : watchRoots.some((root) => file === root || file.startsWith(root + sep));
         // Recordings are written by the player itself; a reload would interrupt the talk being saved,
         // as it would an export the player is writing into a folder that may lie inside the deck's.
-        if (!inside || /node_modules|\.git\b|\bbuild\b|\bdist\b/.test(file) || isRecordingFile(file) || exportWriting()) return;
+        // The deck, and the files it extends, reload wherever they are kept.
+        const own = file === deckPath || (loaded?.base.has(file) ?? false);
+        if (!inside || (!own && (ignoredByPreview(file, watched) || isRecordingFile(file))) || exportWriting()) return;
         console.log(`[${new Date().toLocaleTimeString()}] ${relative(deckDir, file) || file} changed; reloading`);
-        server.ws.send({ type: 'full-reload' });
         void loaded?.reset();
+        server.ws.send({ type: 'full-reload' });
       };
       server.watcher.on('change', onChange);
       server.watcher.on('add', onChange);

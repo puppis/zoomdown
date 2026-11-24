@@ -1,7 +1,8 @@
 [
-  { "caption": "ZoomDown: Preview deck", "command": "build", "args": { "build_system": "Packages/ZoomDown/ZoomDown.sublime-build", "variant": "Preview" } },
+  { "caption": "ZoomDown: Preview deck", "command": "zoomdown_run", "args": { "task": "preview" } },
+  { "caption": "ZoomDown: Stop the preview", "command": "zoomdown_exec", "args": { "kill": true } },
   { "caption": "ZoomDown: Jump to this line in the browser", "command": "zoomdown_jump" },
-  { "caption": "ZoomDown: Build HTML file", "command": "build", "args": { "build_system": "Packages/ZoomDown/ZoomDown.sublime-build" } },
-  { "caption": "ZoomDown: Build static folder", "command": "build", "args": { "build_system": "Packages/ZoomDown/ZoomDown.sublime-build", "variant": "Build folder" } },
+  { "caption": "ZoomDown: Build HTML file", "command": "zoomdown_run", "args": { "task": "build" } },
+  { "caption": "ZoomDown: Build static folder", "command": "zoomdown_run", "args": { "task": "folder" } },
   { "caption": "ZoomDown: Re-read the shell PATH", "command": "zoomdown_forget_path" }
 ]

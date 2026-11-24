@@ -4,9 +4,9 @@
 "   :ZoomDownJump     (<leader>zj, Ctrl+Alt+J)  show the stop of the cursor line in the browser
 "   :ZoomDownBuild    (<leader>zp, Ctrl+Alt+P)  export one self-contained HTML file to ./build
 "
-" Decks (.zd files, which ftdetect/zoomdown.vim makes Markdown) get the mappings
-" and are saved automatically after `updatetime` idle milliseconds (default 1 s);
-" so do .md buffers whose first lines open a slide or styles block.
+" Decks (.zd files, which ftdetect/zoomdown.vim makes Markdown) get the mappings, and so
+" do .md buffers whose first lines open a slide or styles block. Nothing here writes the
+" deck: the browser follows when you write it yourself.
 " The preview is started with an editor command for the inverse search: E, or
 " Alt+click on an element, in the browser moves this Vim to the source line.
 " That needs a server name: Neovim always has one; Vim needs +clientserver and
@@ -18,7 +18,6 @@ if exists('g:loaded_zoomdown') | finish | endif
 let g:loaded_zoomdown = 1
 
 let g:zoomdown_command = get(g:, 'zoomdown_command', 'zoomdown')
-let g:zoomdown_autosave = get(g:, 'zoomdown_autosave', 1)
 let s:plugin_dir = expand('<sfile>:p:h')
 
 " PROGRAM's path according to the login shell (which reads the files where nvm and npm set PATH), or ''.
@@ -88,11 +87,15 @@ function! s:Run(cmd) abort
   endif
 endfunction
 
-" Forward search: save, then show the stop of the cursor line in the browser.
+" What a command says when the buffer has changes the preview and the export do not see yet.
+function! s:Unsaved() abort
+  return &modified ? ' (unsaved changes: the deck is taken as last written)' : ''
+endfunction
+
+" Forward search: show the stop of the cursor line in the browser.
 function! zoomdown#Jump() abort
-  update
   call s:Run(zoomdown#Command() . ' jump ' . shellescape(expand('%:p')) . ' ' . line('.'))
-  echo 'ZoomDown: line ' . line('.') . ' sent to the preview'
+  echo 'ZoomDown: line ' . line('.') . ' sent to the preview' . s:Unsaved()
 endfunction
 
 function! s:Terminal(cmd) abort
@@ -100,21 +103,24 @@ function! s:Terminal(cmd) abort
     botright 12split
     execute 'terminal' a:cmd
   else
-    execute 'botright terminal ++rows=12' a:cmd
+    " Through the shell, which reads the quotes of the arguments; :terminal would pass them on.
+    botright call term_start([&shell, &shellcmdflag, a:cmd], {'term_rows': 12})
   endif
 endfunction
 
 function! zoomdown#Preview() abort
-  update
+  let l:note = s:Unsaved()
   let l:editor = s:EditorCommand()
   call s:Terminal(zoomdown#Command() . ' serve ' . shellescape(s:Deck()) . (empty(l:editor) ? '' : ' --editor ' . shellescape(l:editor)))
   wincmd p
+  if !empty(l:note) | echo 'ZoomDown: preview started' . l:note | endif
 endfunction
 
 function! zoomdown#Build() abort
-  update
+  let l:note = s:Unsaved()
   call s:Terminal(zoomdown#Command() . ' build ' . shellescape(s:Deck()) . ' -o ' . shellescape(expand('%:p:h') . '/build') . ' --one-file')
   wincmd p
+  if !empty(l:note) | echo 'ZoomDown: export started' . l:note | endif
 endfunction
 
 command! ZoomDownPreview call zoomdown#Preview()
@@ -136,10 +142,6 @@ function! s:Setup() abort
   nnoremap <buffer> <silent> <C-M-b> :ZoomDownPreview<CR>
   nnoremap <buffer> <silent> <C-M-j> :ZoomDownJump<CR>
   nnoremap <buffer> <silent> <C-M-p> :ZoomDownBuild<CR>
-  if g:zoomdown_autosave
-    if &updatetime > 1000 | set updatetime=1000 | endif
-    autocmd CursorHold,CursorHoldI <buffer> silent! update
-  endif
 endfunction
 
 augroup zoomdown

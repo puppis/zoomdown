@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { ReloadWatch } from '../bin/zoomdown.mjs';
+import { join, sep } from 'node:path';
+import { ReloadWatch, ignoredByPreview } from '../bin/zoomdown.mjs';
 
 let root = '';
 afterEach(() => {
@@ -48,6 +48,37 @@ describe('a preview reloads for what the deck loads (rule F)', () => {
     await watch.reset();
     expect(watch.concerns(image)).toBe(false);
     expect(watch.concerns(deck1)).toBe(true);
+  });
+
+  it('keeps what a page opens while the settings are read anew', async () => {
+    const { deck1 } = course();
+    const watch = await new ReloadWatch({ deckPath: deck1 }).load();
+    const image = join(root, 'course', 'deck1', 'assets', 'a.png');
+    const reading = watch.reset();
+    watch.open(`/@fs${image}`);
+    await reading;
+    expect(watch.concerns(image)).toBe(true);
+  });
+
+  it('keeps the chain of a deck saved with front matter that does not parse', async () => {
+    const { deck1, shared } = course();
+    const watch = await new ReloadWatch({ deckPath: deck1 }).load();
+    writeFileSync(deck1, '---\nextends: [../base.yaml\n---\n::: slide {#a}\nA\n:::\n');
+    await watch.reset();
+    expect(watch.concerns(deck1)).toBe(true);
+    expect(watch.concerns(shared)).toBe(true);
+  });
+
+  it('ignores exports, packages and Git files by their path below the deck, not by where the deck is kept', () => {
+    const talk = join(sep, 'home', 'build', 'my dist talk');
+    expect(ignoredByPreview(join(talk, 'build', 'index.html'), [talk])).toBe(true);
+    expect(ignoredByPreview(join(talk, 'node_modules', 'x', 'index.js'), [talk])).toBe(true);
+    expect(ignoredByPreview(join(talk, '.git', 'HEAD'), [talk])).toBe(true);
+    expect(ignoredByPreview(join(talk, 'slides.zd'), [talk])).toBe(false);
+    expect(ignoredByPreview(join(talk, 'assets', 'build-steps.svg'), [talk])).toBe(false);
+    // A file a page opened elsewhere: an image in a search folder.
+    expect(ignoredByPreview(join(sep, 'home', 'build', 'shared', 'logo.svg'), [talk])).toBe(false);
+    expect(ignoredByPreview(join(sep, 'home', 'node_modules', 'x', 'a.js'), [talk])).toBe(true);
   });
 
   it('keeps --watch for anything else', async () => {
