@@ -241,4 +241,4 @@ resolving relative to the main document, like everything else. A file that is no
 importing one is looked for in the folders `paths` names in the front matter, in their order.
 
 Exports embed the imported files, so a built deck needs no server to resolve them; the
-preview server reloads when any of them changes.
+preview server reloads when any of them is saved.

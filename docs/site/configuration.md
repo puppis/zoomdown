@@ -165,14 +165,24 @@ every file its pages open or look for (imports, snippets, themes, images, direct
 anything in its library folders (`artworks/`, `fonts/`, `directives/`, …), and any `--watch`
 path; the list is read anew at each reload. Another deck beside a shared settings file, a README
 or a stray file reloads nothing.
+
+A reload follows a save, whether the editor writes the file in place, renames a new copy over it
+or moves the old one away as a backup; what is not saved is not shown. The page comes back at the
+slide and step you were on. What a program writes rather than you reloads nothing: exports (any
+`build` or `dist` folder below the deck's or another served folder), `node_modules`, `.git` and
+`recordings/`; nor does anything reload while the player is writing an export. The deck itself and
+the files it extends reload wherever they are kept, also below folders of those names. Front matter
+saved half-written leaves the preview watching the files the deck extended before, so the next save
+of any of them reloads it.
+
 `--watch PATH` (repeatable) adds a file or a folder to what reloads it,
 `--host` also listens on the network for a tablet, and `--editor` names the editor (`emacs`,
 `sublime`, `code`, `vim`, `jetbrains`, … or a command with `{file}` and `{line}`;
 `ZOOMDOWN_EDITOR` is the default) that the player's E key and Alt + click open source lines
-with. `jump` moves the running preview to the stop of a source line. `build` writes
-`index.html`, `assets/` and `deck/` into the folder, or `offline.html` with `--one-file`;
-`--without-notes` leaves the presenter's `::: notes` out of either. Code decks in `--one-file`
-mode embed the code but not images they load themselves.
+with. `jump` moves the running preview to the stop of a source line, and `build` exports the deck,
+both as last saved: `build` writes `index.html`, `assets/` and `deck/` into the folder, or
+`offline.html` with `--one-file`; `--without-notes` leaves the presenter's `::: notes` out of
+either. Code decks in `--one-file` mode embed the code but not images they load themselves.
 
 ## Development page
 

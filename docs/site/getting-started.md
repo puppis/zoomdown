@@ -51,7 +51,8 @@ zoomdown serve talk/slides.zd --host   # reachable on the network, for a tablet
 ```
 
 The preview opens the deck in your browser at `http://127.0.0.1:8000/` (or the next free port,
-printed in the terminal), reloads it on every save and keeps your position. The argument is a
+printed in the terminal), reloads it every time you save the deck or a file it loads, and keeps
+your position. The argument is a
 `.zd` file (its settings in its front matter; a deck's `.md` too), a PDF, a JS/TS module exporting a deck, or a
 [Slajdomat presentation](documents.html#a-slajdomat-presentation)'s folder. Ctrl+C stops the server; it also stops by itself when the
 program that started it, an editor's build panel say, ends.
@@ -133,12 +134,12 @@ extend the player by name, one file each; [Extending a deck](extending.html) lis
 
 ## Set up your editor
 
-The browser follows you at every save of the deck. The `editors/` folder of the
-repository has ready-made setups for **VS Code, Sublime Text, Emacs, Vim/Neovim and JetBrains
-IDEs**: they bind the preview, the jump from a source line to its stop and the single-file export
-to shortcuts, let the player open a stop's source line
-in the editor (E, or Alt + click on an element), and highlight the dialect inside Markdown.
-[Editors](editors.html) explains each one.
+Any editor will do: save the deck, or a file it loads, and the preview reloads where you were.
+The `editors/` folder of the repository has ready-made setups for **VS Code, Sublime Text, Emacs,
+Vim/Neovim and JetBrains IDEs**: they bind the preview, the jump from a source line to its stop
+and the single-file export to shortcuts, let the player open a stop's source line in the editor
+(E, or Alt + click on an element), and highlight the dialect inside Markdown. None of them saves
+the deck for you. [Editors](editors.html) explains each one.
 
 ## Next steps
 

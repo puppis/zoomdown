@@ -12,6 +12,8 @@ It also connects the editor and the browser in both directions: the preview is s
 `--editor` pointing at this Sublime Text, so E or Alt+click in the player opens the source line
 here (inverse search), and `zoomdown_jump` (Ctrl+Alt+J) shows the stop of the cursor line in
 the browser (forward search).
+
+Nothing here saves a deck: the browser follows when you save it yourself.
 """
 import os
 import re

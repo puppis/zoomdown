@@ -72,7 +72,8 @@ deck, with its examples, to a folder of yours, and opens the copy's `slides.zd`.
 you choose; a copy already
 there is opened as it is, or its files written afresh while the talks recorded in it stay. The
 tour inside the app is only the source of these copies. The window shows the deck as the browser
-would, and the menus add Open Deck, Open Recent, Reload Deck, Reveal Deck Folder, full screen, zoom
+would and reloads it whenever you save it, or a file it loads, in your editor, at the slide and
+step you were on ([what reloads](configuration.html#command-line)); the menus add Open Deck, Open Recent, Reload Deck, Reveal Deck Folder, full screen, zoom
 and the developer tools. Links to other pages open in your browser. Recordings and exported videos
 go to a `recordings/` folder next to the deck, as with `zoomdown serve`; **Reveal Deck Folder**
 opens the folder that holds it, which is where a talk's bundle (`.zip`, its media files and

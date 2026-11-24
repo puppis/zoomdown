@@ -540,7 +540,7 @@ The outline lists every slide; clicking one jumps to its first stop. The address
 current stop as `#step=N`, which can be shared or bookmarked; `#slide=id` opens the first stop of a
 slide by its markup ID (or a slide by name). A URL without a hash opens at the first stop, and a
 hash typed into the address bar of an open deck moves it there; only the preview server's own
-reload after an edit returns to the stop you were looking at.
+reload after a save returns to the stop you were looking at.
 
 ## Loops and automatic advancement
 
@@ -549,8 +549,9 @@ Looping stops (`play=loop`, `stop({ loop: true })`) repeat until the next click.
 
 ## Editing preview
 
-`zoomdown serve` and the dev page reload when the deck's files change and return to the
-slide and step you were on, using a bookmark saved just before the reload. Parse and reference
+`zoomdown serve`, the desktop app and the dev page reload when the deck, or a file it loads, is
+saved, and return to the slide and step you were on, using a bookmark saved just before the
+reload; [what reloads](configuration.html#command-line) is under the command line. Parse and reference
 errors are shown with the offending line. The editor and the player also follow each other:
 `zoomdown jump <file> <line>` shows the stop of a source line, and `E` or Alt + click opens the
 source of a stop or of an element in the editor named by `--editor`; [Editors](editors.html#forward-and-inverse-search)

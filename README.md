@@ -241,11 +241,12 @@ directory (`npm prefix -g`) is missing from that program's `PATH`; the
 ## Editors
 
 `editors/` holds ready-to-use configurations that bind the live preview (`zoomdown serve`, which
-reloads the browser on save and keeps your position), the forward search (`zoomdown jump`, the
-stop of the cursor line) and the one-file export to shortcuts, let the browser open a stop's or
-an element's source line in the editor (inverse search) and highlight the dialect: a VS Code grammar with tasks and key bindings, a Sublime Text package, an Emacs
-mode, a Vim/Neovim plugin and JetBrains External Tools. The documentation page
-[Editors](docs/site/editors.md) explains each setup.
+reloads the browser when you save and keeps your position), the forward search (`zoomdown jump`,
+the stop of the cursor line) and the one-file export to shortcuts, let the browser open a stop's
+or an element's source line in the editor (inverse search) and highlight the dialect: a VS Code
+grammar with tasks and key bindings, a Sublime Text package, an Emacs mode, a Vim/Neovim plugin
+and JetBrains External Tools. None of them saves the deck: the preview follows your own saves. The
+documentation page [Editors](docs/site/editors.md) explains each setup.
 
 ## Limitations
 
