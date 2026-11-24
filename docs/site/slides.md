@@ -73,7 +73,10 @@ the placeholder is never a stop, so a deck keeps running while a slide is still 
 An include written right after another include, with no position of its own (no `x`, `y`, `at`
 nor relative constraint), goes on the same row: right of it, top-aligned, `buff` apart
 (`layout.gap` by default), and as wide as it unless it gives a `width` or `height` itself.
-Directives, arrows and lines written between them do not break the row; text does.
+What does not flow, written between them, does not break the row: directives, arrows and lines,
+pictures and drawings, the parts of a graph or a timeline, and anything placed by a point, by `at=`
+or against another element, such as a label placed over a group of tiles. A block that flows
+(a paragraph without a position) ends the row.
 
 ```markdown
 [[include: #bitcoin x=-7.7 y=0.9 anchor=top-left width=2.6]]

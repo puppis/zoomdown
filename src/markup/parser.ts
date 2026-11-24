@@ -1294,10 +1294,13 @@ export class ASTTransformer {
               for (const key of INHERITED_ATTRS) if (key in item.attributes) passed[key] = item.attributes[key];
               visit(item.items, item.id, passed);
             }
-            // #LAST names what was written: a verdict is part of its include.
+            // #LAST names what was written: a verdict is part of its include. A row of tiles passes
+            // over what does not flow (pictures, drawings, parts of blocks, anything placed by a point
+            // or against another element, a label over a group of tiles): a block that flows ends it.
             if (!CONNECTIONS.has(item.kind) && !ATTACHMENTS.has(item.kind) && item.verdictOf === null) {
               last = item.id;
-              before = item;
+              const placed = Object.keys(item.attributes).some((key) => key === 'x' || key === 'y' || key === 'at' || POSITION_REFERENCES.has(key));
+              if (!placed && item.part === null) before = item;
             }
           } else if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
             if (scope) throw new MarkupError('Groups cannot contain includes or subslides', item.line);

@@ -41,6 +41,12 @@ describe('a row of tiles', () => {
     expect(include(kept, 'b').attributes['right-of']).toBe('#a');
   });
 
+  it('passes over what does not flow, as a label placed over the tiles (rule E)', () => {
+    const list = items('[[include: #a x=-6 y=2 width=3]]\n\n[Phase 1]{#p1 x=-6 y=3}\n\n[[circle: #c x=0 y=0 radius=0.2]]\n\n[mark]{#m at=bottom:#a.top}\n\n[[include: #b]]\n\n::: graph\nA (5,5)\n:::\n\n[[include: #c]]');
+    expect(include(list, 'b').attributes['right-of']).toBe('#a');
+    expect(include(list, 'c').attributes['right-of']).toBe('#b');
+  });
+
   it('places the tiles side by side, layout.gap apart unless buff says otherwise', async () => {
     const root = await built(`::: slide {#r}\n[[include: #a x=-4 y=2 width=3]]\n\n[[include: #b]]\n\n[[include: #c buff=1]]\n:::\n${children(['a', 'b', 'c'])}`);
     const tile = (id: string) => (root.components.get([...root.components.keys()].find((key) => key.endsWith(id))!) as MarkupSlide).viewport as Mobject;

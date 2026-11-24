@@ -139,8 +139,9 @@ and the relative references, plus:
 | `start_here`, `only_this`, `return_to_parent`, `skip_return`, `transition`, `preview` | as for slides | | the same flags, set from the parent's side |
 | `verdict` | inline text | none | a line under the tile, `#child-verdict`, centered and wrapped at the tile's width, shown at the click after the visit; styled by the `verdict` style, which may place it elsewhere (includes only) |
 
-An include written right after another include (directives, arrows and lines between them do not
-count) without a position of its own goes right of it, top-aligned, `buff` apart (`layout.gap` by
+An include written after another include, with nothing that flows between them (directives,
+arrows, lines, pictures, drawings, parts of blocks and anything placed by a point, by `at=` or
+against another element do not count; a block without a position does), without a position of its own goes right of it, top-aligned, `buff` apart (`layout.gap` by
 default), and as wide as it unless it gives a size. A `::: tiles {cols=N}` container places the
 includes inside it as a grid: the first where the container's position says (`x`, `y`, `at`,
 `anchor`, `dx`, `dy`, the relative references), each next one right of the one before, the first

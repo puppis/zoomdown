@@ -41,7 +41,8 @@ every construct of this page live, each next to the listing that produced it; op
   (one dimension keeps the child's aspect, two letterbox it), `angle` rotates it in radians.
   Without `width` and `height` the viewport is at most six units wide. `[[subslide: #id]]` is the
   same as `[[include: #id]]`; with a class name it places a code-authored child.
-- An include written right after another include, without a position, goes right of it,
+- An include written after another include, with nothing that flows between them (a label placed
+  by a point does not count, a paragraph without a position does), without a position, goes right of it,
   top-aligned, `buff` apart (`layout.gap` by default) and as wide; `::: tiles {cols=N}` places its
   includes as a grid from the container's position, `width` and `buff`. `verdict="…"` on an
   include writes a line under its tile (`#child-verdict`, the `verdict` style), wrapped at the
