@@ -18,6 +18,9 @@ import { Transform } from './geometry';
 import { DISPLAY_GROUP_FLAG } from './patches';
 
 /** Scene membership protocol used by engine animation setup and cleanup. */
+/** The stroke scale (a display's `_strokeVersion`) each top-level object last took. */
+const STROKE_VERSIONS = new WeakMap<object, number>();
+
 export class LocalScene {
   mobjects: Mobject[] = [];
 
@@ -179,6 +182,8 @@ export class Display {
   orderDirty = true;
   private _attached = { grid: [] as Mobject[], content: [] as Mobject[], early: [] as Mobject[], overlay: [] as Mobject[] };
   private _strokeContext: { width: number; height: number; slide: number } | null = null;
+  /** Bumped whenever the strokes are scaled anew; each object remembers the scale it took (`STROKE_VERSIONS`). */
+  private _strokeVersion = 0;
   private _needsOpacityReset = false;
   private _baseVisible = true;
   private _culled = false;
@@ -259,7 +264,11 @@ export class Display {
     const contextChanged =
       !context || context.width !== rendererWidth || context.height !== rendererHeight ||
       Math.abs(context.slide - effectiveFrame) > 1e-9 * Math.max(1, effectiveFrame);
-    if (contextChanged) this._strokeContext = { width: rendererWidth, height: rendererHeight, slide: effectiveFrame };
+    if (contextChanged) {
+      this._strokeContext = { width: rendererWidth, height: rendererHeight, slide: effectiveFrame };
+      this._strokeVersion += 1;
+    }
+    const version = this._strokeVersion;
     const partial = {
       grid: this.gridGroup.visible && this.gridOpacity < 1,
       content: this.contentGroup.visible && this.contentOpacity < 1,
@@ -267,13 +276,17 @@ export class Display {
     };
     const visit = (members: Mobject[], visible: boolean, forceDirty: boolean) => {
       for (const mob of members) {
-        if (contextChanged || forceDirty) {
+        // An object added since the strokes were scaled (a tile put in its final state by a jump,
+        // never played) takes the current scale too, not only those present when it changed.
+        const unscaled = STROKE_VERSIONS.get(mob) !== version;
+        if (contextChanged || forceDirty || unscaled) {
           for (const member of mob.getFamily()) {
-            if (contextChanged && member instanceof VMobject) {
+            if ((contextChanged || unscaled) && member instanceof VMobject) {
               member._setSceneContext(rendererWidth, rendererHeight, effectiveFrame);
             }
             member._dirty = true;
           }
+          STROKE_VERSIONS.set(mob, version);
         }
         if (!visible) continue;
         if (mob._dirty) {

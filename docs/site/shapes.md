@@ -305,7 +305,9 @@ p2 -> p1 "back" {bend=-40}
 
 Lines end as in a timeline: a `"label"`, style names written bare, `{attributes}`. Two arrows
 between the same nodes, one each way (the arcs of a net, of a state machine), bend apart, each 20
-degrees to its own right, unless one curves or shifts by itself (`bend`, `loop`, `via`, `offset`);
+degrees to its own right, when they are on screen together (one's step up to its hide overlaps the
+other's) and neither curves or shifts by itself (`bend`, `loop`, `via`, `offset`: the other then
+stays straight);
 arrows the same way and lines stay on one another, as a highlight drawn over the edge it marks
 does. `offset=0.1` shifts any straight arrow or line sideways, its ends still on the outlines. A node is
 `radius=0.3` (a rectangle 0.6 square, an ellipse 0.8 by 0.5) unless its attributes or styles size

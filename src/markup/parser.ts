@@ -614,30 +614,6 @@ export class MarkupParser {
     if (locals.size) for (const item of items) rewriteReferences(item, (name) => locals.get(name));
   }
 
-  /**
-   * Two arrows of a graph between the same two nodes, one each way (the arcs of a net or of a state
-   * machine), bend apart, each 20 degrees to its own right, unless it curves or shifts by itself
-   * (`bend`, `loop`, `via`, `offset`). Arrows the same way, and lines, stay on one another: a
-   * highlight is drawn over the edge it marks.
-   */
-  private static _spreadEdges(items: SlideItem[]): void {
-    const ends = (value: string) => value.replace(/^#/, '').replace(new RegExp(`\\.(${[...GROUP_ANCHORS].join('|')})$`), '');
-    const pairs = new Map<string, ElementSpec[]>();
-    for (const item of items) {
-      if (!(item instanceof ElementSpec) || item.part !== 'edge' || item.kind !== 'arrow') continue;
-      const [from, to] = [ends(item.attributes.from ?? ''), ends(item.attributes.to ?? '')];
-      if (from === to || from.startsWith('(') || to.startsWith('(')) continue;
-      const key = [from, to].sort().join(' ');
-      pairs.set(key, [...(pairs.get(key) ?? []), item]);
-    }
-    for (const edges of pairs.values()) {
-      if (new Set(edges.map((edge) => ends(edge.attributes.from))).size < 2) continue;
-      for (const edge of edges) {
-        if (!['bend', 'loop', 'via', 'offset'].some((name) => name in edge.attributes)) edge.attributes.bend = '-20';
-      }
-    }
-  }
-
   /** A line of a drawing block that is none of its own kinds: any element, parsed as in the slide, its ids under the block's. */
   private _drawnLine(text: string, at: number, base: string, items: SlideItem[]): void {
     items.push(...this._body([text], at, `${base}.`));
@@ -829,7 +805,6 @@ export class MarkupParser {
       this._drawnLine(text, at, `${base}.${k + 1}`, items);
     });
     MarkupParser._localize(items, base);
-    MarkupParser._spreadEdges(items);
     this._stepBlock(items, attrs, line);
     return items;
   }
@@ -1399,6 +1374,7 @@ export class ASTTransformer {
         positionOrder(members);
       }
       ASTTransformer._verdictSteps(slide);
+      ASTTransformer._spreadEdges([...elements.values()]);
       this.plan(slide);
     }
     const complete = new Set<string>();
@@ -1804,6 +1780,38 @@ export class ASTTransformer {
         if (found.length > 1) throw new MarkupError(`#${name} names a part of several blocks: write ${found.map((id) => `#${id}`).join(' or ')}`, 'line' in item ? item.line : slide.line);
         return found[0];
       });
+    }
+  }
+
+  /**
+   * Two arrows of a graph between the same two nodes, one each way and on screen together (their
+   * steps up to their hides overlap), bend apart, each 20 degrees to its own right: the arcs of a
+   * net or of a state machine. An arrow stays straight when an opposite one it meets curves or
+   * shifts by itself (`bend`, `loop`, `via`, `offset`), or when none is ever on screen with it;
+   * arrows the same way and lines stay on one another, as a highlight drawn over its edge does.
+   * Run once the steps are settled.
+   */
+  private static _spreadEdges(elements: ElementSpec[]): void {
+    const anchors = new RegExp(`\\.(${[...GROUP_ANCHORS].join('|')})$`);
+    const ends = (value: string) => value.replace(/^#/, '').replace(anchors, '');
+    const curved = (edge: ElementSpec) => ['bend', 'loop', 'via', 'offset'].some((name) => name in edge.attributes);
+    const window = (edge: ElementSpec): [number, number] => [
+      Math.max(0, elementStep(edge.attributes, edge.line)),
+      'hide' in edge.attributes ? stepValue(edge.attributes, 'hide', edge.line) : Infinity,
+    ];
+    const edges = elements.filter((item) => item.part === 'edge' && item.kind === 'arrow');
+    const own = new Map(edges.map((edge) => [edge, curved(edge)]));
+    for (const edge of edges) {
+      if (own.get(edge)) continue;
+      const [from, to] = [ends(edge.attributes.from ?? ''), ends(edge.attributes.to ?? '')];
+      if (from === to || from.startsWith('(') || to.startsWith('(')) continue;
+      const [start, end] = window(edge);
+      const met = edges.filter((other) => {
+        if (ends(other.attributes.from ?? '') !== to || ends(other.attributes.to ?? '') !== from) return false;
+        const [otherStart, otherEnd] = window(other);
+        return start < otherEnd && otherStart < end;
+      });
+      if (met.length && !met.some((other) => own.get(other))) edge.attributes.bend = '-20';
     }
   }
 

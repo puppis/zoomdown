@@ -737,7 +737,8 @@ messages and arrows then end at its border. A graph's lines draw nodes `A (x,y)`
 `ellipse` or `dot` written after; at the block's `x`, `y` plus `scale` times its own; `radius`
 0.3, 0.6 squares and 0.8 by 0.5 ellipses unless styled; labeled by `"…"`, or by its name with
 `labels=true`; or drawn by any directive after the point, `A (0,0) [[icon: server]]`), edges
-`A -> B` (`--` a line; two arrows one each way bend apart, 20 degrees each to its own right), and
+`A -> B` (`--` a line; two arrows one each way bend apart, 20 degrees each to its own right, when
+they are on screen together and neither curves or shifts by itself), and
 any element. A line ends with an optional
 `"label"`, bare style names and `{attributes}`. Both blocks take `#id`, `step` and `hide`, and are
 stepped as a whole, line by line, every line alike (a node, a message, an event or a plain

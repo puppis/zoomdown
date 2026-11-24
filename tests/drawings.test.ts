@@ -276,10 +276,18 @@ describe('a graph\'s nodes of any kind, and its parallel edges', () => {
     const bends = list.filter((item) => item.part === 'edge').map((item) => item.attributes.bend ?? item.attributes.offset ?? '');
     // One each way: both to their own right, so on either side of the line between the nodes.
     expect(bends.slice(0, 2)).toEqual(['-20', '-20']);
-    // q and r: the arrows bend apart, unless they curve or shift by themselves; the line stays.
-    expect(bends.slice(2)).toEqual(['-20', '-20', '', '0.1', '30']);
+    // q and r: the opposite arrow shifts by itself, so the others stay straight; the line stays.
+    expect(bends.slice(2)).toEqual(['', '', '', '0.1', '30']);
     const same = items('::: graph\nq (0,2)\nr (2,2)\nq -> r\nq -> r {color=RED}\n:::');
     expect(same.filter((item) => item.kind === 'arrow').map((item) => item.attributes.bend)).toEqual([undefined, undefined]);
+  });
+
+  it('bends two opposite arrows only when they are on screen together', () => {
+    const bends = (body: string) => items(body).filter((item) => item.kind === 'arrow').map((item) => item.attributes.bend ?? '');
+    expect(bends('::: graph\nA (0,0)\nB (3,0)\nA -> B {hide=1}\nB -> A {step=1}\n:::')).toEqual(['', '']);
+    expect(bends('::: graph\nA (0,0)\nB (3,0)\nA -> B {hide=2}\nB -> A {step=1}\n:::')).toEqual(['-20', '-20']);
+    // One that curves by itself leaves the other straight, as the docs say.
+    expect(bends('::: graph\na (0,0)\nb (2,0)\na -> b\nb -> a {bend=40}\n:::')).toEqual(['', '40']);
   });
 
   it('shifts a straight arrow or line sideways with offset=, still ending on the outlines', async () => {

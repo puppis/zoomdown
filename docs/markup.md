@@ -280,7 +280,7 @@ any other element may write `p@t` for the point of `p` at time `t`; where an eve
 nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` (or nameless, `(x,y)`) and edges `A -> B "3"`
 (`--` a line, `p.right -> t.left` between anchors); a node may be drawn by any directive after its
 point (`A (0,0) [[icon: server]]`, a deck's own `[[process: value=1]]`), and two arrows between the
-same nodes, one each way, bend apart. `offset=` shifts any straight arrow or line sideways. The names a block's lines write are local to it:
+same nodes, one each way, bend apart when they are on screen together and neither curves by itself. `offset=` shifts any straight arrow or line sideways. The names a block's lines write are local to it:
 `#A` inside the block, `#block.A` outside (or a bare `#A` when one block alone on the slide has an
 `A`), so two graphs of a slide may share names. Lines end
 with an optional `"label"`, bare style names and `{attributes}`; the parts are elements of the

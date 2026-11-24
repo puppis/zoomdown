@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { Line, Rectangle, VGroup } from 'manim-web';
 import { Display, LocalScene, inSourceOrder, setSourceRank, sourceRank } from '../src/display';
@@ -49,6 +49,28 @@ describe('the order things are drawn in', () => {
     expect(Math.max(...below.map((m) => m.order))).toBeLessThan(Math.min(...above.map((m) => m.order)));
     // Opaque materials would be drawn before every transparent one, whatever their order.
     expect([...below, ...above].every((m) => m.transparent)).toBe(true);
+  });
+});
+
+describe('the strokes of a display', () => {
+  it('scale an object added after the camera last changed, as a tile put in its final state by a jump', () => {
+    const local = new LocalScene();
+    const first = new Line({ start: [0, 0, 0], end: [1, 0, 0], color: '#000000' });
+    local.add(first);
+    const display = new Display(local, { contentOpacity: 1, gridOpacity: 0 });
+    display.sync(new Transform());
+    let order = 0;
+    display.prepareRender(800, 600, 16, () => order++);
+    // Added later, with the camera where it was: it must still take the camera's stroke scale.
+    const later = new Line({ start: [0, 1, 0], end: [1, 1, 0], color: '#000000' });
+    const scaled = vi.spyOn(later, '_setSceneContext');
+    const again = vi.spyOn(first, '_setSceneContext');
+    local.add(later);
+    display.sync(new Transform());
+    display.prepareRender(800, 600, 16, () => order++);
+    expect(scaled).toHaveBeenCalledWith(800, 600, 16);
+    // What took the scale already is left alone.
+    expect(again).not.toHaveBeenCalled();
   });
 });
 
