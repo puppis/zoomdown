@@ -275,7 +275,10 @@ whole and is what connections reach.
 `::: timeline {processes="p q" length=10}` draws a space-time diagram: a lifeline per process from
 `x`, `y` over `width` units, time flowing right or as `direction=left|down|up` says, `spacing`
 apart (one gap or a list), names at their start (`$p$`, or a line
-`p: name`); lines `p@1 -> q@3 "m"` draw messages (`--` a line), `q@2 "label"` events (dots), and
+`p: name`, none with `p:` or the block's `names=false`, `{length=9}` ending that lifeline);
+`lifeline_tip=true` ends the lifelines in a tip, `p@2 .. p@4 {dashed=true}` draws a part of one its
+own way; lines `p@1 -> q@3 "m"` draw messages (`--` a line), `q@2 "label"` events (dots; `dot=false`
+or the block's `event_dot=false` for the label alone, `sublabel_width` to wrap it), and
 any other element may write `p@t` for the point of `p` at time `t`; where an event stands there,
 `p@t` names the event (`p@t.top` one of its anchors), so messages and arrows stop at its border. `::: graph {x y scale}` draws
 nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` (or nameless, `(x,y)`) and edges `A -> B "3"`
@@ -560,6 +563,8 @@ callout: color=ORANGE font_size=30
 [Look here]{#c .callout x=0 y=-2}
 ```
 
+A style may name classes among its attributes, which it builds on (`note: .smallsep color=muted`);
+in a `::: styles` block, naming itself builds on its earlier definition (`verdict: .verdict width=4`).
 A style is a named attribute set, defined in the front matter (`styles`, as maps or attribute
 strings) or in a `::: styles` block of the Markdown file, which wins for the same name. Elements, includes and subslides opt in with `.name` tokens (several allowed, later ones
 win). Styles named after a **role** apply automatically: `heading` (also `h1` … `h6`), `body`,

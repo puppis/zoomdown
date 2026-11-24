@@ -31,6 +31,11 @@ kept apart from the deck is a **theme**, `themes/<name>.zd` next to the deck, ap
 
 ## Classes
 
+A style may build on others: the classes it names among its attributes give their attributes
+first, its own go over them (`note: .smallsep color=muted`). In a `::: styles` block, a style that
+names itself builds on its definition so far, the theme's or the front matter's:
+`verdict: .verdict width=4` adds a width to the course's verdict instead of replacing it.
+
 Elements, includes and subslides opt into styles with `.name` tokens in their attribute list. Several
 classes may be listed; later ones win. A style may set how labels look (`label_pos`,
 `label_side`, `slanted`, `label_color`) for elements with and without a label alike: on one

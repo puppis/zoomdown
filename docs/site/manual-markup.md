@@ -147,7 +147,8 @@ includes inside it as a grid: the first where the container's position says (`x`
 `anchor`, `dx`, `dy`, the relative references), each next one right of the one before, the first
 of each row under the first of the row before (under its verdict when it has one), all `buff`
 apart and as large as the container's `width` or `height` unless they give a size; the includes
-take no position of their own, and without `cols` the tiles make one row. The container's `step`
+take no position of their own, and without `cols` the tiles make one row; classes on the container
+fill in what it takes (`{cols=5 .medsep}`). The container's `step`
 and `hide` step it as a whole, line by line, as a timeline's or a graph's do. With
 `layout.captionSize`, a `step=-1` text of the child without a `font_size` of its own or of a class
 is that many points of the parent: its size is `captionSize` times the child's width over the
@@ -730,7 +731,11 @@ A timeline draws a lifeline per process (`processes`, names of letters, digits a
 flowing from `x`, `y` (the start of the first lifeline) over `width` units for `length` units of
 time (either alone gives both), `right` by default or as `direction` says (`left`, `down`, `up`),
 the lifelines `spacing` apart (1, or a list of the gaps between each two), each name at the start
-of its lifeline (`$p$`, or the text of a line `p: name`). Its lines draw messages `p@1 -> q@3` (an arrow; `--` a
+of its lifeline (`$p$`, or the text of a line `p: name`; none with an empty `p:` or the block's
+`names=false`; `p: name {length=9}` ends that lifeline at time 9). `lifeline_tip=true` (or `open`)
+ends the lifelines in a tip; `p@2 .. p@4 {dashed=true}` draws a part of a lifeline its own way, the
+lifeline in pieces (`#id.p`, `#id.p-2`, …); an event with `dot=false` (or the block's
+`event_dot=false`) is its label alone, which `sublabel_width` wraps. Its lines draw messages `p@1 -> q@3` (an arrow; `--` a
 line), events `q@2` (a dot, its label the dot's sublabel), and any element, where `p@t` is the
 point of `p` at time `t`, or, where an event stands, that event (`p@t.top` one of its anchors):
 messages and arrows then end at its border. A graph's lines draw nodes `A (x,y)` (a circle, or the `rectangle`,

@@ -318,7 +318,7 @@ export const ICON_KINDS = new Set<string>(ICON_NAMES);
 /** Where an icon's label sits. */
 export const LABEL_SIDES = new Set(['below', 'above', 'left', 'right']);
 /** What a shape takes for its labels: `label` (centered by default) and `sublabel` (below by default), each with its side, color and gap. */
-export const SHAPE_LABEL_ATTRS = ['label', 'label_side', 'label_color', 'label_buff', 'sublabel', 'sublabel_side', 'sublabel_color', 'sublabel_buff', 'sublabel_font_size'];
+export const SHAPE_LABEL_ATTRS = ['label', 'label_side', 'label_color', 'label_buff', 'label_width', 'sublabel', 'sublabel_side', 'sublabel_color', 'sublabel_buff', 'sublabel_font_size', 'sublabel_width'];
 /** Continuous vibration of vector geometry: `tremble=` with its amplitude and rate. */
 export const TREMBLE_ATTRS = new Set(['tremble', 'tremble_amplitude', 'tremble_rate']);
 /** Element kinds made of vector geometry, which `tremble=` can shake. */

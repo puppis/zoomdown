@@ -1094,7 +1094,9 @@ export class MarkupRenderer {
       if (!attrs[key]) continue;
       const fontSize = key === 'label' ? size : numberValue(attrs, 'sublabel_font_size', element.line, size) as number;
       const tint = attrs[`${key}_color`] ? parseColor(attrs[`${key}_color`]) : color;
-      const text = await this.text(this._parser.parseInlineSpans(attrs[key], element.line), fontSize, 100, tint, attrs.font);
+      // A label wraps at label_width or sublabel_width, else not at all.
+      const wrap = numberValue(attrs, `${key}_width`, element.line, 100) as number;
+      const text = await this.text(this._parser.parseInlineSpans(attrs[key], element.line), fontSize, wrap, tint, attrs.font);
       const side = attrs[`${key}_side`] ?? fallback;
       if (side === 'center') text.moveTo(anchorPoint(shape, 'center'));
       // Beside it by the text's box, as `at=top:#shape.bottom` puts it, centered on the other axis.

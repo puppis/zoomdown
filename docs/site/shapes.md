@@ -54,6 +54,7 @@ letter and the name under it, without a text of their own placed against the sha
 | `label`, `sublabel` | none | the texts, with emphasis, links and formulas |
 | `label_side`, `sublabel_side` | `center`, `below` | where each goes: `center`, `above`, `below`, `left` or `right` |
 | `label_buff`, `sublabel_buff` | 0.1 | the space between the shape and a text beside it |
+| `label_width`, `sublabel_width` | none | the width the text wraps at; it does not wrap by default |
 | `font_size`, `sublabel_font_size` | `layout.fontSize` | their sizes (the sublabel's is the label's unless set) |
 | `label_color`, `sublabel_color` | the shape's `color` | their colors |
 | `font` | the prose font | their face |
@@ -249,8 +250,9 @@ r@5 -> p@6.5 marker
 | Line | Draws |
 | --- | --- |
 | `p@1 -> q@3 "m1"` | a message: an arrow from process `p` at time 1 to `q` at time 3, labeled; `--` draws a line |
-| `q@2 "label"` | an event: a dot on `q` at time 2, its label (optional) as the dot's sublabel |
-| `p: name` | the name shown for `p` (inline text); `$p$` by default |
+| `q@2 "label"` | an event: a dot on `q` at time 2, its label (optional) as the dot's sublabel; `{dot=false}` writes the label alone (`event_dot=false` on the block, for every event), `sublabel_width` wraps it |
+| `p: name` | the name shown for `p` (inline text); `$p$` by default, none when empty (`p:`); `{length=9}` after it ends `p`'s lifeline at time 9 |
+| `p@2 .. p@4 {dashed=true}` | a part of `p`'s lifeline drawn its own way (any attribute or class of a line); the lifeline is drawn in pieces, the first `#id.p`, the others `#id.p-2`, … |
 | anything else | any element, in which `p@t` is the point of `p` at time `t` (`at=center:q@1.1`, `[[line: p@0 -> p@2]]`) |
 
 Where an event stands at `p@t`, `p@t` names that event, in a message as in any element: a message
@@ -265,7 +267,8 @@ takes `processes` (names of letters, digits and `_`), `length` (the time the lif
 `width` (their length in units; either one alone gives both), `spacing` between lifelines (1;
 or a list, one gap between each two: `spacing="1.2 1.4"`), `direction` (time flowing `right`, the
 default, `left`, `down` or `up`, the lifelines following one another across it and each name at the
-start of its lifeline), `x`, `y` (the start of the first lifeline, time 0), `#id`, and `step` and `hide`, which step it
+start of its lifeline), `names=false` (no process names), `lifeline_tip=true` (lifelines ending in a tip; `open` for an
+open one), `x`, `y` (the start of the first lifeline, time 0), `#id`, and `step` and `hide`, which step it
 [as a whole, line by line](fragments.html#blocks-step-as-a-whole). Its parts are elements of the slide
 whose names are [local to the block](#names-local-to-a-block): the lifelines `#id.p`, the names
 `#id.p-name`, an event or a line with an `#e` of its own `#id.e`, and the line `k` of the block

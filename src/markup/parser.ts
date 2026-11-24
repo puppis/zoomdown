@@ -231,6 +231,8 @@ export class MarkupParser {
   private _steps: StepMode = 'explicit';
   /** The anonymous classes blocks make of what they pass to their parts (`node_radius=0.3`), by name. */
   private _passed: StyleSheet = {};
+  /** The styles known so far in the document being parsed (a container's classes). */
+  private _styles: StyleSheet = {};
 
   constructor() {
     this.blockMarkdown = new MarkdownIt('commonmark', { html: false });
@@ -261,7 +263,10 @@ export class MarkupParser {
     source = source.replace(/<!--[\s\S]*?-->/g, (match) => '\n'.repeat((match.match(/\n/g) ?? []).length));
     const lines = source.split(/\r?\n/);
     const slides: SlideSpec[] = [];
-    const styles: StyleSheet = { ...(options.styles ?? {}) };
+    const styles: StyleSheet = {};
+    // A style may build on others, `.name` among its attributes: their attributes first, its own over them.
+    for (const [name, attrs] of Object.entries(options.styles ?? {})) styles[name] = MarkupParser._compose(name, attrs, options.styles ?? {}, undefined);
+    this._styles = styles;
     let index = 0;
     while (index < lines.length) {
       if (!lines[index].trim()) {
@@ -271,7 +276,10 @@ export class MarkupParser {
       const opening = CONTAINER.exec(lines[index]);
       if (opening && /^styles\s*$/.test(opening[1])) {
         const end = MarkupParser._containerEnd(lines, index);
-        Object.assign(styles, MarkupParser._styles(lines.slice(index + 1, end), index + 2));
+        // A style of the block builds on the classes it names; naming itself, on its definition so far (the theme's).
+        for (const [name, attrs] of Object.entries(MarkupParser._styles(lines.slice(index + 1, end), index + 2))) {
+          styles[name] = MarkupParser._compose(name, attrs, styles, styles[name]);
+        }
         index = end + 1;
         continue;
       }
@@ -343,6 +351,24 @@ export class MarkupParser {
       index = end;
     }
     return blocks ? styles : MarkupParser._styles(lines, 1);
+  }
+
+  /**
+   * A style with the classes it names among its attributes (`verdict: .smallsep color=muted width=4`):
+   * their attributes in order, then its own over them. A style naming itself builds on its definition
+   * before this one (`verdict: .verdict width=4` adds a width to the theme's verdict).
+   */
+  private static _compose(name: string, attrs: Attributes, styles: StyleSheet, previous: Attributes | undefined, seen: Set<string> = new Set()): Attributes {
+    if (!attrs.class) return attrs;
+    const merged: Attributes = {};
+    for (const token of attrs.class.split(/\s+/).filter(Boolean)) {
+      const base = token === name ? previous : seen.has(token) ? undefined : styles[token];
+      if (!base) throw new MarkupError(token === name ? `The style ${name} names itself, but no style ${name} comes before it` : `The style ${name} names an unknown style .${token}`);
+      Object.assign(merged, MarkupParser._compose(token, base, styles, undefined, new Set([...seen, name])));
+    }
+    const { class: _, ...own } = attrs;
+    void _;
+    return { ...merged, ...own };
   }
 
   private static _styles(lines: string[], firstLine: number): StyleSheet {
@@ -501,6 +527,18 @@ export class MarkupParser {
    */
   private _tiles(members: SlideItem[], attrs: Attributes, line: number): SlideItem[] {
     const POSITION = [...LAYOUT].filter((key) => !['width', 'height', 'angle', 'class', 'buff'].includes(key));
+    // Classes fill in what the tiles take (`{cols=5 .medsep}`: the gap), under what they write.
+    if (attrs.class) {
+      for (const token of attrs.class.split(/\s+/).filter(Boolean)) {
+        const style = this._styles[token];
+        if (!style) throw new MarkupError(`Unknown style class .${token}`, line);
+        for (const [key, value] of Object.entries(style)) {
+          if (key in attrs || !(['cols', 'buff', 'width', 'height', 'step', 'hide'].includes(key) || POSITION.includes(key) || /^verdict_./.test(key))) continue;
+          attrs[key] = value;
+        }
+      }
+      delete attrs.class;
+    }
     for (const key of Object.keys(attrs)) {
       if (!['cols', 'buff', 'width', 'height', 'step', 'hide'].includes(key) && !POSITION.includes(key) && !/^verdict_./.test(key)) {
         throw new MarkupError(`Tiles take cols, buff, width, height, step, hide, a position and their verdicts' attributes (verdict_…), not ${key}=`, line);
@@ -650,7 +688,14 @@ export class MarkupParser {
    * (`q@2 "label"`, a dot) and any element, in which `p@t` is the point of process `p` at time `t`.
    */
   private _timeline(body: string[], line: number, attrs: Attributes, prefix: string): SlideItem[] {
-    MarkupParser._drawingAttrs(attrs, ['id', 'processes', 'length', 'width', 'spacing', 'direction', 'x', 'y', 'step', 'hide'], 'timeline', line, ['lifeline', 'process', 'message', 'event']);
+    MarkupParser._drawingAttrs(attrs, ['id', 'processes', 'length', 'width', 'spacing', 'direction', 'names', 'x', 'y', 'step', 'hide'], 'timeline', line, ['lifeline', 'process', 'message', 'event']);
+    if ('names' in attrs && !['true', 'false'].includes(attrs.names)) throw new MarkupError('names must be true or false', line);
+    // What the block passes that is no attribute of a part: lifelines ending in a tip, events without dots.
+    const tip = attrs.lifeline_tip;
+    const dots = attrs.event_dot;
+    attrs = { ...attrs };
+    delete attrs.lifeline_tip;
+    delete attrs.event_dot;
     const processes = (attrs.processes ?? '').trim().split(/\s+/).filter(Boolean);
     if (!processes.length) throw new MarkupError('A timeline needs its processes: processes="p q …"', line);
     for (const [i, name] of processes.entries()) {
@@ -696,7 +741,9 @@ export class MarkupParser {
     const base = `${prefix}${attrs.id ?? `timeline-${line}`}`;
     const who = `(${processes.join('|')})`;
     const time = '(-?\\d+(?:\\.\\d+)?)';
-    const naming = new RegExp(`^\\s*${who}\\s*:\\s*(.+)$`);
+    const naming = new RegExp(`^\\s*${who}\\s*:\\s*(.*)$`);
+    // A part of a lifeline drawn its own way: p@2 .. p@4 {dashed=true}.
+    const segment = new RegExp(`^\\s*${who}@${time}\\s*\\.\\.\\s*${who}@${time}(?![\\w.@])(.*)$`);
     const message = new RegExp(`^\\s*${who}@${time}\\s*(->|--)\\s*${who}@${time}(?![\\w.@])(.*)$`);
     const event = new RegExp(`^\\s*${who}@${time}(?![\\w.@])(.*)$`);
     const anchors = [...GROUP_ANCHORS].sort((a, b) => b.length - a.length).join('|');
@@ -706,7 +753,7 @@ export class MarkupParser {
     // point with no event stays a point.
     const events = new Map<string, string>();
     body.forEach((text, k) => {
-      const happened = message.test(text) ? null : event.exec(text);
+      const happened = message.test(text) || segment.test(text) ? null : event.exec(text);
       if (!happened) return;
       const key = `${happened[1]}@${Number(happened[2])}`;
       const own = MarkupParser._tail(happened[3], line + 1 + k).attrs.id;
@@ -718,26 +765,71 @@ export class MarkupParser {
       if (anchor) throw new MarkupError(`${process}@${moment} names no event, so it has no .${anchor}`, at);
       return point(process, moment);
     };
-    const names = new Map<string, string>();
-    for (const text of body) {
+    // A process's line, `p: name {length=9}`: the name it shows (none when empty) and where its lifeline ends.
+    const names = new Map<string, string | null>();
+    const ends = new Map<string, number>();
+    body.forEach((text, k) => {
       const named = naming.exec(text);
-      if (named) names.set(named[1], named[2].trim());
-    }
+      if (!named) return;
+      // The name is what the line writes, but a trailing {length=…} (a formula's braces stay its own).
+      const split = /^(.*?)\s*(\{[^{}]*=[^{}]*\})\s*$/.exec(named[2]);
+      const written = (split ? split[1] : named[2]).trim();
+      const own = split ? parseAttributes(split[2], line + 1 + k) : {};
+      for (const key of Object.keys(own)) if (key !== 'length') throw new MarkupError(`A process's line takes its name and length=, not ${key}=`, line + 1 + k);
+      names.set(named[1], written || null);
+      if ('length' in own) {
+        const end = Number(own.length);
+        if (!(end > 0)) throw new MarkupError('A lifeline\'s length is a positive time', line + 1 + k);
+        ends.set(named[1], end);
+      }
+    });
+    const segments = new Map<string, Array<{ from: number; to: number; own: Attributes; words: string[]; at: number }>>();
+    body.forEach((text, k) => {
+      const part = segment.exec(text);
+      if (!part) return;
+      if (part[1] !== part[3]) throw new MarkupError('A part of a lifeline joins two times of one process: p@2 .. p@4', line + 1 + k);
+      const tail = MarkupParser._tail(part[5], line + 1 + k);
+      const [from, to] = [Number(part[2]), Number(part[4])].sort((a, b) => a - b);
+      segments.set(part[1], [...(segments.get(part[1]) ?? []), { from, to, own: tail.attrs, words: tail.words, at: line + 1 + k }]);
+    });
     const items: SlideItem[] = [];
     const make = (id: string, kind: string, spans: InlineSpan[], own: Attributes, role: string, at: number) => {
       items.push(this._part(id, kind, spans, own, role, attrs, at, base));
     };
     for (const process of processes) {
       if (GROUP_ANCHORS.has(process)) throw new MarkupError(`A process may not be named after an anchor: ${process}`, line);
-      make(`${base}.${process}`, 'line', [], this._drawn({ from: point(process, 0), to: point(process, span) }, []), 'lifeline', line);
-      (items[items.length - 1] as ElementSpec).localName = process;
-      const name = this.parseInlineSpans(names.get(process) ?? `$${process}$`, line);
-      make(`${base}.${process}-name`, 'text', name, this._drawn({ at: nameAt(process) }, []), 'process', line);
+      // The lifeline, in pieces where parts of it are drawn their own way; the first is #block.p.
+      const end = ends.get(process) ?? span;
+      const parts = (segments.get(process) ?? []).sort((a, b) => a.from - b.from);
+      const pieces: Array<{ from: number; to: number; own: Attributes; words: string[]; at: number }> = [];
+      let reached = 0;
+      for (const part of parts) {
+        if (part.from < reached - 1e-9 || part.to > end + 1e-9) throw new MarkupError(`Parts of the lifeline of ${process} overlap or pass its end`, part.at);
+        if (part.from > reached) pieces.push({ from: reached, to: part.from, own: {}, words: [], at: line });
+        pieces.push(part);
+        reached = part.to;
+      }
+      if (reached < end) pieces.push({ from: reached, to: end, own: {}, words: [], at: line });
+      pieces.forEach((piece, n) => {
+        const own: Attributes = { ...piece.own, from: point(process, piece.from), to: point(process, piece.to) };
+        // With lifeline_tip, the last piece ends in a tip (lifeline_tip=open: an open one).
+        const tipped = tip !== undefined && tip !== 'false' && tip !== 'none' && n === pieces.length - 1;
+        if (tipped) {
+          own.buff = '0';
+          if (tip !== 'true') own.tip = tip;
+        }
+        make(n === 0 ? `${base}.${process}` : `${base}.${process}-${n + 1}`, tipped ? 'arrow' : 'line', [], this._drawn(own, piece.words), 'lifeline', piece.at);
+        if (n === 0) (items[items.length - 1] as ElementSpec).localName = process;
+      });
+      // Its name, unless the block shows none (names=false) or the process's line gives an empty one.
+      const named = names.has(process) ? names.get(process) : `$${process}$`;
+      if (attrs.names === 'false' || named === null || named === undefined) continue;
+      make(`${base}.${process}-name`, 'text', this.parseInlineSpans(named, line), this._drawn({ at: nameAt(process) }, []), 'process', line);
       (items[items.length - 1] as ElementSpec).localName = `${process}-name`;
     }
     body.forEach((text, k) => {
       const at = line + 1 + k;
-      if (!text.trim() || naming.test(text)) return;
+      if (!text.trim() || naming.test(text) || segment.test(text)) return;
       const id = `${base}.${k + 1}`;
       const sent = message.exec(text);
       if (sent) {
@@ -753,6 +845,11 @@ export class MarkupParser {
         const [x, y] = point(happened[1], Number(happened[2])).slice(1, -1).split(',');
         const own: Attributes = { ...tail.attrs, x, y };
         if (tail.label !== null) own.sublabel = tail.label;
+        // An event without a dot (dot=false, or the block's event_dot=false): its label at the point alone.
+        const dot = own.dot ?? dots;
+        delete own.dot;
+        if (dot !== undefined && !['true', 'false'].includes(dot)) throw new MarkupError('dot must be true or false', at);
+        if (dot === 'false') Object.assign(own, { radius: '0.0001', fill_opacity: '0', stroke_width: '0' });
         make(id, 'dot', [], this._drawn(own, tail.words), 'event', at);
         return;
       }
@@ -2014,13 +2111,13 @@ export class ASTTransformer {
     for (const key of [...GEOMETRY, 'font_size', 'size', 'buff', 'radius', 'corner_radius', 'stroke_width', 'fill_opacity', 'opacity', 'dx', 'dy', 'run_time', 'lag',
       'start_angle', 'scale', 'roughness', 'bowing', 'hachure_angle', 'hachure_gap', 'fill_weight', 'seed', 'smoothness', 'tremble_amplitude', 'tremble_rate',
       'padding_x', 'padding_y', 'header_opacity', 'stripe_opacity', 'min', 'max', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'sublabel_buff', 'sublabel_font_size', 'halo_width',
-      'tip_length', 'tip_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end', 'flow_top', 'flow_left', 'label_width', 'line_height', 'header_font_size']) {
+      'tip_length', 'tip_width', 'sublabel_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end', 'flow_top', 'flow_left', 'label_width', 'line_height', 'header_font_size']) {
       if (!(key in attrs)) continue;
       const number = numberValue(attrs, key, line) as number;
       if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'sublabel_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
         throw new MarkupError(`${key} must be nonnegative`, line);
       }
-      if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size', 'sublabel_font_size'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);
+      if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size', 'sublabel_font_size', 'sublabel_width'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);
       if (['fill_opacity', 'opacity', 'smoothness', 'header_opacity', 'stripe_opacity'].includes(key) && (number < 0 || number > 1)) {
         throw new MarkupError(`${key} must be between zero and one`, line);
       }

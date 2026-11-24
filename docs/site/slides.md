@@ -89,7 +89,8 @@ the container's position says, each next one right of the one before, and the fi
 under the first of the row before (under its verdict when it has one, measured from the verdict's
 line box, so the rows step evenly whatever its letters reach), all `buff` apart and as
 large as the container's `width` or `height` unless they say it themselves. Without `cols` the
-tiles make one row. The includes inside take no position of their own. Its `step` and `hide`
+tiles make one row. Classes on the container fill in what it takes and does not write
+(`::: tiles {cols=5 .medsep}`: the gap of `medsep`). The includes inside take no position of their own. Its `step` and `hide`
 step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole): the first tile is
 visited at its `step`, the verdicts go at its `hide`.
 
