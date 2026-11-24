@@ -85,7 +85,9 @@ A `::: tiles` container lays its includes out as a grid of `cols` columns: the f
 the container's position says, each next one right of the one before, and the first of each row
 under the first of the row before (under its verdict when it has one), all `buff` apart and as
 large as the container's `width` or `height` unless they say it themselves. Without `cols` the
-tiles make one row. The includes inside take no position of their own.
+tiles make one row. The includes inside take no position of their own. Its `step` and `hide`
+step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole): the first tile is
+visited at its `step`, the verdicts go at its `hide`.
 
 ```markdown
 ::: tiles {cols=3 x=-7 y=3 anchor=top-left width=3.5 buff=0.5}

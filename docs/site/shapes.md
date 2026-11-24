@@ -257,9 +257,8 @@ A message or an event line ends with an optional `"label"`, style names written 
 (`marker`, `snap`: the same as `{.marker}`) and `{attributes}` (`{color=RED step=+}`). The block
 takes `processes` (names of letters, digits and `_`), `length` (the time the lifelines span) and
 `width` (their length in units; either one alone gives both), `spacing` (1) between lifelines,
-`x`, `y` (the left end of the top lifeline, time 0), `#id`, and `step` and `hide` for every part
-without its own (with [sequential steps](fragments.html#steps-that-follow-the-source), `step` goes
-to the first part, and the others follow it as usual). Its parts are elements of the slide: the
+`x`, `y` (the left end of the top lifeline, time 0), `#id`, and `step` and `hide`, which step it
+[as a whole, line by line](fragments.html#blocks-step-as-a-whole). Its parts are elements of the slide: the
 lifelines `#id-p`, the names `#id-p-name` and the line `k` of the block `#id-k`, so each appears at
 its own click. They take the deck's styles `lifeline`, `process`, `message` and `event` after
 those of their kind, each only what its kind takes. In a [group](groups.html) the diagram is part of the group.
@@ -292,4 +291,4 @@ Lines end as in a timeline: a `"label"`, style names written bare, `{attributes}
 `radius=0.3` (a rectangle 0.6 square, an ellipse 0.8 by 0.5) unless its attributes or styles size
 it. With `labels=true` every node without a label of its own is labeled by its name. Nodes and
 edges take the deck's styles `node` and `edge` after those of their kind, each only what its kind
-takes, and the block's `step` and `hide` as a timeline's parts do.
+takes. The block's `step` and `hide` step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole).

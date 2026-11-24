@@ -120,6 +120,30 @@ after a child counts from its visit. Directives follow the same rule: `[[show]]`
 without `step` take the step of the element before them, and `step=+` the click after it. Without
 `steps: sequential`, `+` has nothing to count from and is refused.
 
+## Blocks step as a whole
+
+A `::: timeline`, a `::: graph` and a `::: tiles` block are stepped as a whole, line by line,
+like a group whose members may carry steps of their own; every line is treated alike, whatever
+it is (a node, an edge, a message, an event, an include or a plain element):
+
+- with sequential steps, the block's `step` is where its first line starts, unless that line has
+  a step of its own, and the lines after it follow as anywhere (`step=+` the click after, none
+  the same click);
+- with numbered steps, the block's `step` goes to every line without a step of its own;
+- the block's `hide` goes to every line without one (the verdict of a tile included: an include
+  itself is never hidden).
+
+```markdown
+::: graph {step=1 hide=2}
+A (0,0)
+B (2,0)
+A -> B
+[x]{at=(1,1)}
+:::
+```
+
+A, B, the arrow and x appear at click 1 and go at click 2, whichever line is written first.
+
 ## Timing
 
 <a class="try" href="tour.html#slide=anchors">Open in the tour ↗</a>

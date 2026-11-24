@@ -420,8 +420,8 @@ export class MarkupParser {
   private _tiles(members: SlideItem[], attrs: Attributes, line: number): SlideItem[] {
     const POSITION = [...LAYOUT].filter((key) => !['width', 'height', 'angle', 'class', 'buff'].includes(key));
     for (const key of Object.keys(attrs)) {
-      if (key !== 'cols' && key !== 'buff' && key !== 'width' && key !== 'height' && !POSITION.includes(key)) {
-        throw new MarkupError(`Tiles take cols, buff, width, height and a position, not ${key}=`, line);
+      if (!['cols', 'buff', 'width', 'height', 'step', 'hide'].includes(key) && !POSITION.includes(key)) {
+        throw new MarkupError(`Tiles take cols, buff, width, height, step, hide and a position, not ${key}=`, line);
       }
     }
     const cols = 'cols' in attrs ? Number(attrs.cols) : Infinity;
@@ -455,6 +455,8 @@ export class MarkupParser {
         own['left-aligned'] = `#${head.target}`;
       }
     });
+    if (attrs.hide === '+') throw new MarkupError("hide=+ counts from an element's own step: give the tiles hide=N", line);
+    this._stepBlock(members, attrs, line);
     return members;
   }
 
@@ -488,17 +490,31 @@ export class MarkupParser {
     return { label, words, attrs };
   }
 
-  /**
-   * The attributes of an element a timeline or a graph makes: its own, with its style names, and
-   * the block's `step` and `hide` when it has none of its own. With sequential steps a block's
-   * `step` goes to its first element alone, the others following it.
-   */
-  private _drawn(own: Attributes, words: string[], block: Attributes, first: boolean): Attributes {
+  /** The attributes of an element a timeline or a graph makes: its own, with its style names. */
+  private _drawn(own: Attributes, words: string[]): Attributes {
     const attrs = { ...own };
     if (words.length) attrs.class = [attrs.class, ...words].filter(Boolean).join(' ');
-    if ('step' in block && !('step' in attrs) && (first || this._steps !== 'sequential')) attrs.step = block.step;
-    if ('hide' in block && !('hide' in attrs)) attrs.hide = block.hide;
     return attrs;
+  }
+
+  /**
+   * Step a block as a whole, line by line (rule B), whatever its lines are (nodes, messages,
+   * events, includes, plain elements): with sequential steps its `step` is where its first line
+   * starts, unless that line has a step of its own, the lines after it following as anywhere;
+   * with numbered steps it goes to every line without a step of its own. Its `hide` goes to every
+   * line without one. The block is stepped as a group whose members may carry steps.
+   */
+  private _stepBlock(items: SlideItem[], block: Attributes, line: number): void {
+    const lines = items.filter((item): item is ElementSpec | IncludeSpec | CodeSlideSpec => (item instanceof ElementSpec && item.verdictOf === null) || item instanceof IncludeSpec || item instanceof CodeSlideSpec);
+    if ('step' in block) {
+      if (block.step === '+' && this._steps !== 'sequential') throw new MarkupError(RELATIVE_STEP, line);
+      const takers = this._steps === 'sequential' ? lines.slice(0, 1) : lines;
+      for (const item of takers) if (!('step' in item.attributes)) item.attributes.step = block.step;
+    }
+    if ('hide' in block) {
+      // A verdict goes with its include's line; an include itself is never hidden.
+      for (const item of items) if (item instanceof ElementSpec && !('hide' in item.attributes)) item.attributes.hide = block.hide;
+    }
   }
 
   /** What a drawing block (a timeline, a graph) checks of its own attributes. */
@@ -561,9 +577,9 @@ export class MarkupParser {
     };
     for (const process of processes) {
       const y = number(y0 - processes.indexOf(process) * spacing);
-      make(`${base}-${process}`, 'line', [], this._drawn({ from: point(process, 0), to: point(process, span) }, [], attrs, !items.length), 'lifeline', line);
+      make(`${base}-${process}`, 'line', [], this._drawn({ from: point(process, 0), to: point(process, span) }, []), 'lifeline', line);
       const name = this.parseInlineSpans(names.get(process) ?? `$${process}$`, line);
-      make(`${base}-${process}-name`, 'text', name, this._drawn({ at: `right:(${number(x0 - 0.2)},${y})` }, [], attrs, false), 'process', line);
+      make(`${base}-${process}-name`, 'text', name, this._drawn({ at: `right:(${number(x0 - 0.2)},${y})` }, []), 'process', line);
     }
     body.forEach((text, k) => {
       const at = line + 1 + k;
@@ -574,7 +590,7 @@ export class MarkupParser {
         const tail = MarkupParser._tail(sent[6], at);
         const own: Attributes = { ...tail.attrs, from: point(sent[1], Number(sent[2])), to: point(sent[4], Number(sent[5])) };
         if (tail.label !== null) own.label = tail.label;
-        make(id, sent[3] === '->' ? 'arrow' : 'line', [], this._drawn(own, tail.words, attrs, !items.length), 'message', at);
+        make(id, sent[3] === '->' ? 'arrow' : 'line', [], this._drawn(own, tail.words), 'message', at);
         return;
       }
       const happened = event.exec(text);
@@ -583,11 +599,12 @@ export class MarkupParser {
         const [x, y] = point(happened[1], Number(happened[2])).slice(1, -1).split(',');
         const own: Attributes = { ...tail.attrs, x, y };
         if (tail.label !== null) own.sublabel = tail.label;
-        make(id, 'dot', [], this._drawn(own, tail.words, attrs, !items.length), 'event', at);
+        make(id, 'dot', [], this._drawn(own, tail.words), 'event', at);
         return;
       }
       this._drawnLine(text.replace(anywhere, (_, process: string, moment: string) => point(process, Number(moment))), at, id, items);
     });
+    this._stepBlock(items, attrs, line);
     return items;
   }
 
@@ -623,7 +640,7 @@ export class MarkupParser {
         const own: Attributes = { ...tail.attrs, x: number(x0 + scale * Number(placed[2])), y: number(y0 + scale * Number(placed[3])) };
         const label = tail.label ?? (attrs.labels === 'true' ? placed[1] : null);
         if (label !== null && label !== '') own.label = label;
-        make(placed[1], kind, this._drawn(own, tail.words, attrs, !items.length), 'node', at);
+        make(placed[1], kind, this._drawn(own, tail.words), 'node', at);
         return;
       }
       const joined = edge.exec(text);
@@ -631,11 +648,12 @@ export class MarkupParser {
         const tail = MarkupParser._tail(joined[4], at);
         const own: Attributes = { ...tail.attrs, from: `#${joined[1]}`, to: `#${joined[3]}` };
         if (tail.label !== null) own.label = tail.label;
-        make(`${base}-${k + 1}`, joined[2] === '->' ? 'arrow' : 'line', this._drawn(own, tail.words, attrs, !items.length), 'edge', at);
+        make(`${base}-${k + 1}`, joined[2] === '->' ? 'arrow' : 'line', this._drawn(own, tail.words), 'edge', at);
         return;
       }
       this._drawnLine(text, at, `${base}-${k + 1}`, items);
     });
+    this._stepBlock(items, attrs, line);
     return items;
   }
 

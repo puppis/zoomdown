@@ -276,8 +276,11 @@ process from `x`, `y` over `width` units, `spacing` apart, names at their left (
 any other element may write `p@t` for the point of `p` at time `t`. `::: graph {x y scale}` draws
 nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` and edges `A -> B "3"` (`--` a line). Lines end
 with an optional `"label"`, bare style names and `{attributes}`; the parts are elements of the
-slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`, and the
-block's `step` and `hide` go to the parts without their own.
+slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`. A block
+(timeline, graph or tiles) is stepped as a whole, line by line, whatever each line is: with
+sequential steps its `step` is where its first line starts (unless that line has its own) and
+the lines after it follow; with numbered steps it goes to every line without its own; its `hide`
+goes to every line without its own.
 
 `fill_gradient` fills a shape with a linear gradient through two colors or more, spaced evenly
 from the first to the last in `gradient_direction` (`right` by default, `left`, `up` or `down`).

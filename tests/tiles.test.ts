@@ -68,7 +68,7 @@ describe('a grid of tiles', () => {
     expect(() => parse('::: tiles {cols=2}\n[[include: #a x=1]]\n:::')).toThrow(/give the position \(x=\) to the tiles container/);
     expect(() => parse('::: tiles\n[[include: #a]]\ntext\n:::')).toThrow(/Tiles contain includes only/);
     expect(() => parse('::: tiles {cols=0}\n[[include: #a]]\n:::')).toThrow(/cols must be a positive integer/);
-    expect(() => parse('::: tiles {step=2}\n[[include: #a]]\n:::')).toThrow(/Tiles take cols, buff, width, height and a position, not step=/);
+    expect(() => parse('::: tiles {color=RED}\n[[include: #a]]\n:::')).toThrow(/Tiles take cols, buff, width, height, step, hide and a position, not color=/);
     expect(() => parse('::: tiles\n:::')).toThrow(/at least one include/);
   });
 });

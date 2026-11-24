@@ -146,7 +146,8 @@ includes inside it as a grid: the first where the container's position says (`x`
 `anchor`, `dx`, `dy`, the relative references), each next one right of the one before, the first
 of each row under the first of the row before (under its verdict when it has one), all `buff`
 apart and as large as the container's `width` or `height` unless they give a size; the includes
-take no position of their own, and without `cols` the tiles make one row. With
+take no position of their own, and without `cols` the tiles make one row. The container's `step`
+and `hide` step it as a whole, line by line, as a timeline's or a graph's do. With
 `layout.captionSize`, a `step=-1` text of the child without a `font_size` of its own or of a class
 is that many points of the parent: its size is `captionSize` times the child's width over the
 tile's. See [Rows and grids of tiles](slides.html#rows-and-grids-of-tiles).
@@ -732,8 +733,11 @@ point of `p` at time `t`. A graph's lines draw nodes `A (x,y)` (a circle, or the
 `ellipse` or `dot` written after; at the block's `x`, `y` plus `scale` times its own; `radius`
 0.3, 0.6 squares and 0.8 by 0.5 ellipses unless styled; labeled by `"…"`, or by its name with
 `labels=true`), edges `A -> B` (`--` a line), and any element. A line ends with an optional
-`"label"`, bare style names and `{attributes}`. Both blocks take `#id`, `step` and `hide`, given to
-the parts without their own (with sequential steps, `step` to the first part only). The parts
+`"label"`, bare style names and `{attributes}`. Both blocks take `#id`, `step` and `hide`, and are
+stepped as a whole, line by line, every line alike (a node, a message, an event or a plain
+element): with sequential steps the block's `step` is where its first line starts, unless that
+line has a step of its own, and the lines after it follow; with numbered steps it goes to every
+line without its own; the block's `hide` goes to every line without its own. The parts
 are elements of the slide (lifelines `#id-p`, names `#id-p-name`, the line `k` of the block
 `#id-k`, nodes by their names), with the extra style roles `lifeline`, `process`, `message`,
 `event`, `node` and `edge`, from which each takes only what its kind takes. See

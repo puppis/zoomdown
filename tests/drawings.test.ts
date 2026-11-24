@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Mobject } from 'manim-web';
 import { MarkupParser } from '../src/markup/parser';
-import { ElementSpec, GroupSpec, type SlideItem } from '../src/markup/ast';
+import { ElementSpec, GroupSpec, IncludeSpec, type SlideItem } from '../src/markup/ast';
 import { element, installFakeCanvas, slide } from './helpers/slides';
 
 beforeAll(installFakeCanvas);
@@ -93,6 +93,36 @@ describe('a timeline', () => {
   it('may stand in a group, its parts the group\'s members', () => {
     const group = parse('::: {.group #g x=1 y=1 step=2}\n::: timeline {#t processes="p" length=3}\np@1\n:::\n:::').slides[0].items[0] as GroupSpec;
     expect(group.items.map((member) => member.id)).toEqual(['g.t-p', 'g.t-p-name', 'g.t-1']);
+  });
+});
+
+describe('a block stepped as a whole, line by line (rule B)', () => {
+  const steps = (body: string, mode: 'explicit' | 'sequential') => Object.fromEntries(items(body, { steps: mode })
+    .map((item) => [item.id, `${item.attributes.step ?? ''}/${item.attributes.hide ?? ''}`]));
+
+  it('gives every line its step and hide with numbered steps, a plain element as a node', () => {
+    const got = steps('Start {#start}\n\n::: graph {#g step=1 hide=2}\nA (0,0)\nB (2,0)\nA -> B\n[x]{#x at=(1,1)}\n:::', 'explicit');
+    expect(got).toMatchObject({ start: '/', A: '1/2', B: '1/2', 'g-3': '1/2', x: '1/2' });
+  });
+
+  it('starts its first line at its step with sequential steps, whatever that line is, and hides every line', () => {
+    const last = steps('Start {#start}\n\n::: graph {#g step=1 hide=2}\nA (0,0)\nB (2,0)\nA -> B\n[x]{#x at=(1,1)}\n:::', 'sequential');
+    expect(last).toMatchObject({ start: '/', A: '1/2', B: '1/2', 'g-3': '1/2', x: '1/2' });
+    const first = steps('Start {#start}\n\n::: graph {#g step=1 hide=2}\n[x]{#x at=(1,1)}\nA (0,0)\nB (2,0)\nA -> B\n:::', 'sequential');
+    expect(first).toMatchObject({ start: '/', x: '1/2', A: '1/2', B: '1/2', 'g-4': '1/2' });
+    // A first line with a step of its own keeps it; the lines after follow it.
+    const own = steps('::: timeline {#t processes="p" length=4 step=+}\n[note]{#n at=p@1 step=3}\np@2\n:::', 'sequential');
+    expect(own).toMatchObject({ 't-p': '1/', 't-p-name': '1/', n: '3/', 't-2': '3/' });
+  });
+
+  it('steps tiles as other blocks', () => {
+    const document = new MarkupParser().parse('::: slide {#r}\n[t]{#t step=+}\n\n::: tiles {step=4 hide=6}\n[[include: #a verdict="x"]]\n[[include: #b]]\n:::\n:::\n::: slide {#a}\nA\n:::\n::: slide {#b}\nB\n:::', { steps: 'sequential' });
+    const r = document.slides.find((s) => s.id === 'r')!.items;
+    const visit = (target: string) => (r.find((item) => item instanceof IncludeSpec && item.target === target) as IncludeSpec).attributes.step;
+    expect([visit('a'), visit('b')]).toEqual(['4', '5']);
+    // The verdict comes the click after its tile's visit, and goes with the block.
+    expect(byId(r, 'a-verdict').attributes).toMatchObject({ step: '5', hide: '6' });
+    expect(() => new MarkupParser().parse('::: slide {#r}\n::: tiles {step=+}\n[[include: #a]]\n:::\n:::\n::: slide {#a}\nA\n:::')).toThrow(/steps: sequential/);
   });
 });
 
