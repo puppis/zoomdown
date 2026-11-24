@@ -275,7 +275,10 @@ process from `x`, `y` over `width` units, `spacing` apart, names at their left (
 `p: name`); lines `p@1 -> q@3 "m"` draw messages (`--` a line), `q@2 "label"` events (dots), and
 any other element may write `p@t` for the point of `p` at time `t`; where an event stands there,
 `p@t` names the event (`p@t.top` one of its anchors), so messages and arrows stop at its border. `::: graph {x y scale}` draws
-nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` and edges `A -> B "3"` (`--` a line). Lines end
+nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` (or nameless, `(x,y)`) and edges `A -> B "3"`
+(`--` a line, `p.right -> t.left` between anchors). The names a block's lines write are local to it:
+`#A` inside the block, `#block.A` outside (or a bare `#A` when one block alone on the slide has an
+`A`), so two graphs of a slide may share names. Lines end
 with an optional `"label"`, bare style names and `{attributes}`; the parts are elements of the
 slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`, unless
 the block names their classes (`node=place edge=arc`, `message=request`); `<role>_<attribute>` on

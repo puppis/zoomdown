@@ -264,9 +264,10 @@ A message or an event line ends with an optional `"label"`, style names written 
 takes `processes` (names of letters, digits and `_`), `length` (the time the lifelines span) and
 `width` (their length in units; either one alone gives both), `spacing` (1) between lifelines,
 `x`, `y` (the left end of the top lifeline, time 0), `#id`, and `step` and `hide`, which step it
-[as a whole, line by line](fragments.html#blocks-step-as-a-whole). Its parts are elements of the slide: the
-lifelines `#id-p`, the names `#id-p-name` and the line `k` of the block `#id-k`, so each appears at
-its own click. They take the deck's styles `lifeline`, `process`, `message` and `event` after
+[as a whole, line by line](fragments.html#blocks-step-as-a-whole). Its parts are elements of the slide
+whose names are [local to the block](#names-local-to-a-block): the lifelines `#id.p`, the names
+`#id.p-name`, an event or a line with an `#e` of its own `#id.e`, and the line `k` of the block
+`#id.k`, so each appears at its own click. They take the deck's styles `lifeline`, `process`, `message` and `event` after
 those of their kind, each only what its kind takes, unless the block names their classes:
 `::: timeline {message=request event=step process=small-name}` gives the messages `.request`,
 and so on, in place of the role's style (a class each block can choose, which no other element
@@ -293,9 +294,10 @@ p2 -> p1 "back" {bend=-40}
 
 | Line | Draws |
 | --- | --- |
-| `A (x,y)` | a node `#A`, a circle at `x`, `y` (scaled by `scale` from the block's `x`, `y`); `rectangle`, `ellipse` or `dot` after the coordinates changes its shape |
+| `A (x,y)` | a node `A`, a circle at `x`, `y` (scaled by `scale` from the block's `x`, `y`); `rectangle`, `ellipse` or `dot` after the coordinates changes its shape |
+| `(x,y)` | a node without a name, a lattice point say, that no line refers to |
 | `A (x,y) "label"` | the same, its [label](#labels) inside |
-| `A -> B "3"` | an edge: an arrow from `#A` to `#B`, labeled; `--` draws a line |
+| `A -> B "3"` | an edge: an arrow from `A` to `B`, labeled; `--` draws a line; `p.right -> t.left` joins two anchors |
 | anything else | any element, which may name the nodes |
 
 Lines end as in a timeline: a `"label"`, style names written bare, `{attributes}`. A node is
@@ -305,3 +307,33 @@ edges take the deck's styles `node` and `edge` after those of their kind, each o
 takes, unless the block names their classes (`::: graph {node=place edge=arc}`, in place of the
 roles' styles), and the block passes `node_<attribute>` and `edge_<attribute>` to them under what a
 line writes (`node_radius=0.2`, `edge_stroke_width=3`). The block's `step` and `hide` step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole).
+
+## Names local to a block
+
+The names a timeline's or a graph's lines write are local to the block: a node `A`, a process `p`,
+an event or any element with an `#e` of its own. Inside the block, `#A` names its own `A` (an edge,
+`at=center:#A`, a blob around `#A #B`); on the slide its id is `<block>.A`, the block's `#id` (or
+`graph-<line>`, `timeline-<line>` without one) before the name. Two graphs of one slide may so use
+the same names, and a node needs no name at all (`(3,1) grid-point`).
+
+```markdown
+::: graph {#g1}
+A (0,0)
+B (1,0)
+A -> B
+:::
+
+::: graph {#g2 x=4}
+A (0,0)
+B (1,0)
+A -> B
+:::
+
+[the left one]{at=bottom:#g1.A.top}
+```
+
+From outside the block, `#g1.A` names the node; a bare `#A` names it as well when one block alone
+on the slide has an `A` and no element of the slide is called `A` itself, and is an error when
+several do. A node or a process may not be called after an anchor (`top`, `left`, `center`, …),
+which `#g1.top` would read as one.
+

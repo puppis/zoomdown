@@ -569,6 +569,25 @@ export class MarkupParser {
     if ('id' in attrs && !IDENTIFIER.test(attrs.id)) throw new MarkupError(`Invalid ${what} ID ${JSON.stringify(attrs.id)}`, line);
   }
 
+  /**
+   * Make the names a block's lines write local to it (rule D): a node, a process, an event or any
+   * element with an `#id` is `<block>.<name>` on the slide, and inside the block `#name` names it;
+   * a name no line of the block gives stays the slide's.
+   */
+  private static _localize(items: SlideItem[], base: string): void {
+    const locals = new Map<string, string>();
+    for (const item of items) {
+      if (!(item instanceof ElementSpec)) continue;
+      if (item.localName === null && 'id' in item.attributes && item.id === item.attributes.id) {
+        item.localName = item.id;
+        (item as { id: string }).id = `${base}.${item.id}`;
+        item.attributes.id = item.id;
+      }
+      if (item.localName !== null) locals.set(item.localName, item.id);
+    }
+    if (locals.size) for (const item of items) rewriteReferences(item, (name) => locals.get(name));
+  }
+
   /** A line of a drawing block that is none of its own kinds: any element, parsed as in the slide, its ids under the block's. */
   private _drawnLine(text: string, at: number, base: string, items: SlideItem[]): void {
     items.push(...this._body([text], at, `${base}.`));
@@ -616,7 +635,8 @@ export class MarkupParser {
       const happened = message.test(text) ? null : event.exec(text);
       if (!happened) return;
       const key = `${happened[1]}@${Number(happened[2])}`;
-      if (!events.has(key)) events.set(key, MarkupParser._tail(happened[3], line + 1 + k).attrs.id ?? `${base}-${k + 1}`);
+      const own = MarkupParser._tail(happened[3], line + 1 + k).attrs.id;
+      if (!events.has(key)) events.set(key, `${base}.${own ?? k + 1}`);
     });
     const end = (process: string, moment: number, at: number, anchor?: string) => {
       const named = events.get(`${process}@${moment}`);
@@ -635,14 +655,17 @@ export class MarkupParser {
     };
     for (const process of processes) {
       const y = number(y0 - processes.indexOf(process) * spacing);
-      make(`${base}-${process}`, 'line', [], this._drawn({ from: point(process, 0), to: point(process, span) }, []), 'lifeline', line);
+      if (GROUP_ANCHORS.has(process)) throw new MarkupError(`A process may not be named after an anchor: ${process}`, line);
+      make(`${base}.${process}`, 'line', [], this._drawn({ from: point(process, 0), to: point(process, span) }, []), 'lifeline', line);
+      (items[items.length - 1] as ElementSpec).localName = process;
       const name = this.parseInlineSpans(names.get(process) ?? `$${process}$`, line);
-      make(`${base}-${process}-name`, 'text', name, this._drawn({ at: `right:(${number(x0 - 0.2)},${y})` }, []), 'process', line);
+      make(`${base}.${process}-name`, 'text', name, this._drawn({ at: `right:(${number(x0 - 0.2)},${y})` }, []), 'process', line);
+      (items[items.length - 1] as ElementSpec).localName = `${process}-name`;
     }
     body.forEach((text, k) => {
       const at = line + 1 + k;
       if (!text.trim() || naming.test(text)) return;
-      const id = `${base}-${k + 1}`;
+      const id = `${base}.${k + 1}`;
       const sent = message.exec(text);
       if (sent) {
         const tail = MarkupParser._tail(sent[6], at);
@@ -662,6 +685,7 @@ export class MarkupParser {
       }
       this._drawnLine(text.replace(anywhere, (_, process: string, moment: string, anchor?: string) => end(process, Number(moment), at, anchor)), at, id, items);
     });
+    MarkupParser._localize(items, base);
     this._stepBlock(items, attrs, line);
     return items;
   }
@@ -680,8 +704,10 @@ export class MarkupParser {
     const scale = numberValue(attrs, 'scale', line, 1) as number;
     const number = (value: number) => String(Number(value.toFixed(9)));
     const base = `${prefix}${attrs.id ?? `graph-${line}`}`;
-    const node = /^\s*([A-Za-z_][\w-]*)\s*\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)(.*)$/;
-    const edge = /^\s*([A-Za-z_][\w-]*)\s*(->|--)\s*([A-Za-z_][\w-]*)(?![\w.(])(.*)$/;
+    // A node, named or not (a lattice point needs no name), and an edge whose ends may name anchors.
+    const node = /^\s*(?:([A-Za-z_][\w-]*)\s*)?\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)(.*)$/;
+    const end = `([A-Za-z_][\\w-]*)(?:\\.(${[...GROUP_ANCHORS].sort((a, b) => b.length - a.length).join('|')}))?`;
+    const edge = new RegExp(`^\\s*${end}\\s*(->|--)\\s*${end}(?![\\w.(])(.*)$`);
     const items: SlideItem[] = [];
     const make = (id: string, kind: string, own: Attributes, role: string, at: number) => {
       items.push(MarkupParser._part(id, kind, [], own, role, attrs, at));
@@ -692,23 +718,28 @@ export class MarkupParser {
       const placed = node.exec(text);
       if (placed) {
         const tail = MarkupParser._tail(placed[4], at);
+        if ('id' in tail.attrs) throw new MarkupError(`A node is named by its line, A (x,y), not by #${tail.attrs.id}`, at);
+        const name = placed[1] ?? null;
+        if (name !== null && GROUP_ANCHORS.has(name)) throw new MarkupError(`A node may not be named after an anchor: ${name}`, at);
         const kind = ['circle', 'rectangle', 'ellipse', 'dot'].includes(tail.words[0]) ? (tail.words.shift() as string) : 'circle';
         const own: Attributes = { ...tail.attrs, x: number(x0 + scale * Number(placed[2])), y: number(y0 + scale * Number(placed[3])) };
-        const label = tail.label ?? (attrs.labels === 'true' ? placed[1] : null);
+        const label = tail.label ?? (attrs.labels === 'true' ? name : null);
         if (label !== null && label !== '') own.label = label;
-        make(placed[1], kind, this._drawn(own, tail.words), 'node', at);
+        make(`${base}.${name ?? k + 1}`, kind, this._drawn(own, tail.words), 'node', at);
+        (items[items.length - 1] as ElementSpec).localName = name;
         return;
       }
       const joined = edge.exec(text);
       if (joined) {
-        const tail = MarkupParser._tail(joined[4], at);
-        const own: Attributes = { ...tail.attrs, from: `#${joined[1]}`, to: `#${joined[3]}` };
+        const tail = MarkupParser._tail(joined[6], at);
+        const own: Attributes = { ...tail.attrs, from: `#${joined[1]}${joined[2] ? `.${joined[2]}` : ''}`, to: `#${joined[4]}${joined[5] ? `.${joined[5]}` : ''}` };
         if (tail.label !== null) own.label = tail.label;
-        make(`${base}-${k + 1}`, joined[2] === '->' ? 'arrow' : 'line', this._drawn(own, tail.words), 'edge', at);
+        make(`${base}.${k + 1}`, joined[3] === '->' ? 'arrow' : 'line', this._drawn(own, tail.words), 'edge', at);
         return;
       }
-      this._drawnLine(text, at, `${base}-${k + 1}`, items);
+      this._drawnLine(text, at, `${base}.${k + 1}`, items);
     });
+    MarkupParser._localize(items, base);
     this._stepBlock(items, attrs, line);
     return items;
   }
@@ -1084,6 +1115,32 @@ function resolveLast(item: ElementSpec | IncludeSpec | CodeSlideSpec, last: stri
   }
 }
 
+/**
+ * Rewrite the elements an item names (`#name` in its relative constraints, its `at=`, the ends of
+ * an arrow or a line, an attachment's targets, a directive's target) by `lookup`, which gives the
+ * id a name stands for, or undefined to leave it; `.text` and anchors after a name are kept.
+ */
+function rewriteReferences(item: SlideItem, lookup: (name: string) => string | undefined): void {
+  const swap = (value: string) => value.replace(/#([A-Za-z_][\w-]*)/g, (whole, name: string) => {
+    const id = lookup(name);
+    return id === undefined ? whole : `#${id}`;
+  });
+  const bare = (value: string) => value.split(/\s+/).map((name) => lookup(name) ?? name).join(' ');
+  if (item instanceof ElementSpec || item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
+    const attrs = item.attributes;
+    for (const key of NAMING_KEYS) if (attrs[key] !== undefined) attrs[key] = swap(attrs[key]);
+    if (item instanceof ElementSpec && ATTACHMENTS.has(item.kind) && attrs.target) attrs.target = bare(attrs.target);
+    if (item instanceof GroupSpec) for (const member of item.items) rewriteReferences(member, lookup);
+  } else if (item instanceof EventSpec || item instanceof ActionSpec) {
+    (item as { target: string }).target = bare(item.target);
+    if (item instanceof ActionSpec) {
+      if (item.attributes.to) item.attributes.to = bare(item.attributes.to);
+      if (item.attributes.path) item.attributes.path = swap(item.attributes.path);
+      if (item.attributes.at) item.attributes.at = swap(item.attributes.at);
+    }
+  }
+}
+
 /** Validate a component tree and compile fragment state into animation steps. */
 export class ASTTransformer {
   /** `steps`: how the slides number their steps (`layout.steps`), settled while validating. */
@@ -1106,6 +1163,7 @@ export class ASTTransformer {
       const scopeOf = new Map<string, string>();
       // What a group passes down to its members that do not set their own: the text's size, face,
       // color and line height, a member taking those it has (a shape no font, an arrow no line height).
+      ASTTransformer._resolveNames(slide);
       const visit = (items: SlideItem[], scope: string, inherited: Attributes = {}): void => {
         // The element written last in this scope, which `#LAST` names: arrows, lines and
         // attachments, which nothing can reference, and subslides are passed over.
@@ -1619,6 +1677,36 @@ export class ASTTransformer {
   private static _checkTransition(attrs: Attributes, line: number): void {
     if ('transition' in attrs && !['zoom', 'cut'].includes(attrs.transition) && !LIBRARY_NAME.test(attrs.transition)) {
       throw new MarkupError('transition must be zoom, cut, or the name of a camera transition of the deck', line);
+    }
+  }
+
+  /**
+   * Bare names outside the blocks that give them (rule D): `#A` names the part A of the one block
+   * of the slide that has an A, when no element of the slide is A itself; with several such
+   * blocks it is an error, and `#block.A` names each.
+   */
+  private static _resolveNames(slide: SlideSpec): void {
+    const ids = new Set<string>();
+    const locals = new Map<string, string[]>();
+    const collect = (items: SlideItem[]) => {
+      for (const item of items) {
+        if (item instanceof IncludeSpec) ids.add(item.target);
+        if (!(item instanceof ElementSpec)) continue;
+        ids.add(item.id);
+        if (item.localName !== null) locals.set(item.localName, [...(locals.get(item.localName) ?? []), item.id]);
+        if (item instanceof GroupSpec) collect(item.items);
+      }
+    };
+    collect(slide.items);
+    if (!locals.size) return;
+    for (const item of slide.items) {
+      rewriteReferences(item, (name) => {
+        if (ids.has(name)) return undefined;
+        const found = locals.get(name);
+        if (!found) return undefined;
+        if (found.length > 1) throw new MarkupError(`#${name} names a part of several blocks: write ${found.map((id) => `#${id}`).join(' or ')}`, 'line' in item ? item.line : slide.line);
+        return found[0];
+      });
     }
   }
 

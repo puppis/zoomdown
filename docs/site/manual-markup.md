@@ -739,8 +739,12 @@ stepped as a whole, line by line, every line alike (a node, a message, an event 
 element): with sequential steps the block's `step` is where its first line starts, unless that
 line has a step of its own, and the lines after it follow; with numbered steps it goes to every
 line without its own; the block's `hide` goes to every line without its own. The parts
-are elements of the slide (lifelines `#id-p`, names `#id-p-name`, the line `k` of the block
-`#id-k`, nodes by their names), with the extra style roles `lifeline`, `process`, `message`,
+are elements of the slide whose names are local to the block: inside it, `#A` names its node,
+process, event or element `A`; on the slide the id is `<block>.A` (`#id.p` a lifeline,
+`#id.p-name` its name, `#id.k` the line `k`, the block being `graph-<line>` or `timeline-<line>`
+without an `#id`), and a bare `#A` outside the block names it when one block alone on the slide
+has an `A` and no element is `A` itself. A node line may have no name (`(3,1)`), and an edge may
+join anchors (`p.right -> t.left`). They take the extra style roles `lifeline`, `process`, `message`,
 `event`, `node` and `edge`, from which each takes only what its kind takes. A block names the
 classes of a role's parts in place of its style (`node=place edge=arc`, `message=request`), and
 passes `<role>_<attribute>` to them under what a line writes (`message_buff=0.09`,

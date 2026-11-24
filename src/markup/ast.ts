@@ -89,6 +89,9 @@ export class ElementSpec {
    */
   role: string | null = null;
 
+  /** The name a line of a timeline or a graph gave the element, local to its block (its id is `<block>.<name>`), or null. */
+  localName: string | null = null;
+
   /** Explicit local coordinates, interpreted using the element's anchor. */
   get position(): [number, number, number] | null {
     if (!('x' in this.attributes) && !('y' in this.attributes)) return null;

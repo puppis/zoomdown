@@ -21,11 +21,11 @@ describe('styles fill in only what fits (rule A)', () => {
 
   it('give each kind only what it takes, from classes as from roles', () => {
     const styles = 'big: radius=0.3 width=0.4 height=0.4 font_size=30';
-    const items = parse(styles, '::: graph\np (0,0) big\nq (2,0) rectangle big\np -> q\n:::\n\n[[dot: #d x=4 y=0 .big]]\n\nText {#t .big}').slides[0].items;
-    expect(byId(items, 'p').attributes).toMatchObject({ radius: '0.3' });
-    expect(byId(items, 'p').attributes).not.toHaveProperty('width');
-    expect(byId(items, 'q').attributes).toMatchObject({ width: '0.4', height: '0.4' });
-    expect(byId(items, 'q').attributes).not.toHaveProperty('radius');
+    const items = parse(styles, '::: graph {#g}\np (0,0) big\nq (2,0) rectangle big\np -> q\n:::\n\n[[dot: #d x=4 y=0 .big]]\n\nText {#t .big}').slides[0].items;
+    expect(byId(items, 'g.p').attributes).toMatchObject({ radius: '0.3' });
+    expect(byId(items, 'g.p').attributes).not.toHaveProperty('width');
+    expect(byId(items, 'g.q').attributes).toMatchObject({ width: '0.4', height: '0.4' });
+    expect(byId(items, 'g.q').attributes).not.toHaveProperty('radius');
     expect(byId(items, 'd').attributes).toMatchObject({ radius: '0.3' });
     expect(byId(items, 'd').attributes).not.toHaveProperty('height');
     expect(byId(items, 't').attributes).toMatchObject({ font_size: '30' });
