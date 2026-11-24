@@ -741,7 +741,11 @@ line has a step of its own, and the lines after it follow; with numbered steps i
 line without its own; the block's `hide` goes to every line without its own. The parts
 are elements of the slide (lifelines `#id-p`, names `#id-p-name`, the line `k` of the block
 `#id-k`, nodes by their names), with the extra style roles `lifeline`, `process`, `message`,
-`event`, `node` and `edge`, from which each takes only what its kind takes. See
+`event`, `node` and `edge`, from which each takes only what its kind takes. A block names the
+classes of a role's parts in place of its style (`node=place edge=arc`, `message=request`), and
+passes `<role>_<attribute>` to them under what a line writes (`message_buff=0.09`,
+`process_font_size=20`, `node_radius=0.2`). An include passes `verdict_<attribute>` to its verdict
+(`verdict_width`, `verdict_at`, `verdict_class`), and `::: tiles` to all its tiles' verdicts. See
 [Space-time diagrams](shapes.html#space-time-diagrams) and [Graphs](shapes.html#graphs).
 
 ### ::: {.group}

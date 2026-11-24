@@ -267,7 +267,12 @@ takes `processes` (names of letters, digits and `_`), `length` (the time the lif
 [as a whole, line by line](fragments.html#blocks-step-as-a-whole). Its parts are elements of the slide: the
 lifelines `#id-p`, the names `#id-p-name` and the line `k` of the block `#id-k`, so each appears at
 its own click. They take the deck's styles `lifeline`, `process`, `message` and `event` after
-those of their kind, each only what its kind takes. In a [group](groups.html) the diagram is part of the group.
+those of their kind, each only what its kind takes, unless the block names their classes:
+`::: timeline {message=request event=step process=small-name}` gives the messages `.request`,
+and so on, in place of the role's style (a class each block can choose, which no other element
+of the deck takes by surprise). The block also passes `<part>_<attribute>` to its parts, under
+what a line writes: `message_buff=0.09`, `process_font_size=20`, `event_radius=0.12`,
+`lifeline_color=faded`. In a [group](groups.html) the diagram is part of the group.
 
 ## Graphs
 
@@ -297,4 +302,6 @@ Lines end as in a timeline: a `"label"`, style names written bare, `{attributes}
 `radius=0.3` (a rectangle 0.6 square, an ellipse 0.8 by 0.5) unless its attributes or styles size
 it. With `labels=true` every node without a label of its own is labeled by its name. Nodes and
 edges take the deck's styles `node` and `edge` after those of their kind, each only what its kind
-takes. The block's `step` and `hide` step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole).
+takes, unless the block names their classes (`::: graph {node=place edge=arc}`, in place of the
+roles' styles), and the block passes `node_<attribute>` and `edge_<attribute>` to them under what a
+line writes (`node_radius=0.2`, `edge_stroke_width=3`). The block's `step` and `hide` step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole).

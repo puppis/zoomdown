@@ -277,7 +277,11 @@ any other element may write `p@t` for the point of `p` at time `t`; where an eve
 `p@t` names the event (`p@t.top` one of its anchors), so messages and arrows stop at its border. `::: graph {x y scale}` draws
 nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` and edges `A -> B "3"` (`--` a line). Lines end
 with an optional `"label"`, bare style names and `{attributes}`; the parts are elements of the
-slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`. A block
+slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`, unless
+the block names their classes (`node=place edge=arc`, `message=request`); `<role>_<attribute>` on
+the block (`message_buff=0.09`, `process_font_size=20`, `node_radius=0.2`) passes to its parts
+under what a line writes, as `verdict_<attribute>` on an include (or on `::: tiles`) passes to its
+verdicts and `label_`/`sublabel_` on a shape to its labels. A block
 (timeline, graph or tiles) is stepped as a whole, line by line, whatever each line is: with
 sequential steps its `step` is where its first line starts (unless that line has its own) and
 the lines after it follow; with numbered steps it goes to every line without its own; its `hide`

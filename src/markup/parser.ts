@@ -395,7 +395,12 @@ export class MarkupParser {
    */
   private _include(items: SlideItem[], target: string, attrs: Attributes, line: number): void {
     items.push(new IncludeSpec(target, attrs, line));
-    if (!('verdict' in attrs)) return;
+    // What the include passes to its verdict (rule C): verdict_width=4.4, verdict_at=…, verdict_class=note.
+    const passed = MarkupParser._partAttributes(attrs, 'verdict', true);
+    if (!('verdict' in attrs)) {
+      if (Object.keys(passed).length) throw new MarkupError(`verdict_${Object.keys(passed)[0]} requires a verdict`, line);
+      return;
+    }
     const source = attrs.verdict;
     delete attrs.verdict;
     let content: InlineSpan[];
@@ -404,10 +409,38 @@ export class MarkupParser {
     } catch (error) {
       throw new MarkupError(String((error as Error).message).replace(/^Line \d+: /, ''), line);
     }
-    const verdict = new ElementSpec(`${target}-verdict`, 'text', content, {}, '', line);
+    const verdict = new ElementSpec(`${target}-verdict`, 'text', content, passed, '', line);
     verdict.verdictOf = target;
     verdict.role = 'verdict';
     items.push(verdict);
+  }
+
+  /**
+   * What an element or a block passes to the parts of one role it makes (rule C): its attributes
+   * `<role>_<attribute>`, as `<attribute>`, `<role>_class` as the parts' class; `take` removes them
+   * from the element's own.
+   */
+  private static _partAttributes(attrs: Attributes, role: string, take = false): Attributes {
+    const passed: Attributes = {};
+    for (const [key, value] of Object.entries(attrs)) {
+      if (!key.startsWith(`${role}_`)) continue;
+      passed[key.slice(role.length + 1)] = value;
+      if (take) delete attrs[key];
+    }
+    return passed;
+  }
+
+  /**
+   * Make a part of a block for one role: the block's `<role>_<attribute>` under the line's own,
+   * and the classes the block names for the role (`node=place`) in place of the role's style.
+   */
+  private static _part(id: string, kind: string, spans: InlineSpan[], own: Attributes, role: string, block: Attributes, at: number): ElementSpec {
+    const attrs = { ...MarkupParser._partAttributes(block, role), ...own };
+    const named = block[role];
+    if (named) attrs.class = [named, attrs.class].filter(Boolean).join(' ');
+    const element = new ElementSpec(attrs.id ?? id, kind, spans, attrs, '', at);
+    element.role = named ? null : role;
+    return element;
   }
 
   /**
@@ -420,8 +453,8 @@ export class MarkupParser {
   private _tiles(members: SlideItem[], attrs: Attributes, line: number): SlideItem[] {
     const POSITION = [...LAYOUT].filter((key) => !['width', 'height', 'angle', 'class', 'buff'].includes(key));
     for (const key of Object.keys(attrs)) {
-      if (!['cols', 'buff', 'width', 'height', 'step', 'hide'].includes(key) && !POSITION.includes(key)) {
-        throw new MarkupError(`Tiles take cols, buff, width, height, step, hide and a position, not ${key}=`, line);
+      if (!['cols', 'buff', 'width', 'height', 'step', 'hide'].includes(key) && !POSITION.includes(key) && !/^verdict_./.test(key)) {
+        throw new MarkupError(`Tiles take cols, buff, width, height, step, hide, a position and their verdicts' attributes (verdict_…), not ${key}=`, line);
       }
     }
     const cols = 'cols' in attrs ? Number(attrs.cols) : Infinity;
@@ -456,6 +489,12 @@ export class MarkupParser {
       }
     });
     if (attrs.hide === '+') throw new MarkupError("hide=+ counts from an element's own step: give the tiles hide=N", line);
+    // What the tiles pass to every verdict, under what its include passes.
+    const passed = MarkupParser._partAttributes(attrs, 'verdict');
+    for (const item of members) {
+      if (!(item instanceof ElementSpec) || item.verdictOf === null) continue;
+      for (const [key, value] of Object.entries(passed)) if (!(key in item.attributes)) item.attributes[key] = value;
+    }
     this._stepBlock(members, attrs, line);
     return members;
   }
@@ -517,10 +556,14 @@ export class MarkupParser {
     }
   }
 
-  /** What a drawing block (a timeline, a graph) checks of its own attributes. */
-  private static _drawingAttrs(attrs: Attributes, allowed: string[], what: string, line: number): void {
+  /**
+   * What a drawing block (a timeline, a graph) checks of its own attributes: its own keys, and for
+   * each role of its parts the classes it names (`node=place`) and what it passes (`node_radius=0.3`).
+   */
+  private static _drawingAttrs(attrs: Attributes, allowed: string[], what: string, line: number, roles: string[]): void {
     for (const key of Object.keys(attrs)) {
-      if (!allowed.includes(key)) throw new MarkupError(`A ${what} takes ${allowed.join(', ')}, not ${key}=`, line);
+      if (allowed.includes(key) || roles.includes(key) || roles.some((role) => key.startsWith(`${role}_`) && key.length > role.length + 1)) continue;
+      throw new MarkupError(`A ${what} takes ${allowed.join(', ')}, the classes of its ${roles.join(', ')} parts and their attributes (${roles[0]}_…), not ${key}=`, line);
     }
     if (attrs.hide === '+') throw new MarkupError(`hide=+ counts from an element's own step: give the ${what} hide=N`, line);
     if ('id' in attrs && !IDENTIFIER.test(attrs.id)) throw new MarkupError(`Invalid ${what} ID ${JSON.stringify(attrs.id)}`, line);
@@ -539,7 +582,7 @@ export class MarkupParser {
    * (`q@2 "label"`, a dot) and any element, in which `p@t` is the point of process `p` at time `t`.
    */
   private _timeline(body: string[], line: number, attrs: Attributes, prefix: string): SlideItem[] {
-    MarkupParser._drawingAttrs(attrs, ['id', 'processes', 'length', 'width', 'spacing', 'x', 'y', 'step', 'hide'], 'timeline', line);
+    MarkupParser._drawingAttrs(attrs, ['id', 'processes', 'length', 'width', 'spacing', 'x', 'y', 'step', 'hide'], 'timeline', line, ['lifeline', 'process', 'message', 'event']);
     const processes = (attrs.processes ?? '').trim().split(/\s+/).filter(Boolean);
     if (!processes.length) throw new MarkupError('A timeline needs its processes: processes="p q …"', line);
     for (const [i, name] of processes.entries()) {
@@ -588,9 +631,7 @@ export class MarkupParser {
     }
     const items: SlideItem[] = [];
     const make = (id: string, kind: string, spans: InlineSpan[], own: Attributes, role: string, at: number) => {
-      const element = new ElementSpec(own.id ?? id, kind, spans, own, '', at);
-      element.role = role;
-      items.push(element);
+      items.push(MarkupParser._part(id, kind, spans, own, role, attrs, at));
     };
     for (const process of processes) {
       const y = number(y0 - processes.indexOf(process) * spacing);
@@ -632,7 +673,7 @@ export class MarkupParser {
    * is its id, which edges and any element may name.
    */
   private _graph(body: string[], line: number, attrs: Attributes, prefix: string): SlideItem[] {
-    MarkupParser._drawingAttrs(attrs, ['id', 'x', 'y', 'scale', 'labels', 'step', 'hide'], 'graph', line);
+    MarkupParser._drawingAttrs(attrs, ['id', 'x', 'y', 'scale', 'labels', 'step', 'hide'], 'graph', line, ['node', 'edge']);
     if ('labels' in attrs && !['true', 'false'].includes(attrs.labels)) throw new MarkupError('labels must be true or false', line);
     const x0 = numberValue(attrs, 'x', line, 0) as number;
     const y0 = numberValue(attrs, 'y', line, 0) as number;
@@ -643,9 +684,7 @@ export class MarkupParser {
     const edge = /^\s*([A-Za-z_][\w-]*)\s*(->|--)\s*([A-Za-z_][\w-]*)(?![\w.(])(.*)$/;
     const items: SlideItem[] = [];
     const make = (id: string, kind: string, own: Attributes, role: string, at: number) => {
-      const element = new ElementSpec(own.id ?? id, kind, [], own, '', at);
-      element.role = role;
-      items.push(element);
+      items.push(MarkupParser._part(id, kind, [], own, role, attrs, at));
     };
     body.forEach((text, k) => {
       const at = line + 1 + k;

@@ -104,7 +104,9 @@ visited at its `step`, the verdicts go at its `hide`.
 that appears at the click after the tile's visit: what the child taught, once it has been seen.
 It is a text of the parent, `#child-verdict`, styled by the deck's `verdict` style (color, size,
 `width`, and a position that replaces the place under the tile); its text may hold emphasis and
-formulas. The visits of a slide whose tiles have verdicts are numbered first, so the verdicts'
+formulas. The include passes `verdict_<attribute>` to its verdict, for one tile: `verdict_width=4.4`,
+`verdict_at=left:#LAST.right`, `verdict_class=note`; `::: tiles {verdict_width=4.4}` passes it to
+every tile's verdict that does not set it. The visits of a slide whose tiles have verdicts are numbered first, so the verdicts'
 clicks come after them; with [sequential steps](fragments.html#steps-that-follow-the-source) the
 verdicts stand outside the count, the element after an include counting from its visit.
 

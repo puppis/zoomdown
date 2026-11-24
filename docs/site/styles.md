@@ -50,6 +50,15 @@ Styles named after a **role** apply automatically to every element of that role:
 | `connection`, `arrow`, `line` | arrows and lines |
 | `attachment`, `brace`, `box`, `blob` | braces, boxes and blobs |
 | `icon`, `icon-<name>` | every icon, or the icons of one name |
+| `verdict` | the lines under tiles (`verdict=` on an include) |
+| `lifeline`, `process`, `message`, `event` | the parts of a [timeline](shapes.html#space-time-diagrams) |
+| `node`, `edge` | the parts of a [graph](shapes.html#graphs) |
+
+The parts of a block take the style of their role only when the block names no class for them:
+`::: graph {node=place edge=arc}` gives its nodes `.place` and its edges `.arc` instead, so each
+block chooses its own look and a deck's `.node` class meant for other elements reaches no graph
+by surprise. The block passes `<role>_<attribute>` to its parts as well (`node_radius=0.2`), as an
+include passes `verdict_<attribute>` to its verdict and a shape `label_color` to its label.
 
 ## Resolution
 
