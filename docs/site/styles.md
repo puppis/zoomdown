@@ -54,9 +54,22 @@ Styles named after a **role** apply automatically to every element of that role:
 ## Resolution
 
 An element's own attributes win, then its classes, then its roles, then the layout defaults.
-A style may set any attribute the element accepts (`anchor`, `width`, `opacity`, `stroke_width`,
-`enter`, …); an attribute the element kind does not accept is reported like any misplaced
-attribute, naming the element's line.
+A style may set any attribute (`anchor`, `width`, `opacity`, `stroke_width`, `enter`, …), and
+**fills in only what fits** the element it reaches:
+
+- **Its kind**: an attribute the element's kind does not take is left out, from a class as from a
+  role, so one class can size every shape of a drawing (`big: radius=0.3 width=0.4 height=0.4`
+  gives a circle its radius, a rectangle its width and height, a text nothing of it), and an
+  anchor the kind has not (a baseline on a shape) is left out too.
+- **Its placement**: a placement from a style fills in only what the element's own placement,
+  and that of a stronger style, leaves free. `at=` fills in only an element placed by nothing
+  else; a coordinate or an alignment only an axis nothing else sets, and never one placed by
+  `at=` or by a direction along it; `buff` only an element placed by a direction or flowing
+  down; `dx` and `dy` only an element something places. So `verdict: color=good buff=0.1`
+  spaces a verdict that flows and is ignored on one placed by `at=(0,0)`.
+
+Only attributes written on the element itself can conflict: `[x]{at=(0,0) buff=0.1}` is an
+error, naming the element's line, and so is an attribute its kind does not take.
 
 > **Tip** Put common typography in `layout` (`fontSize`, `headingSize`, `codeSize`, `font`,
 > `color`) and use styles for the few recurring variations: footnotes, callouts, captions.

@@ -548,9 +548,13 @@ strings) or in a `::: styles` block of the Markdown file, which wins for the sam
 win). Styles named after a **role** apply automatically: `heading` (also `h1` … `h6`), `body`,
 `math`, `code`, `image`, `shape` (also `rectangle`, `circle`, …), `connection` (`arrow`, `line`),
 `attachment` (`brace`, `box`), `group` and `include`. Resolution order: the element's own
-attributes, then its classes, then its roles, then the layout defaults. A style may set any
-attribute the element accepts, including `anchor`, `width`, `opacity` or `stroke_width`;
-unsupported ones are reported like misplaced attributes.
+attributes, then its classes, then its roles, then the layout defaults. Styles fill in only what
+fits: a class or a role gives an element only the attributes its kind takes (a radius to a circle,
+a width to a rectangle, an anchor its kind has), and a placement only where the element's own and
+a stronger style's leave room (`at=` on an element placed by nothing else, a coordinate or an
+alignment on a free axis and never with `at=` or a direction along it, `buff` on one placed by a
+direction or flowing down, `dx`/`dy` on one placed at all). Only the attributes written on the
+element itself can conflict or be refused.
 
 ## Groups
 

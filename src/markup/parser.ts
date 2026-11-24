@@ -1046,12 +1046,7 @@ export class ASTTransformer {
             applyStyles(item, styles);
             if (item.id === 'LAST') throw new MarkupError(RESERVED_LAST, item.line);
             resolveLast(item, last, where);
-            // What a block made (a node, a message, a verdict) takes from the styles of its roles only
-            // what its kind takes: a node style for circles sets no radius on a rectangle.
-            if (item.role !== null) {
-              const takes = ASTTransformer.allowedAttributes(item);
-              if (takes) for (const key of roleStyledKeys(item)) if (!takes.has(key)) delete item.attributes[key];
-            }
+            ASTTransformer._fit(item);
             // A node of a graph is as large as its style says, or of a default size.
             if (item.role === 'node') {
               const sizes: Record<string, Attributes> = { circle: { radius: '0.3' }, rectangle: { width: '0.6', height: '0.6' }, ellipse: { width: '0.8', height: '0.5' } };
@@ -1086,6 +1081,7 @@ export class ASTTransformer {
             if (scope) throw new MarkupError('Groups cannot contain includes or subslides', item.line);
             applyStyles(item, styles);
             resolveLast(item, last, where);
+            ASTTransformer._fit(item);
             if (item instanceof IncludeSpec && before instanceof IncludeSpec) ASTTransformer._row(item, before);
             before = item;
             previous = this._sequence(item, previous);
@@ -1552,9 +1548,55 @@ export class ASTTransformer {
     }
   }
 
+  /** The attributes an include or a subslide takes. */
+  static childAttributes(item: IncludeSpec | CodeSlideSpec): Set<string> {
+    return new Set([...LAYOUT, 'step', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', ...(item instanceof IncludeSpec && 'src' in item.attributes ? ['src'] : [])]);
+  }
+
+  /**
+   * Styles fill in only what fits (rule A). What a class or a role gives an element that its kind
+   * does not take is dropped (a radius on a rectangle, a width on a dot), and so is an anchor its
+   * kind has not. A placement from a style is kept only where it fits the element's own and that of
+   * a stronger style (its own, then its classes, then its roles): `at=` only on an element placed
+   * by nothing else, a coordinate or an alignment only on an axis nothing else sets and never with
+   * `at=` or a direction along it, a direction only on a free axis; `buff` only on an element placed
+   * by a direction or flowing down, `dx` and `dy` only on one placed at all. Only the attributes
+   * written on the element itself can conflict.
+   */
+  private static _fit(item: ElementSpec | IncludeSpec | CodeSlideSpec): void {
+    const attrs = item.attributes;
+    const styled = styledKeys(item);
+    if (!styled.size) return;
+    const fromStyle = (key: string) => key in attrs && styled.has(key);
+    const takes = item instanceof ElementSpec ? ASTTransformer.allowedAttributes(item) : ASTTransformer.childAttributes(item);
+    if (takes) for (const key of Object.keys(attrs)) if (fromStyle(key) && !takes.has(key)) delete attrs[key];
+    if (fromStyle('anchor')) {
+      try {
+        ASTTransformer._checkAnchorFor(item, attrs.anchor, item.line);
+      } catch {
+        delete attrs.anchor;
+      }
+    }
+    const placing = (key: string) => key === 'x' || key === 'y' || key === 'at' || POSITION_REFERENCES.has(key);
+    const axis = (key: string) => (key === 'x' || HORIZONTAL_POSITION.has(key) ? 'x' : key === 'y' || VERTICAL_POSITION.has(key) ? 'y' : null);
+    const kept = Object.keys(attrs).filter((key) => placing(key) && !fromStyle(key));
+    const roles = roleStyledKeys(item);
+    const rank = (key: string) => (roles.has(key) ? 10 : 0) + (key === 'at' ? 0 : key in NEIGHBORS ? 1 : 2);
+    const offered = Object.keys(attrs).filter((key) => placing(key) && fromStyle(key)).sort((a, b) => rank(a) - rank(b));
+    for (const key of offered) {
+      const fits = !kept.includes('at') && (key !== 'at' || !kept.length)
+        && !kept.some((other) => axis(other) === axis(key))
+        && !((key === 'x' || key === 'y') && kept.some((other) => other in NEIGHBORS));
+      if (fits) kept.push(key);
+      else delete attrs[key];
+    }
+    if (fromStyle('buff') && !kept.some((key) => key in NEIGHBORS) && !ASTTransformer._flowsDown(item)) delete attrs.buff;
+    for (const key of ['dx', 'dy']) if (fromStyle(key) && !kept.length) delete attrs[key];
+  }
+
   /** Validate an include or import and register its parent link. */
   private _checkChild(item: IncludeSpec | CodeSlideSpec, slide: SlideSpec, slides: Map<string, SlideSpec>, parents: Map<string, string>): void {
-    this._checkAttrs(item.attributes, new Set([...LAYOUT, 'step', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', ...(item instanceof IncludeSpec && 'src' in item.attributes ? ['src'] : [])]), item.line);
+    this._checkAttrs(item.attributes, ASTTransformer.childAttributes(item), item.line);
     ASTTransformer._checkFlags(item.attributes, item.line);
     ASTTransformer._checkTransition(item.attributes, item.line);
     if ('anchor' in item.attributes) ASTTransformer._checkAnchorFor(item, item.attributes.anchor, item.line);
