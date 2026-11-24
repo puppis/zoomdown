@@ -299,10 +299,15 @@ p2 -> p1 "back" {bend=-40}
 | `A (x,y)` | a node `A`, a circle at `x`, `y` (scaled by `scale` from the block's `x`, `y`); `rectangle`, `ellipse` or `dot` after the coordinates changes its shape |
 | `(x,y)` | a node without a name, a lattice point say, that no line refers to |
 | `A (x,y) "label"` | the same, its [label](#labels) inside |
+| `A (x,y) [[icon: server]]` | a node drawn by any directive (an icon, an artwork, a shape, a directive of the deck's own such as `[[process: value=1]]`), centered on its point unless the directive places it |
 | `A -> B "3"` | an edge: an arrow from `A` to `B`, labeled; `--` draws a line; `p.right -> t.left` joins two anchors |
 | anything else | any element, which may name the nodes |
 
-Lines end as in a timeline: a `"label"`, style names written bare, `{attributes}`. A node is
+Lines end as in a timeline: a `"label"`, style names written bare, `{attributes}`. Two arrows
+between the same nodes, one each way (the arcs of a net, of a state machine), bend apart, each 20
+degrees to its own right, unless one curves or shifts by itself (`bend`, `loop`, `via`, `offset`);
+arrows the same way and lines stay on one another, as a highlight drawn over the edge it marks
+does. `offset=0.1` shifts any straight arrow or line sideways, its ends still on the outlines. A node is
 `radius=0.3` (a rectangle 0.6 square, an ellipse 0.8 by 0.5) unless its attributes or styles size
 it. With `labels=true` every node without a label of its own is labeled by its name. Nodes and
 edges take the deck's styles `node` and `edge` after those of their kind, each only what its kind

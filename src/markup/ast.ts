@@ -89,6 +89,9 @@ export class ElementSpec {
    */
   role: string | null = null;
 
+  /** The part of a block the element is (`node`, `edge`, `message`, …), whether or not the block names its class; null for any other. */
+  part: string | null = null;
+
   /** The name a line of a timeline or a graph gave the element, local to its block (its id is `<block>.<name>`), or null. */
   localName: string | null = null;
 

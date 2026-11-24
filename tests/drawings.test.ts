@@ -251,3 +251,43 @@ describe('a timeline\'s direction and spacing', () => {
     expect(() => items('::: timeline {processes="p q r" length=4 spacing="1 2 3"}\n:::')).toThrow(/one between each two lifelines \(2 here\)/);
   });
 });
+
+describe('a graph\'s nodes of any kind, and its parallel edges', () => {
+  it('draws a node with any directive, centered on its point, an edge reaching it', async () => {
+    const list = items('::: graph {#g node_color=RED}\nA (0,0) [[icon: server size=1]] "api"\nB (3,0) [[process: value=1]] big\nC (6,0) [[circle: radius=0.5]]\nA -> B\nB -> C\n:::', { styles: 'big: size=2' });
+    expect(byId(list, 'g.A')).toMatchObject({ kind: 'icon', source: 'server', localName: 'A', part: 'node' });
+    expect(byId(list, 'g.A').attributes).toMatchObject({ at: '(0,0)', size: '1', label: 'api', color: 'RED' });
+    expect(byId(list, 'g.B')).toMatchObject({ kind: 'custom', source: 'process' });
+    expect(byId(list, 'g.B').attributes).toMatchObject({ value: '1', size: '2', at: '(3,0)' });
+    expect(byId(list, 'g.C').attributes).toMatchObject({ radius: '0.5', at: '(6,0)' });
+    const built = await slide('', '::: graph {#g}\nA (0,0) [[circle: radius=0.5]]\nB (3,0)\nA -> B {#e buff=0}\n:::');
+    expect(element(built, 'g.e').getLeft()[0]).toBeCloseTo(0.5, 6);
+    expect(() => items('::: graph\nA (0,0) [[arrow: (0,0) -> (1,1)]]\n:::')).toThrow(/A node is drawn by one directive that makes an element/);
+  });
+
+  it('keeps a node\'s default size when the block names its class', () => {
+    const list = items('::: graph {#g node=place}\nA (0,0)\nt (1,0) rectangle\n:::', { styles: 'place: color=BLUE' });
+    expect(byId(list, 'g.A').attributes).toMatchObject({ radius: '0.3', color: 'BLUE' });
+    expect(byId(list, 'g.t').attributes).toMatchObject({ width: '0.6', height: '0.6' });
+  });
+
+  it('bends two arrows between the same nodes apart, one each way, and leaves a highlight on its edge', () => {
+    const list = items('::: graph {#g}\np (0,0)\nt (2,0)\np -> t\nt -> p\nq (0,2)\nr (2,2)\nq -> r\nq -> r {color=RED step=1}\nq -- r\nr -> q {offset=0.1}\nq -> r {bend=30}\n:::', { steps: 'explicit' });
+    const bends = list.filter((item) => item.part === 'edge').map((item) => item.attributes.bend ?? item.attributes.offset ?? '');
+    // One each way: both to their own right, so on either side of the line between the nodes.
+    expect(bends.slice(0, 2)).toEqual(['-20', '-20']);
+    // q and r: the arrows bend apart, unless they curve or shift by themselves; the line stays.
+    expect(bends.slice(2)).toEqual(['-20', '-20', '', '0.1', '30']);
+    const same = items('::: graph\nq (0,2)\nr (2,2)\nq -> r\nq -> r {color=RED}\n:::');
+    expect(same.filter((item) => item.kind === 'arrow').map((item) => item.attributes.bend)).toEqual([undefined, undefined]);
+  });
+
+  it('shifts a straight arrow or line sideways with offset=, still ending on the outlines', async () => {
+    const built = await slide('', '[[circle: #a x=0 y=0 radius=1]]\n\n[[circle: #b x=4 y=0 radius=1]]\n\n[[line: #a -> #b, #l, offset=0.6]]');
+    const line = element(built, 'l');
+    expect(line.getTop()[1]).toBeCloseTo(0.6, 6);
+    // On the outline of the left circle, 0.6 above its center: x = 0.8.
+    expect(line.getLeft()[0]).toBeCloseTo(0.8, 6);
+    expect(() => items('[[circle: #a x=0 y=0 radius=1]]\n\n[[circle: #b x=4 y=0 radius=1]]\n\n[[arrow: #a -> #b, offset=0.1, bend=20]]')).toThrow(/offset shifts a straight arrow or line/);
+  });
+});

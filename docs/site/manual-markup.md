@@ -581,6 +581,7 @@ labels, `label_pos`, `slanted`, dashes, hand-drawn strokes and `halo_bridge` fol
 | `from`, `to` | `#id`, `#id.anchor`, `(x,y)` | required, written before the attributes | the endpoints |
 | `buff` | units | 0.08 on an arrow, 0 on a line | the space left at both ends, between the connection and what it joins (an element's border, an anchor or a point), measured along its path; on an arrow by default at most a third of its length |
 | `buff_start`, `buff_end` | units | `buff` | the space at one end only, as TikZ's `shorten <` and `shorten >` |
+| `offset` | units | 0 | shifts a straight arrow or line sideways, to the left of its way (negative: to the right), its ends still on the outlines it joins; not with `bend`, `loop` or `via` |
 | `label` | inline markup | | text at the middle of the connection |
 | `label_width` | units | the connection's length, 4 at least | the width the label wraps at |
 | `label_side` | `above`, `below` | `above` | the side of the edge the label sits on, in the label's own frame along the edge: it reads from left to right (bottom to top on a vertical edge), and `above` is the side its letters stand on, so the left of a vertical edge |
@@ -734,7 +735,9 @@ point of `p` at time `t`, or, where an event stands, that event (`p@t.top` one o
 messages and arrows then end at its border. A graph's lines draw nodes `A (x,y)` (a circle, or the `rectangle`,
 `ellipse` or `dot` written after; at the block's `x`, `y` plus `scale` times its own; `radius`
 0.3, 0.6 squares and 0.8 by 0.5 ellipses unless styled; labeled by `"…"`, or by its name with
-`labels=true`), edges `A -> B` (`--` a line), and any element. A line ends with an optional
+`labels=true`; or drawn by any directive after the point, `A (0,0) [[icon: server]]`), edges
+`A -> B` (`--` a line; two arrows one each way bend apart, 20 degrees each to its own right), and
+any element. A line ends with an optional
 `"label"`, bare style names and `{attributes}`. Both blocks take `#id`, `step` and `hide`, and are
 stepped as a whole, line by line, every line alike (a node, a message, an event or a plain
 element): with sequential steps the block's `step` is where its first line starts, unless that

@@ -440,7 +440,33 @@ export class MarkupParser {
     if (named) attrs.class = [named, attrs.class].filter(Boolean).join(' ');
     const element = new ElementSpec(attrs.id ?? id, kind, spans, attrs, '', at);
     element.role = named ? null : role;
+    element.part = role;
     return element;
+  }
+
+  /**
+   * A node drawn by any directive (`A (0,0) [[icon: server]]`, a deck's own `[[process: value=1]]`):
+   * its element, centered on the node's point unless it places itself, a part of the block like a
+   * shape node.
+   */
+  private _directiveNode(directive: string, id: string, own: Attributes, block: Attributes, at: number): ElementSpec {
+    const made = this._body([directive], at, `${id}.`).filter((item): item is ElementSpec => item instanceof ElementSpec);
+    if (made.length !== 1 || CONNECTIONS.has(made[0].kind) || ATTACHMENTS.has(made[0].kind)) {
+      throw new MarkupError('A node is drawn by one directive that makes an element: [[icon: …]], [[circle: …]], a directive of the deck', at);
+    }
+    const element = made[0];
+    if ('id' in element.attributes) throw new MarkupError('A node is named by its line, A (x,y) [[…]], not by an #id in its directive', at);
+    const placed = Object.keys(element.attributes).some((key) => key === 'x' || key === 'y' || key === 'at' || POSITION_REFERENCES.has(key));
+    const { at: point, class: words, ...rest } = own;
+    const attrs: Attributes = { ...MarkupParser._partAttributes(block, 'node'), ...element.attributes, ...rest };
+    if (!placed) attrs.at = point;
+    const named = block.node;
+    const classes = [named, element.attributes.class, words].filter(Boolean).join(' ');
+    if (classes) attrs.class = classes;
+    const node = new ElementSpec(id, element.kind, element.spans, attrs, element.source, at, element.level, element.list);
+    node.role = named ? null : 'node';
+    node.part = 'node';
+    return node;
   }
 
   /**
@@ -586,6 +612,30 @@ export class MarkupParser {
       if (item.localName !== null) locals.set(item.localName, item.id);
     }
     if (locals.size) for (const item of items) rewriteReferences(item, (name) => locals.get(name));
+  }
+
+  /**
+   * Two arrows of a graph between the same two nodes, one each way (the arcs of a net or of a state
+   * machine), bend apart, each 20 degrees to its own right, unless it curves or shifts by itself
+   * (`bend`, `loop`, `via`, `offset`). Arrows the same way, and lines, stay on one another: a
+   * highlight is drawn over the edge it marks.
+   */
+  private static _spreadEdges(items: SlideItem[]): void {
+    const ends = (value: string) => value.replace(/^#/, '').replace(new RegExp(`\\.(${[...GROUP_ANCHORS].join('|')})$`), '');
+    const pairs = new Map<string, ElementSpec[]>();
+    for (const item of items) {
+      if (!(item instanceof ElementSpec) || item.part !== 'edge' || item.kind !== 'arrow') continue;
+      const [from, to] = [ends(item.attributes.from ?? ''), ends(item.attributes.to ?? '')];
+      if (from === to || from.startsWith('(') || to.startsWith('(')) continue;
+      const key = [from, to].sort().join(' ');
+      pairs.set(key, [...(pairs.get(key) ?? []), item]);
+    }
+    for (const edges of pairs.values()) {
+      if (new Set(edges.map((edge) => ends(edge.attributes.from))).size < 2) continue;
+      for (const edge of edges) {
+        if (!['bend', 'loop', 'via', 'offset'].some((name) => name in edge.attributes)) edge.attributes.bend = '-20';
+      }
+    }
   }
 
   /** A line of a drawing block that is none of its own kinds: any element, parsed as in the slide, its ids under the block's. */
@@ -741,6 +791,21 @@ export class MarkupParser {
       if (!text.trim()) return;
       const placed = node.exec(text);
       if (placed) {
+        // A node drawn by a directive of any kind: its point, then the directive, then the line's end.
+        const drawn = /^\s*(\[\[.*?\]\])(.*)$/.exec(placed[4]);
+        if (drawn) {
+          const tail = MarkupParser._tail(drawn[2], at);
+          if ('id' in tail.attrs) throw new MarkupError(`A node is named by its line, A (x,y), not by #${tail.attrs.id}`, at);
+          const name = placed[1] ?? null;
+          if (name !== null && GROUP_ANCHORS.has(name)) throw new MarkupError(`A node may not be named after an anchor: ${name}`, at);
+          const own: Attributes = { ...this._drawn(tail.attrs, tail.words), at: `(${number(x0 + scale * Number(placed[2]))},${number(y0 + scale * Number(placed[3]))})` };
+          const label = tail.label ?? (attrs.labels === 'true' ? name : null);
+          if (label !== null && label !== '') own.label = label;
+          const element = this._directiveNode(drawn[1], `${base}.${name ?? k + 1}`, own, attrs, at);
+          element.localName = name;
+          items.push(element);
+          return;
+        }
         const tail = MarkupParser._tail(placed[4], at);
         if ('id' in tail.attrs) throw new MarkupError(`A node is named by its line, A (x,y), not by #${tail.attrs.id}`, at);
         const name = placed[1] ?? null;
@@ -764,6 +829,7 @@ export class MarkupParser {
       this._drawnLine(text, at, `${base}.${k + 1}`, items);
     });
     MarkupParser._localize(items, base);
+    MarkupParser._spreadEdges(items);
     this._stepBlock(items, attrs, line);
     return items;
   }
@@ -1204,7 +1270,7 @@ export class ASTTransformer {
             resolveLast(item, last, where);
             ASTTransformer._fit(item);
             // A node of a graph is as large as its style says, or of a default size.
-            if (item.role === 'node') {
+            if (item.part === 'node') {
               const sizes: Record<string, Attributes> = { circle: { radius: '0.3' }, rectangle: { width: '0.6', height: '0.6' }, ellipse: { width: '0.8', height: '0.5' } };
               for (const [key, value] of Object.entries(sizes[item.kind] ?? {})) if (!(key in item.attributes)) item.attributes[key] = value;
             }
@@ -1458,7 +1524,7 @@ export class ASTTransformer {
     let allowed: Set<string> | null;
     if (item.kind === 'group') allowed = new Set(GROUP_ATTRS);
     else if (CONNECTIONS.has(item.kind)) {
-      allowed = new Set(['id', 'step', 'hide', 'color', 'from', 'to', 'buff', 'buff_start', 'buff_end', 'dashed', 'halo_bridge', 'halo_width', 'tip', 'tip_length', 'tip_width', 'bend', 'loop', 'looseness', 'wavy', 'amplitude', 'via', 'label', 'label_buff', 'label_color', 'label_pos', 'label_side', 'label_width', 'slanted', 'font', 'font_size', 'opacity', 'href', ...STROKE_ATTRS, ...TIMING_ATTRS, ...SKETCH_ATTRS]);
+      allowed = new Set(['id', 'step', 'hide', 'color', 'from', 'to', 'buff', 'buff_start', 'buff_end', 'offset', 'dashed', 'halo_bridge', 'halo_width', 'tip', 'tip_length', 'tip_width', 'bend', 'loop', 'looseness', 'wavy', 'amplitude', 'via', 'label', 'label_buff', 'label_color', 'label_pos', 'label_side', 'label_width', 'slanted', 'font', 'font_size', 'opacity', 'href', ...STROKE_ATTRS, ...TIMING_ATTRS, ...SKETCH_ATTRS]);
     }
     else if (ATTACHMENTS.has(item.kind)) {
       allowed = new Set(['id', 'target', 'step', 'hide', 'color', 'buff', 'opacity', 'href', ...STROKE_ATTRS, ...TIMING_ATTRS, ...SKETCH_ATTRS]);
@@ -1523,6 +1589,10 @@ export class ASTTransformer {
     if (allowed) this._checkAttrs(item.attributes, allowed, item.line);
     if (CONNECTIONS.has(item.kind)) {
       if ('dashed' in item.attributes && !['true', 'false'].includes(item.attributes.dashed)) throw new MarkupError('dashed must be true or false', item.line);
+      if ('offset' in item.attributes) {
+        if (!Number.isFinite(Number(item.attributes.offset))) throw new MarkupError('offset must be a number', item.line);
+        if (['bend', 'loop', 'via'].some((key) => key in item.attributes) && !styledKeys(item).has('offset')) throw new MarkupError('offset shifts a straight arrow or line: not with bend, loop or via', item.line);
+      }
       // A halo bridge is true (the deck's background), false, or a color.
       if ('halo_bridge' in item.attributes && !['true', 'false'].includes(item.attributes.halo_bridge)) ASTTransformer._checkColor(item.attributes.halo_bridge, item.line);
       if ('halo_width' in item.attributes && !styledKeys(item).has('halo_width') && !('halo_bridge' in item.attributes)) throw new MarkupError('halo_width requires halo_bridge', item.line);

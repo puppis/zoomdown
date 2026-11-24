@@ -495,25 +495,32 @@ export function placeRelative(
 
 /** What a renderer is made with: the layout, the document's base path, macros, preloaded assets, and the deck's library folders and modules. */
 /** The point where a ray from the center of `obj` along `direction` leaves its box, turned with it by `angle=`. */
-export function boundaryPoint(obj: Mobject, direction: [number, number, number]): [number, number, number] {
+export function boundaryPoint(obj: Mobject, direction: [number, number, number], shift = 0): [number, number, number] {
   const { center, half, angle } = shapeFrame(obj);
   // The direction in the box's own frame, and the way back.
   const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
   const d = angle ? [cos * direction[0] + sin * direction[1], -sin * direction[0] + cos * direction[1]] : direction;
+  // The line leaves from the center, or `shift` to the left of it across the direction (an offset arrow).
+  const norm = Math.hypot(d[0], d[1]);
+  const s = shift && norm > 1e-12 ? [(-d[1] / norm) * shift, (d[0] / norm) * shift] : [0, 0];
   const point = (t: number): [number, number, number] => {
-    const [x, y] = [d[0] * t, d[1] * t];
+    const [x, y] = [s[0] + d[0] * t, s[1] + d[1] * t];
     return angle ? [center[0] + cos * x - sin * y, center[1] + sin * x + cos * y, center[2]] : [center[0] + x, center[1] + y, center[2]];
   };
   // A circle, a dot or an ellipse is met on its outline, not on the corner of its box.
   if ((obj as RoundMobject).markupRound) {
-    const reach = Math.hypot(half[0] > 0 ? d[0] / half[0] : 0, half[1] > 0 ? d[1] / half[1] : 0);
-    return reach < 1e-12 ? point(0) : point(1 / reach);
+    if (!(half[0] > 0 && half[1] > 0)) return point(0);
+    const a = (d[0] / half[0]) ** 2 + (d[1] / half[1]) ** 2;
+    const b = 2 * ((s[0] * d[0]) / half[0] ** 2 + (s[1] * d[1]) / half[1] ** 2);
+    const c = (s[0] / half[0]) ** 2 + (s[1] / half[1]) ** 2 - 1;
+    const disc = b * b - 4 * a * c;
+    return a < 1e-12 || disc < 0 ? point(0) : point((-b + Math.sqrt(disc)) / (2 * a));
   }
   let t = Infinity;
   for (const axis of [0, 1] as const) {
-    if (Math.abs(d[axis]) > 1e-9 && half[axis] > 0) t = Math.min(t, half[axis] / Math.abs(d[axis]));
+    if (Math.abs(d[axis]) > 1e-9 && half[axis] > 0) t = Math.min(t, (Math.sign(d[axis]) * half[axis] - s[axis]) / d[axis]);
   }
-  return Number.isFinite(t) ? point(t) : point(0);
+  return Number.isFinite(t) ? point(Math.max(0, t)) : point(0);
 }
 
 export interface MarkupRendererOptions {
@@ -1526,6 +1533,9 @@ export class MarkupRenderer {
     };
     let a = at(source, start);
     let b = at(target, end);
+    // offset= shifts a straight arrow or line sideways, to the left of its way: two arrows between
+    // the same elements, one each way, side by side.
+    const offset = numberValue(attrs, 'offset', element.line, 0) as number;
     const color = attrs.color ? parseColor(attrs.color) : this.layout.color;
     const isArrow = element.kind === 'arrow';
     const strokeWidth = element.kind === 'line' || 'stroke_width' in attrs ? Number(attrs.stroke_width ?? 2) : undefined;
@@ -1547,8 +1557,11 @@ export class MarkupRenderer {
       // Each other end sits where the line between them leaves the element: on the outline of a
       // circle, a dot or an ellipse, on the box of anything else, where a direction that is
       // horizontal up to floating-point noise still meets the side, not a corner.
-      if (source && !anchorOf(start)) a = boundaryPoint(source, direction);
-      if (target && !anchorOf(end)) b = boundaryPoint(target, [-direction[0], -direction[1], -direction[2]]);
+      const across: [number, number, number] = [(-direction[1] / length) * offset, (direction[0] / length) * offset, 0];
+      if (source && !anchorOf(start)) a = boundaryPoint(source, direction, offset);
+      else a = [a[0] + across[0], a[1] + across[1], a[2]];
+      if (target && !anchorOf(end)) b = boundaryPoint(target, [-direction[0], -direction[1], -direction[2]], -offset);
+      else b = [b[0] + across[0], b[1] + across[1], b[2]];
       if ('wavy' in attrs) {
         // A wave runs between the borders; the space at its ends is cut from the wave itself.
         const wave = new Spline(waveCubics([a[0], a[1]], [b[0], b[1]], Number(attrs.wavy), numberValue(attrs, 'amplitude', element.line, 0.15) as number));
