@@ -729,7 +729,8 @@ A timeline draws a horizontal lifeline per process (`processes`, names of letter
 `length` units of time (either alone gives both), `spacing` (1) apart, each name at its left
 (`$p$`, or the text of a line `p: name`). Its lines draw messages `p@1 -> q@3` (an arrow; `--` a
 line), events `q@2` (a dot, its label the dot's sublabel), and any element, where `p@t` is the
-point of `p` at time `t`. A graph's lines draw nodes `A (x,y)` (a circle, or the `rectangle`,
+point of `p` at time `t`, or, where an event stands, that event (`p@t.top` one of its anchors):
+messages and arrows then end at its border. A graph's lines draw nodes `A (x,y)` (a circle, or the `rectangle`,
 `ellipse` or `dot` written after; at the block's `x`, `y` plus `scale` times its own; `radius`
 0.3, 0.6 squares and 0.8 by 0.5 ellipses unless styled; labeled by `"…"`, or by its name with
 `labels=true`), edges `A -> B` (`--` a line), and any element. A line ends with an optional

@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { Mobject } from 'manim-web';
 import { MarkupParser } from '../src/markup/parser';
 import { ElementSpec, GroupSpec, IncludeSpec, type SlideItem } from '../src/markup/ast';
-import { element, installFakeCanvas, slide } from './helpers/slides';
+import { built, element, installFakeCanvas, slide } from './helpers/slides';
+import type { MarkupSlide } from '../src/markup/slide';
 
 beforeAll(installFakeCanvas);
 
@@ -123,6 +124,32 @@ describe('a block stepped as a whole, line by line (rule B)', () => {
     // The verdict comes the click after its tile's visit, and goes with the block.
     expect(byId(r, 'a-verdict').attributes).toMatchObject({ step: '5', hide: '6' });
     expect(() => new MarkupParser().parse('::: slide {#r}\n::: tiles {step=+}\n[[include: #a]]\n:::\n:::\n::: slide {#a}\nA\n:::')).toThrow(/steps: sequential/);
+  });
+});
+
+describe('a point where an event stands', () => {
+  const styled = (body: string) => built(`::: styles\nevent: radius=0.15\n:::\n::: slide {#s}\n${body}\n:::`);
+
+  it('names the event, so that a message stops at its border as an arrow between circles does', async () => {
+    const timeline = await styled('::: timeline {#t processes="p q" length=4 x=-4 y=1 width=8}\np@1 "e"\nq@3 "f"\np@1 -> q@3 {#m}\n:::');
+    const circles = await styled('[[circle: #c1 x=-2 y=1 radius=0.15]]\n\n[[circle: #c2 x=2 y=0 radius=0.15]]\n\n[[arrow: #c1 -> #c2, #m]]');
+    const box = (slide: MarkupSlide) => [element(slide, 'm').getLeft()[0], element(slide, 'm').getRight()[0], element(slide, 'm').getTop()[1], element(slide, 'm').getBottom()[1]];
+    box(timeline).forEach((value, i) => expect(value).toBeCloseTo(box(circles)[i], 6));
+    expect(element(timeline, 'm').getLeft()[0]).toBeGreaterThan(-2 + 0.15);
+  });
+
+  it('is named with an anchor, and stays a point without an event', () => {
+    const list = items('::: timeline {#t processes="p q" length=4}\np@1\n[a]{#a at=bottom:p@1.top}\n[b]{#b at=center:q@2}\np@1 -> q@2\n:::');
+    expect(byId(list, 'a').attributes.at).toBe('bottom:#t-1.top');
+    expect(byId(list, 'b').attributes.at).toBe('center:(2,-1)');
+    expect(list.find((item) => item.role === 'message')!.attributes).toMatchObject({ from: '#t-1', to: '(2,-1)' });
+    expect(() => items('::: timeline {processes="p" length=4}\n[a]{at=p@2.top}\n:::')).toThrow(/p@2 names no event, so it has no .top/);
+  });
+
+  it('is reached at its border in a graph too', async () => {
+    const graph = await styled('::: graph\nA (-2,1) {radius=0.15}\nB (2,0) {radius=0.15}\nA -> B {#m}\n:::');
+    const circles = await styled('[[circle: #c1 x=-2 y=1 radius=0.15]]\n\n[[circle: #c2 x=2 y=0 radius=0.15]]\n\n[[arrow: #c1 -> #c2, #m]]');
+    expect(element(graph, 'm').getLeft()[0]).toBeCloseTo(element(circles, 'm').getLeft()[0], 6);
   });
 });
 

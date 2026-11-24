@@ -253,6 +253,12 @@ r@5 -> p@6.5 marker
 | `p: name` | the name shown for `p` (inline text); `$p$` by default |
 | anything else | any element, in which `p@t` is the point of `p` at time `t` (`at=center:q@1.1`, `[[line: p@0 -> p@2]]`) |
 
+Where an event stands at `p@t`, `p@t` names that event, in a message as in any element: a message
+or an arrow ends at its border, as `[[arrow: #a -> #b]]` ends at two circles' (a dot of radius
+0.15 is met 0.215 from its center), and an element is placed against it (`at=bottom:p@3.top`,
+`p@t` followed by one of its anchors). A point where no event stands stays a point, and an
+anchor after it is an error. The events need no `buff=` on the messages that join them.
+
 A message or an event line ends with an optional `"label"`, style names written bare
 (`marker`, `snap`: the same as `{.marker}`) and `{attributes}` (`{color=RED step=+}`). The block
 takes `processes` (names of letters, digits and `_`), `length` (the time the lifelines span) and

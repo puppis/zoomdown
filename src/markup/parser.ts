@@ -563,7 +563,24 @@ export class MarkupParser {
     const naming = new RegExp(`^\\s*${who}\\s*:\\s*(.+)$`);
     const message = new RegExp(`^\\s*${who}@${time}\\s*(->|--)\\s*${who}@${time}(?![\\w.@])(.*)$`);
     const event = new RegExp(`^\\s*${who}@${time}(?![\\w.@])(.*)$`);
-    const anywhere = new RegExp(`(?<![\\w.@])${who}@${time}(?![\\w.@])`, 'g');
+    const anchors = [...GROUP_ANCHORS].sort((a, b) => b.length - a.length).join('|');
+    const anywhere = new RegExp(`(?<![\\w.@])${who}@${time}(?:\\.(${anchors}))?(?![\\w.@])`, 'g');
+    // An event stands for its point: p@t names the event written there, so that a message, an
+    // arrow or an element placed against it meets its border (p@t.bottom one of its anchors); a
+    // point with no event stays a point.
+    const events = new Map<string, string>();
+    body.forEach((text, k) => {
+      const happened = message.test(text) ? null : event.exec(text);
+      if (!happened) return;
+      const key = `${happened[1]}@${Number(happened[2])}`;
+      if (!events.has(key)) events.set(key, MarkupParser._tail(happened[3], line + 1 + k).attrs.id ?? `${base}-${k + 1}`);
+    });
+    const end = (process: string, moment: number, at: number, anchor?: string) => {
+      const named = events.get(`${process}@${moment}`);
+      if (named) return `#${named}${anchor ? `.${anchor}` : ''}`;
+      if (anchor) throw new MarkupError(`${process}@${moment} names no event, so it has no .${anchor}`, at);
+      return point(process, moment);
+    };
     const names = new Map<string, string>();
     for (const text of body) {
       const named = naming.exec(text);
@@ -588,7 +605,7 @@ export class MarkupParser {
       const sent = message.exec(text);
       if (sent) {
         const tail = MarkupParser._tail(sent[6], at);
-        const own: Attributes = { ...tail.attrs, from: point(sent[1], Number(sent[2])), to: point(sent[4], Number(sent[5])) };
+        const own: Attributes = { ...tail.attrs, from: end(sent[1], Number(sent[2]), at), to: end(sent[4], Number(sent[5]), at) };
         if (tail.label !== null) own.label = tail.label;
         make(id, sent[3] === '->' ? 'arrow' : 'line', [], this._drawn(own, tail.words), 'message', at);
         return;
@@ -602,7 +619,7 @@ export class MarkupParser {
         make(id, 'dot', [], this._drawn(own, tail.words), 'event', at);
         return;
       }
-      this._drawnLine(text.replace(anywhere, (_, process: string, moment: string) => point(process, Number(moment))), at, id, items);
+      this._drawnLine(text.replace(anywhere, (_, process: string, moment: string, anchor?: string) => end(process, Number(moment), at, anchor)), at, id, items);
     });
     this._stepBlock(items, attrs, line);
     return items;

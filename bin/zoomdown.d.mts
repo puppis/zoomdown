@@ -11,6 +11,18 @@ export const LIBRARY_KINDS: ReadonlyArray<{ key: string; folder: string | null; 
 export function deckFolders(deckPath: string): Promise<{ paths: string[]; artworks: string[]; fonts: string[]; effects: string[]; charts: string[]; languages: string[]; codeThemes: string[]; themes: string[]; slides: string[]; directives: string[]; snippets: string[]; transitions: string[]; all: string[]; extended: string[] }>;
 /** The settings of a Markdown deck on disk: its front matter over the files it extends, paths absolute; the Markdown with its front matter blank; the files extended. */
 export function deckSettings(deckPath: string): Promise<{ settings: import('../src/markup/frontmatter.mjs').DeckSettings; body: string; extended: string[] }>;
+/** What a preview reloads for: the files the deck's pages opened since the last reload, its source and the files it extends, its library folders and --watch paths. */
+export class ReloadWatch {
+  constructor(options: { deckPath: string; extra?: string[] });
+  readonly deckPath: string;
+  readonly base: Set<string>;
+  readonly opened: Set<string>;
+  readonly libraries: string[];
+  load(): Promise<ReloadWatch>;
+  open(url: string | undefined): string | null;
+  concerns(file: string): boolean;
+  reset(): Promise<ReloadWatch>;
+}
 export function startPreview(options: Record<string, unknown>): Promise<{ server: unknown; url: string; port: number; deckPath: string; kind: string; watchRoots: string[] }>;
 /** Build a deck into a static folder, or with `oneFile` into one `offline.html`; resolves with the page written. Throws on errors. */
 export function buildDeck(options: Record<string, unknown>): Promise<{ target: string }>;

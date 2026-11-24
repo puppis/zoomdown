@@ -273,7 +273,8 @@ whole and is what connections reach.
 `::: timeline {processes="p q" length=10}` draws a space-time diagram: a horizontal lifeline per
 process from `x`, `y` over `width` units, `spacing` apart, names at their left (`$p$`, or a line
 `p: name`); lines `p@1 -> q@3 "m"` draw messages (`--` a line), `q@2 "label"` events (dots), and
-any other element may write `p@t` for the point of `p` at time `t`. `::: graph {x y scale}` draws
+any other element may write `p@t` for the point of `p` at time `t`; where an event stands there,
+`p@t` names the event (`p@t.top` one of its anchors), so messages and arrows stop at its border. `::: graph {x y scale}` draws
 nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` and edges `A -> B "3"` (`--` a line). Lines end
 with an optional `"label"`, bare style names and `{attributes}`; the parts are elements of the
 slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`. A block
