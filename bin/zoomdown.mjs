@@ -203,6 +203,68 @@ export async function deckFolders(deckPath) {
 }
 
 /**
+ * What a preview reloads for (watch what you load): the files the deck's pages opened, or tried to
+ * (a snippet looked for in several folders), since the last reload; the deck's Markdown and the
+ * files it extends, read before any page opens; anything in its library folders (artworks, fonts,
+ * effects, directives, …), where a new file may be the one a page looked for; and the paths given
+ * with --watch. A file beside the deck that no page opened (another deck beside a shared settings
+ * file, a README, a stray file) changes nothing. `reset` starts the list again after a reload,
+ * the deck's settings read anew.
+ */
+export class ReloadWatch {
+  constructor({ deckPath, extra = [] }) {
+    this.deckPath = deckPath;
+    this.extra = extra;
+    this.libraries = [];
+    this.base = new Set([deckPath]);
+    this.opened = new Set(this.base);
+  }
+
+  /** Read the deck's settings: the files it extends and its library folders. */
+  async load() {
+    let extended = [];
+    let libraries = [];
+    try {
+      const folders = await deckFolders(this.deckPath);
+      extended = (await deckSettings(this.deckPath)).extended;
+      libraries = LIBRARY_KINDS.filter(({ key }) => key !== 'paths').flatMap(({ key }) => folders[key] ?? []);
+    } catch {
+      // Front matter being edited may not parse: keep watching the deck itself, and what pages open.
+    }
+    this.base = new Set([this.deckPath, ...extended]);
+    this.libraries = libraries;
+    this.opened = new Set(this.base);
+    return this;
+  }
+
+  /** Note a request of a page: a file served by its path (`/@fs/…`), query and fragment aside; returns the file, or null. */
+  open(url) {
+    const match = /^\/@fs(\/[^?#]*)/.exec(url ?? '');
+    if (!match) return null;
+    let file;
+    try {
+      file = decodeURIComponent(match[1]);
+    } catch {
+      return null;
+    }
+    if (sep !== '/') file = file.replace(/^\/(?=[A-Za-z]:)/, '').split('/').join(sep);
+    this.opened.add(file);
+    return file;
+  }
+
+  /** Whether a change to `file` concerns the deck. */
+  concerns(file) {
+    const under = (folder) => file === folder || file.startsWith(folder + sep);
+    return this.opened.has(file) || this.libraries.some(under) || this.extra.some(under);
+  }
+
+  /** Start the list again, after a reload: the pages will open what they need anew. */
+  reset() {
+    return this.load();
+  }
+}
+
+/**
  * The extensions of markup files: `.zd`, the ZoomDown extension, and the Markdown ones that decks
  * had before it, still read the same way.
  */
@@ -243,17 +305,31 @@ export async function startPreview(options) {
   // The deck's search and artwork folders are served and watched like its own folder.
   const folders = kind === 'markdown' ? await deckFolders(deckPath) : { all: [], extended: [] };
   const watchRoots = [...new Set([deckDir, ...options.watch, ...folders.all, ...folders.extended])];
+  // Reloads follow what the deck loads, not the folders that hold it (watch what you load).
+  const loaded = kind === 'markdown' ? await new ReloadWatch({ deckPath, extra: options.watch }).load() : null;
   const reloadPlugin = {
     name: 'zoomdown-reload',
     configureServer(server) {
-      for (const root of watchRoots) server.watcher.add(root);
+      // The deck's own folder, its library folders and --watch are watched whole; a file a page
+      // opens elsewhere (an extended settings file, an image in a search folder) once it is opened.
+      const watched = [deckDir, ...options.watch, ...folders.all];
+      for (const root of watched) server.watcher.add(root);
+      if (loaded) {
+        for (const file of loaded.base) server.watcher.add(file);
+        server.middlewares.use((request, _response, next) => {
+          const file = loaded.open(request.url);
+          if (file && !watched.some((root) => file.startsWith(root + sep))) server.watcher.add(file);
+          next();
+        });
+      }
       const onChange = (file) => {
-        const inside = watchRoots.some((root) => file === root || file.startsWith(root + sep));
+        const inside = loaded ? loaded.concerns(file) : watchRoots.some((root) => file === root || file.startsWith(root + sep));
         // Recordings are written by the player itself; a reload would interrupt the talk being saved,
         // as it would an export the player is writing into a folder that may lie inside the deck's.
         if (!inside || /node_modules|\.git\b|\bbuild\b|\bdist\b/.test(file) || isRecordingFile(file) || exportWriting()) return;
         console.log(`[${new Date().toLocaleTimeString()}] ${relative(deckDir, file) || file} changed; reloading`);
         server.ws.send({ type: 'full-reload' });
+        void loaded?.reset();
       };
       server.watcher.on('change', onChange);
       server.watcher.on('add', onChange);
@@ -310,7 +386,10 @@ async function serve(options) {
   if (options.editor) console.log(`Inverse search: E or Alt+click in the player opens the source with "${options.editor}"`);
   else console.log('Inverse search is off (pass --editor emacs|sublime|code|vim|jetbrains or a command with {file} and {line})');
   console.log(`Forward search: zoomdown jump <file> <line> moves this preview to the stop of a line`);
-  console.log(`Watching ${watchRoots.map((root) => relative(process.cwd(), root) || '.').join(', ')} — press Ctrl+C to stop`);
+  const extra = options.watch.length ? `, and ${options.watch.map((path) => relative(process.cwd(), path) || '.').join(', ')}` : '';
+  console.log(kind === 'markdown'
+    ? `Reloading when the deck, the files it extends or anything it loads changes${extra} — press Ctrl+C to stop`
+    : `Watching ${watchRoots.map((root) => relative(process.cwd(), root) || '.').join(', ')} — press Ctrl+C to stop`);
   const stop = (reason) => {
     if (reason) console.log(reason);
     server.close().finally(() => process.exit(0));

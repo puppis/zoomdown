@@ -97,7 +97,7 @@ from the player's settings without any flag; `--local` keeps it to this computer
 8765 when that is free, so a trusted tablet finds the deck again at the same address, and the
 next free port otherwise; `--port` insists on one. The first time, macOS may ask whether ZoomDown
 may accept incoming connections: answer Allow for the tablet to reach it. `--editor` names the editor that `E` and Alt + click open source lines with;
-`--watch` adds folders whose changes reload the deck; `--scene` picks a named export of a module.
+`--watch` adds files or folders whose changes reload the deck, besides what it loads; `--scene` picks a named export of a module.
 The server's address is in the Help menu and on the terminal, and `zoomdown jump` from an editor
 reaches it like any preview.
 

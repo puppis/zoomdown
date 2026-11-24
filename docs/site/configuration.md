@@ -158,8 +158,14 @@ node bin/zoomdown.mjs jump <file> <line>
 `<deck>` is a `.zd` file (or a deck's `.md`), a PDF, a JS/TS module exporting a deck definition, or a
 [Slajdomat presentation](documents.html#a-slajdomat-presentation) by its folder, `index.html` or `manifest.json`; another `.json`
 path is refused, with a message saying to move its settings into the front matter. Both
-commands read the front matter, with the files it extends. `serve` watches the deck's folder,
-the folders its settings name, the folders of the files it extends and any `--watch` path,
+commands read the front matter, with the files it extends. `serve` serves the deck's folder, the
+folders its settings name and those of the files it extends, and reloads the preview for what the
+deck loads, not for the folders that hold it: the deck and the whole chain of files it extends,
+every file its pages open or look for (imports, snippets, themes, images, directives, fonts),
+anything in its library folders (`artworks/`, `fonts/`, `directives/`, …), and any `--watch`
+path; the list is read anew at each reload. Another deck beside a shared settings file, a README
+or a stray file reloads nothing.
+`--watch PATH` (repeatable) adds a file or a folder to what reloads it,
 `--host` also listens on the network for a tablet, and `--editor` names the editor (`emacs`,
 `sublime`, `code`, `vim`, `jetbrains`, … or a command with `{file}` and `{line}`;
 `ZOOMDOWN_EDITOR` is the default) that the player's E key and Alt + click open source lines
