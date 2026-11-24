@@ -145,7 +145,8 @@ mixed prose and math share one baseline, and a paragraph with inline math stays 
 The spaces that start the source line after a `\\` indent the line it begins: each by a plain
 space of the font, and a tab to the next multiple of four. The lines an indented
 line wraps to keep its indent, within the rest of the width (an indent leaves a quarter of it at
-least). Spaces after any other line end collapse, those in a block with `&&` columns align only
+least). Spaces after any other line end collapse (`&&` makes columns, a row per source line, in a block
+of two lines or more; in a single line it is two ampersands), those in a block with `&&` columns align only
 the source, and in a list item they count from the column of the item's text, so a continuation
 aligned under the text is not indented.
 

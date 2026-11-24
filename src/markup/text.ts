@@ -555,9 +555,14 @@ export interface Row {
   indent: number;
 }
 
-/** Whether a block has columns: an unescaped `&&` in its prose (an escaped `\&&` arrives as two separate spans). */
+/**
+ * Whether a block has columns: an unescaped `&&` in its prose (an escaped `\&&` arrives as two
+ * separate spans), in a block of two lines or more (a line end of the source or `\\`). A single
+ * line has nothing to align: there `&&` is two ampersands, as in `while (a && b)`.
+ */
 export function hasColumns(spans: InlineSpan[]): boolean {
-  return spans.some((s) => s.kind === 'text' && s.content.includes('&&'));
+  if (!spans.some((s) => s.kind === 'text' && s.content.includes('&&'))) return false;
+  return spans.some((s) => s.kind === 'text' && (s.soft || s.content.includes('\n')));
 }
 
 /**

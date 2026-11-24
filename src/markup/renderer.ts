@@ -454,6 +454,12 @@ export function placeRelative(
     // their fonts, not their ink), and the lines' own gap between them.
     const mine = textLines(obj);
     const theirs = textLines(reference);
+    // A tile under or over a text (a row of tiles under the verdicts of the row before) is set by
+    // the text's line box, the font's reach times its lines, not by how far its letters reach.
+    if (!mine && theirs && direction[0] === 0 && !(item instanceof ElementSpec)) {
+      const edge = direction[1] < 0 ? theirs.last - theirs.descent - buff - obj.getTop()[1] : theirs.first + theirs.ascent + buff - obj.getBottom()[1];
+      obj.shift([0, edge, 0]);
+    }
     if (mine && theirs) {
       if (direction[1] === 0) obj.shift([0, theirs.first - mine.first, 0]);
       else if (direction[1] < 0) {

@@ -86,7 +86,8 @@ or against another element, such as a label placed over a group of tiles. A bloc
 
 A `::: tiles` container lays its includes out as a grid of `cols` columns: the first tile where
 the container's position says, each next one right of the one before, and the first of each row
-under the first of the row before (under its verdict when it has one), all `buff` apart and as
+under the first of the row before (under its verdict when it has one, measured from the verdict's
+line box, so the rows step evenly whatever its letters reach), all `buff` apart and as
 large as the container's `width` or `height` unless they say it themselves. Without `cols` the
 tiles make one row. The includes inside take no position of their own. Its `step` and `hide`
 step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole): the first tile is
@@ -109,7 +110,10 @@ It is a text of the parent, `#child-verdict`, styled by the deck's `verdict` sty
 `width`, and a position that replaces the place under the tile); its text may hold emphasis and
 formulas. The include passes `verdict_<attribute>` to its verdict, for one tile: `verdict_width=4.4`,
 `verdict_at=left:#LAST.right`, `verdict_class=note`; `::: tiles {verdict_width=4.4}` passes it to
-every tile's verdict that does not set it. The visits of a slide whose tiles have verdicts are numbered first, so the verdicts'
+every tile's verdict that does not set it. With sequential steps, an element written after the include comes with the include's visit, as it
+came with a verdict line written there before: turning a verdict line into `verdict=` can move the
+next element without a step of its own one click earlier; give it `step=+` to keep it after the
+verdict. The visits of a slide whose tiles have verdicts are numbered first, so the verdicts'
 clicks come after them; with [sequential steps](fragments.html#steps-that-follow-the-source) the
 verdicts stand outside the count, the element after an include counting from its visit.
 

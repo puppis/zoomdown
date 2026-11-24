@@ -79,6 +79,20 @@ describe('a grid of tiles', () => {
   });
 });
 
+describe('a column of tiles', () => {
+  it('steps evenly whatever the verdicts\' letters reach (bug 5)', async () => {
+    const root = await built(`::: slide {#r}\n::: tiles {cols=1 x=-4 y=5.5 anchor=top-left width=4 buff=0.3}\n[[include: #a verdict="not the actual run"]]\n[[include: #b verdict="no money lost"]]\n[[include: #c verdict="none"]]\n[[include: #d verdict="x"]]\n:::\n:::\n${children(['a', 'b', 'c', 'd'])}`);
+    const tops = ['a', 'b', 'c', 'd'].map((id) => ((root.components.get([...root.components.keys()].find((key) => key.endsWith(id))!) as MarkupSlide).viewport as Mobject).getTop()[1]);
+    const steps = tops.slice(1).map((top, i) => tops[i] - top);
+    for (const step of steps) expect(step).toBeCloseTo(steps[0], 9);
+    // The rule itself: a tile's top is buff under the text's line box (last baseline less descent).
+    const placed = await built(`::: slide {#r}\n[money]{#t x=-4 y=3}\n\n[[include: #a below:#t buff=0.3 width=4]]\n:::\n${children(['a'])}`);
+    const lines = textLines(element(placed, 't'))!;
+    const tile = ((placed.components.values().next().value as MarkupSlide).viewport as Mobject);
+    expect(tile.getTop()[1]).toBeCloseTo(lines.last - lines.descent - 0.3, 9);
+  });
+});
+
 describe('the verdict of a tile', () => {
   it('is a text under the tile, shown at the click after its visit', () => {
     const list = items('[[include: #a x=0 y=0 width=3 step=1 verdict="a *public* ledger"]]');

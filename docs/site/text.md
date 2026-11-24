@@ -123,9 +123,12 @@ from the text. A list of pseudocode keeps its indentation:
 ## Columns
 
 Pieces of text align across lines with `&&` between them, as in a table without rules or in a
-LaTeX `align`: in a block that contains `&&`, every line of the source is a row and `&&` ends a
+LaTeX `align`: in a block of two lines or more that contains `&&`, every line of the source is a
+row and `&&` ends a
 cell, each column is as wide as its widest cell, and a cell starts where the columns before it
-end, plus a gap of one em. Spaces around `&&` are free, so the source itself can be aligned:
+end, plus a gap of one em. A text of one line has nothing to align: there `&&` is two ampersands,
+as in `[while (a && b)]` or a label `p@1 "e && f"`. Spaces around `&&` are free, so the source
+itself can be aligned:
 
 ```zoomdown {height=4}
 ::: slide {#columns width=16 height=4}

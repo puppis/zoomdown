@@ -37,7 +37,12 @@ describe('aligned columns', () => {
   });
 
   it('treats && glued to words as a separator too, and a trailing or leading one as an empty cell', () => {
-    const spans: InlineSpan[] = [{ content: 'a&&b&&', kind: 'text', bold: false, italic: false, color: null }];
-    expect(text(inlineRows(spans))).toEqual([['a', 'b', '']]);
+    const spans: InlineSpan[] = [{ content: 'a&&b&&\nc&&d', kind: 'text', bold: false, italic: false, color: null }];
+    expect(text(inlineRows(spans)).slice(0, 1)).toEqual([['a', 'b', '']]);
+  });
+
+  it('keeps && in a text of one line, which has nothing to align', () => {
+    const spans: InlineSpan[] = [{ content: 'while (a && b)', kind: 'text', bold: false, italic: false, color: null }];
+    expect(text(inlineRows(spans))).toEqual([['while (a && b)']]);
   });
 });
