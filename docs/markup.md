@@ -276,7 +276,8 @@ whole and is what connections reach.
 `x`, `y` over `width` units, time flowing right or as `direction=left|down|up` says, `spacing`
 apart (one gap or a list), names at their start (`$p$`, or a line
 `p: name`, none with `p:` or the block's `names=false`, `{length=9}` ending that lifeline);
-`lifeline_tip=true` ends the lifelines in a tip, `p@2 .. p@4 {dashed=true}` draws a part of one its
+`lifeline_tip=true` ends the lifelines in a tip (sized from the whole lifeline, a line's width),
+a timeline or a graph takes classes and the deck's `timeline` or `graph` style, `p@2 .. p@4 {dashed=true}` draws a part of one its
 own way; lines `p@1 -> q@3 "m"` draw messages (`--` a line), `q@2 "label"` events (dots; `dot=false`
 or the block's `event_dot=false` for the label alone, `sublabel_width` to wrap it), and
 any other element may write `p@t` for the point of `p` at time `t`; where an event stands there,

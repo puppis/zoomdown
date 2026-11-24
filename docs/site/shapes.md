@@ -251,7 +251,7 @@ r@5 -> p@6.5 marker
 | --- | --- |
 | `p@1 -> q@3 "m1"` | a message: an arrow from process `p` at time 1 to `q` at time 3, labeled; `--` draws a line |
 | `q@2 "label"` | an event: a dot on `q` at time 2, its label (optional) as the dot's sublabel; `{dot=false}` writes the label alone (`event_dot=false` on the block, for every event), `sublabel_width` wraps it |
-| `p: name` | the name shown for `p` (inline text); `$p$` by default, none when empty (`p:`); `{length=9}` after it ends `p`'s lifeline at time 9 |
+| `p: name` | the name shown for `p` (inline text); `$p$` by default, none when empty (`p:`); `{length=9}` after it, a space apart, ends `p`'s lifeline at time 9 (a `{…}` stuck to a span's `]` is the span's: `P: [proposer]{color=amber} {length=9}`) |
 | `p@2 .. p@4 {dashed=true}` | a part of `p`'s lifeline drawn its own way (any attribute or class of a line); the lifeline is drawn in pieces, the first `#id.p`, the others `#id.p-2`, … |
 | anything else | any element, in which `p@t` is the point of `p` at time `t` (`at=center:q@1.1`, `[[line: p@0 -> p@2]]`) |
 
@@ -268,7 +268,9 @@ takes `processes` (names of letters, digits and `_`), `length` (the time the lif
 or a list, one gap between each two: `spacing="1.2 1.4"`), `direction` (time flowing `right`, the
 default, `left`, `down` or `up`, the lifelines following one another across it and each name at the
 start of its lifeline), `names=false` (no process names), `lifeline_tip=true` (lifelines ending in a tip; `open` for an
-open one), `x`, `y` (the start of the first lifeline, time 0), `#id`, and `step` and `hide`, which step it
+open one; the tip as large as the whole lifeline allows, the piece it ends a lifeline still, a
+line's width and color unless the `lifeline` style says otherwise), classes (`::: timeline {.waits}`,
+under the deck's `timeline` style: settings several timelines share), `x`, `y` (the start of the first lifeline, time 0), `#id`, and `step` and `hide`, which step it
 [as a whole, line by line](fragments.html#blocks-step-as-a-whole). Its parts are elements of the slide
 whose names are [local to the block](#names-local-to-a-block): the lifelines `#id.p`, the names
 `#id.p-name`, an event or a line with an `#e` of its own `#id.e`, and the line `k` of the block
@@ -315,7 +317,7 @@ stays straight);
 arrows the same way and lines stay on one another, as a highlight drawn over the edge it marks
 does. `offset=0.1` shifts any straight arrow or line sideways, its ends still on the outlines. A node is
 `radius=0.3` (a rectangle 0.6 square, an ellipse 0.8 by 0.5) unless its attributes or styles size
-it. With `labels=true` every node without a label of its own is labeled by its name. Nodes and
+it. The block takes classes and the deck's `graph` style, as a timeline does. With `labels=true` every node without a label of its own is labeled by its name. Nodes and
 edges take the deck's styles `node` and `edge` after those of their kind, each only what its kind
 takes, unless the block names their classes (`::: graph {node=place edge=arc}`, in place of the
 roles' styles), and the block passes `node_<attribute>` and `edge_<attribute>` to them as an

@@ -110,7 +110,8 @@ that appears at the click after the tile's visit: what the child taught, once it
 It is a text of the parent, `#child-verdict`, styled by the deck's `verdict` style (color, size,
 `width`, and a position that replaces the place under the tile); its text may hold emphasis and
 formulas. The include passes `verdict_<attribute>` to its verdict, for one tile: `verdict_width=4.4`,
-`verdict_at=left:#LAST.right`, `verdict_class=note`; `::: tiles {verdict_width=4.4}` passes it to
+`verdict_at=left:#LAST.right`, `verdict_class=note`; under its tile, a verdict hangs from its first
+line box, so the verdicts of a row share a baseline whatever their letters; `::: tiles {verdict_width=4.4}` passes it to
 every tile's verdict that does not set it. With sequential steps, an element written after the include comes with the include's visit, as it
 came with a verdict line written there before: turning a verdict line into `verdict=` can move the
 next element without a step of its own one click earlier; give it `step=+` to keep it after the

@@ -73,3 +73,37 @@ describe('tiles with classes (15)', () => {
     expect(() => items('::: tiles {.nothing}\n[[include: #a]]\n:::')).toThrow(/Unknown style class .nothing/);
   });
 });
+
+describe('the revision round\'s fixes', () => {
+  it('reads a {…} stuck to a span\'s ] as the span\'s own, on a process\'s line (bug 1)', () => {
+    const list = items('::: timeline {#t processes="P Q R S" length=10}\nP: [proposer]{color=RED}\nQ: [acceptor]{color=RED} {length=9}\nR: {length=8}\nS: name {length=7}\n:::');
+    expect(byId(list, 't.P-name').spans[0]).toMatchObject({ content: 'proposer', color: 'RED' });
+    expect([byId(list, 't.Q').attributes.to, byId(list, 't.R').attributes.to, byId(list, 't.S').attributes.to]).toEqual(['(9,-1)', '(8,-2)', '(7,-3)']);
+    expect(byId(list, 't.R-name')).toBeUndefined();
+  });
+
+  it('hangs a verdict from its first line box, so a row\'s verdicts share a baseline (bug 2)', async () => {
+    const root = await (await import('./helpers/slides')).built('::: slide {#r}\n[[include: #a x=-4 y=0 width=3 verdict="Dickson"]]\n\n[[include: #b verdict="xxxx"]]\n:::\n::: slide {#a}\nA\n:::\n::: slide {#b}\nB\n:::');
+    const [a, b] = ['a-verdict', 'b-verdict'].map((id) => textLines(element(root, id))!);
+    expect(a.first).toBeCloseTo(b.first, 9);
+    const tile = (root.components.values().next().value as { viewport: { getBottom(): number[] } }).viewport;
+    expect(a.first + a.ascent).toBeCloseTo(tile.getBottom()[1] - 0.35, 9);
+  });
+
+  it('sizes a lifeline\'s tip from the whole lifeline, with a line\'s width (bugs 3, 4)', async () => {
+    const list = items('::: timeline {#t processes="p" direction=down width=6.3 lifeline_tip=true}\np@1 .. p@6.2 {dashed=true}\n:::');
+    const last = byId(list, 't.p-3');
+    expect([last.kind, last.lifeline]).toEqual(['arrow', 6.3]);
+    const built = await slide('', '::: timeline {#t processes="p" direction=down width=6.3 lifeline_tip=true}\np@1 .. p@6.2 {dashed=true}\n:::\n\n::: timeline {#u processes="p" x=3 direction=down width=6.3 lifeline_tip=true}\n:::');
+    // The stub's tip is a whole lifeline's, longer than the 0.1 stub, not a quarter of it.
+    expect(element(built, 't.p-3').getHeight()).toBeGreaterThan(0.15);
+    expect(element(built, 'u.p').getHeight()).toBeCloseTo(6.3, 6);
+  });
+
+  it('gives a timeline and a graph the deck\'s timeline and graph styles and the classes they name', () => {
+    const list = items('::: timeline {#t processes="p" length=4 .waits}\np@1 {#e}\n:::\n\n::: graph {#g}\nA (0,0)\n:::', { styles: { waits: 'event_dot=false lifeline_tip=true', graph: 'node_radius=0.5' } });
+    expect(byId(list, 't.p').kind).toBe('arrow');
+    expect(byId(list, 't.e').attributes.stroke_width).toBe('0');
+    expect(byId(list, 'g.A').attributes.radius).toBe('0.5');
+  });
+});

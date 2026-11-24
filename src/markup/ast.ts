@@ -89,6 +89,9 @@ export class ElementSpec {
    */
   role: string | null = null;
 
+  /** The length of the whole lifeline a piece of it belongs to (a timeline's lifeline drawn in pieces), or null. */
+  lifeline: number | null = null;
+
   /** The part of a block the element is (`node`, `edge`, `message`, …), whether or not the block names its class; null for any other. */
   part: string | null = null;
 

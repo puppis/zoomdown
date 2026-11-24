@@ -460,6 +460,11 @@ export function placeRelative(
       const edge = direction[1] < 0 ? theirs.last - theirs.descent - buff - obj.getTop()[1] : theirs.first + theirs.ascent + buff - obj.getBottom()[1];
       obj.shift([0, edge, 0]);
     }
+    // A verdict hangs from its first line box under its tile, so the verdicts of a row share a baseline.
+    if (mine && !theirs && item instanceof ElementSpec && item.verdictOf !== null && direction[0] === 0) {
+      const edge = direction[1] < 0 ? reference.getBottom()[1] - buff - (mine.first + mine.ascent) : reference.getTop()[1] + buff - (mine.last - mine.descent);
+      obj.shift([0, edge, 0]);
+    }
     if (mine && theirs) {
       if (direction[1] === 0) obj.shift([0, theirs.first - mine.first, 0]);
       else if (direction[1] < 0) {
@@ -1551,7 +1556,7 @@ export class MarkupRenderer {
     const offset = numberValue(attrs, 'offset', element.line, 0) as number;
     const color = attrs.color ? parseColor(attrs.color) : this.layout.color;
     const isArrow = element.kind === 'arrow';
-    const strokeWidth = element.kind === 'line' || 'stroke_width' in attrs ? Number(attrs.stroke_width ?? 2) : undefined;
+    const strokeWidth = element.kind === 'line' || (element.lifeline ?? null) !== null || 'stroke_width' in attrs ? Number(attrs.stroke_width ?? 2) : undefined;
     const width = strokeWidth ?? (isArrow ? 4 : 2);
     const dash = attrs.dashed === 'true' ? dashPattern(width) : undefined;
     const sketchy = sketchOptions(element, { color, strokeWidth: width, fillColor: color, fillOpacity: 0, ...(dash ? { dash } : {}) });
@@ -1594,7 +1599,7 @@ export class MarkupRenderer {
       path = from > 0 || to > 0 ? curve.part(from, curve.length - to) : curve;
     }
     const length = path ? path.length : Math.hypot(end3[0] - start3[0], end3[1] - start3[1]);
-    const [tipLength, tipWidth] = tipSize(tip, width, length, explicit('tip_length'), explicit('tip_width'));
+    const [tipLength, tipWidth] = tipSize(tip, width, element.lifeline ?? length, explicit('tip_length'), explicit('tip_width'));
     let connection: Mobject;
     let strokes: BridgePath['strokes'];
     let shaftEnd: Point2;

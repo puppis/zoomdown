@@ -644,6 +644,23 @@ export class MarkupParser {
   }
 
   /**
+   * A drawing block's styles: the deck's `timeline` or `graph` style, then the classes it names
+   * (`::: timeline {.waits}`), under what it writes; a style's position and size are its own.
+   */
+  private _blockStyles(attrs: Attributes, kind: string, line: number): Attributes {
+    const layers: Attributes[] = [];
+    if (this._styles[kind]) layers.push(this._styles[kind]);
+    for (const token of (attrs.class ?? '').split(/\s+/).filter(Boolean)) {
+      const style = this._styles[token];
+      if (!style) throw new MarkupError(`Unknown style class .${token}`, line);
+      layers.push(style);
+    }
+    const { class: _, ...own } = attrs;
+    void _;
+    return { ...Object.assign({}, ...layers), ...own };
+  }
+
+  /**
    * What a drawing block (a timeline, a graph) checks of its own attributes: its own keys, and for
    * each role of its parts the classes it names (`node=place`) and what it passes (`node_radius=0.3`).
    */
@@ -688,6 +705,7 @@ export class MarkupParser {
    * (`q@2 "label"`, a dot) and any element, in which `p@t` is the point of process `p` at time `t`.
    */
   private _timeline(body: string[], line: number, attrs: Attributes, prefix: string): SlideItem[] {
+    attrs = this._blockStyles(attrs, 'timeline', line);
     MarkupParser._drawingAttrs(attrs, ['id', 'processes', 'length', 'width', 'spacing', 'direction', 'names', 'x', 'y', 'step', 'hide'], 'timeline', line, ['lifeline', 'process', 'message', 'event']);
     if ('names' in attrs && !['true', 'false'].includes(attrs.names)) throw new MarkupError('names must be true or false', line);
     // What the block passes that is no attribute of a part: lifelines ending in a tip, events without dots.
@@ -772,8 +790,9 @@ export class MarkupParser {
       const named = naming.exec(text);
       if (!named) return;
       // The name is what the line writes, but a trailing {length=…} (a formula's braces stay its own).
-      const split = /^(.*?)\s*(\{[^{}]*=[^{}]*\})\s*$/.exec(named[2]);
-      const written = (split ? split[1] : named[2]).trim();
+      // A {…} stuck to a span's `]` is the span's own: [proposer]{color=amber}.
+      const split = /^(?:(.*?)\s+)?(\{[^{}]*=[^{}]*\})\s*$/.exec(named[2]);
+      const written = (split ? split[1] ?? '' : named[2]).trim();
       const own = split ? parseAttributes(split[2], line + 1 + k) : {};
       for (const key of Object.keys(own)) if (key !== 'length') throw new MarkupError(`A process's line takes its name and length=, not ${key}=`, line + 1 + k);
       names.set(named[1], written || null);
@@ -819,6 +838,8 @@ export class MarkupParser {
           if (tip !== 'true') own.tip = tip;
         }
         make(n === 0 ? `${base}.${process}` : `${base}.${process}-${n + 1}`, tipped ? 'arrow' : 'line', [], this._drawn(own, piece.words), 'lifeline', piece.at);
+        // A tipped piece is a lifeline still: a line's width and color, its tip as large as the whole lifeline allows.
+        if (tipped) (items[items.length - 1] as ElementSpec).lifeline = (end * extent) / span;
         if (n === 0) (items[items.length - 1] as ElementSpec).localName = process;
       });
       // Its name, unless the block shows none (names=false) or the process's line gives an empty one.
@@ -867,6 +888,7 @@ export class MarkupParser {
    * is its id, which edges and any element may name.
    */
   private _graph(body: string[], line: number, attrs: Attributes, prefix: string): SlideItem[] {
+    attrs = this._blockStyles(attrs, 'graph', line);
     MarkupParser._drawingAttrs(attrs, ['id', 'x', 'y', 'scale', 'labels', 'step', 'hide'], 'graph', line, ['node', 'edge']);
     if ('labels' in attrs && !['true', 'false'].includes(attrs.labels)) throw new MarkupError('labels must be true or false', line);
     const x0 = numberValue(attrs, 'x', line, 0) as number;
