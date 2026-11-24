@@ -279,15 +279,16 @@ any other element may write `p@t` for the point of `p` at time `t`; where an eve
 `p@t` names the event (`p@t.top` one of its anchors), so messages and arrows stop at its border. `::: graph {x y scale}` draws
 nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` (or nameless, `(x,y)`) and edges `A -> B "3"`
 (`--` a line, `p.right -> t.left` between anchors); a node may be drawn by any directive after its
-point (`A (0,0) [[icon: server]]`, a deck's own `[[process: value=1]]`), and two arrows between the
+point (`A (0,0) [[icon: server]]`, a deck's own `[[process: value=1]]`, which sees the node's name as
+its `id`), and two arrows between the
 same nodes, one each way, bend apart when they are on screen together and neither curves by itself. `offset=` shifts any straight arrow or line sideways. The names a block's lines write are local to it:
 `#A` inside the block, `#block.A` outside (or a bare `#A` when one block alone on the slide has an
 `A`), so two graphs of a slide may share names. Lines end
 with an optional `"label"`, bare style names and `{attributes}`; the parts are elements of the
 slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`, unless
 the block names their classes (`node=place edge=arc`, `message=request`); `<role>_<attribute>` on
-the block (`message_buff=0.09`, `process_font_size=20`, `node_radius=0.2`) passes to its parts
-under what a line writes, as `verdict_<attribute>` on an include (or on `::: tiles`) passes to its
+the block (`message_buff=0.09`, `process_font_size=20`, `node_radius=0.2`) passes to its parts as
+an anonymous class (each part takes what fits its kind) under what a line writes, as `verdict_<attribute>` on an include (or on `::: tiles`) passes to its
 verdicts and `label_`/`sublabel_` on a shape to its labels. A block
 (timeline, graph or tiles) is stepped as a whole, line by line, whatever each line is: with
 sequential steps its `step` is where its first line starts (unless that line has its own) and

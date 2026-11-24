@@ -47,9 +47,15 @@ describe('parts take prefixed attributes, blocks name their parts\' classes (rul
     expect(() => parse('', '[[include: #a verdict_width=4]]', children.split('\n').slice(0, 3).join('\n'))).toThrow(/verdict_width requires a verdict/);
   });
 
-  it('refuse what no part takes', () => {
+  it('fill in only what fits each part, as a class does, and refuse a part the block has not', () => {
+    const list = elements('', '::: graph {node_radius=0.3 node_width=0.5 node_height=0.5}\np (0,0)\nt (2,0) rectangle\np -> t\n:::');
+    const [p, t] = list.filter((item) => item.part === 'node');
+    expect(p.attributes).toMatchObject({ radius: '0.3' });
+    expect(p.attributes).not.toHaveProperty('width');
+    expect(t.attributes).toMatchObject({ width: '0.5', height: '0.5' });
+    expect(t.attributes).not.toHaveProperty('radius');
+    expect(() => parse('', '::: timeline {processes="p" length=2 message_radius=1}\np@0 -> p@1\n:::')).not.toThrow();
     expect(() => parse('', '::: graph {vertex_radius=1}\nA (0,0)\n:::')).toThrow(/A graph takes .* not vertex_radius=/);
-    expect(() => parse('', '::: timeline {processes="p" length=2 message_radius=1}\np@0 -> p@1\n:::')).toThrow(/Unknown attributes: radius/);
   });
 });
 

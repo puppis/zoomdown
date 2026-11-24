@@ -229,6 +229,8 @@ export class MarkupParser {
   readonly markdown: MarkdownIt;
   /** How the document being parsed numbers its steps (`layout.steps`). */
   private _steps: StepMode = 'explicit';
+  /** The anonymous classes blocks make of what they pass to their parts (`node_radius=0.3`), by name. */
+  private _passed: StyleSheet = {};
 
   constructor() {
     this.blockMarkdown = new MarkdownIt('commonmark', { html: false });
@@ -254,6 +256,7 @@ export class MarkupParser {
   /** Parse a string; infer the unique unreferenced root unless specified. */
   parse(source: string, options: { root?: string | null; basePath?: string; styles?: StyleSheet; steps?: StepMode } = {}): MarkupDocument {
     this._steps = options.steps ?? 'explicit';
+    this._passed = {};
     // Keep source line numbers intact when discarding author comments.
     source = source.replace(/<!--[\s\S]*?-->/g, (match) => '\n'.repeat((match.match(/\n/g) ?? []).length));
     const lines = source.split(/\r?\n/);
@@ -285,6 +288,7 @@ export class MarkupParser {
       index = end + 1;
     }
     if (!slides.length) throw new MarkupError('The document contains no slides');
+    Object.assign(styles, this._passed);
     const document = new MarkupDocument(slides, (options.root ?? '').replace(/^#/, ''), options.basePath ?? '', styles);
     return new ASTTransformer({ steps: this._steps }).validate(document);
   }
@@ -396,11 +400,12 @@ export class MarkupParser {
   private _include(items: SlideItem[], target: string, attrs: Attributes, line: number): void {
     items.push(new IncludeSpec(target, attrs, line));
     // What the include passes to its verdict (rule C): verdict_width=4.4, verdict_at=…, verdict_class=note.
-    const passed = MarkupParser._partAttributes(attrs, 'verdict', true);
+    const written = Object.keys(attrs).find((key) => key.startsWith('verdict_'));
     if (!('verdict' in attrs)) {
-      if (Object.keys(passed).length) throw new MarkupError(`verdict_${Object.keys(passed)[0]} requires a verdict`, line);
+      if (written) throw new MarkupError(`${written} requires a verdict`, line);
       return;
     }
+    const passed = this._passedClasses(attrs, 'verdict', `include-${target}`, true);
     const source = attrs.verdict;
     delete attrs.verdict;
     let content: InlineSpan[];
@@ -409,16 +414,32 @@ export class MarkupParser {
     } catch (error) {
       throw new MarkupError(String((error as Error).message).replace(/^Line \d+: /, ''), line);
     }
-    const verdict = new ElementSpec(`${target}-verdict`, 'text', content, passed, '', line);
+    const verdict = new ElementSpec(`${target}-verdict`, 'text', content, passed.length ? { class: passed.join(' ') } : {}, '', line);
     verdict.verdictOf = target;
     verdict.role = 'verdict';
     items.push(verdict);
   }
 
   /**
+   * The classes a part takes from what its element or block passes it (rule C): the classes it names
+   * (`<role>_class=note`), then an anonymous class of its `<role>_<attribute>` (`node_radius=0.3`),
+   * which so fills in only what fits the part, as any class does; `key` names that class.
+   */
+  private _passedClasses(attrs: Attributes, role: string, key: string, take = false): string[] {
+    const passed = MarkupParser._partAttributes(attrs, role, take);
+    const classes = passed.class ? passed.class.split(/\s+/).filter(Boolean) : [];
+    delete passed.class;
+    if (Object.keys(passed).length) {
+      const name = `@${key}/${role}`;
+      this._passed[name] = passed;
+      classes.push(name);
+    }
+    return classes;
+  }
+
+  /**
    * What an element or a block passes to the parts of one role it makes (rule C): its attributes
-   * `<role>_<attribute>`, as `<attribute>`, `<role>_class` as the parts' class; `take` removes them
-   * from the element's own.
+   * `<role>_<attribute>`, as `<attribute>`; `take` removes them from the element's own.
    */
   private static _partAttributes(attrs: Attributes, role: string, take = false): Attributes {
     const passed: Attributes = {};
@@ -434,10 +455,11 @@ export class MarkupParser {
    * Make a part of a block for one role: the block's `<role>_<attribute>` under the line's own,
    * and the classes the block names for the role (`node=place`) in place of the role's style.
    */
-  private static _part(id: string, kind: string, spans: InlineSpan[], own: Attributes, role: string, block: Attributes, at: number): ElementSpec {
-    const attrs = { ...MarkupParser._partAttributes(block, role), ...own };
+  private _part(id: string, kind: string, spans: InlineSpan[], own: Attributes, role: string, block: Attributes, at: number, key: string): ElementSpec {
+    const attrs = { ...own };
     const named = block[role];
-    if (named) attrs.class = [named, attrs.class].filter(Boolean).join(' ');
+    const classes = [named, ...this._passedClasses(block, role, key), attrs.class].filter(Boolean);
+    if (classes.length) attrs.class = classes.join(' ');
     const element = new ElementSpec(attrs.id ?? id, kind, spans, attrs, '', at);
     element.role = named ? null : role;
     element.part = role;
@@ -458,10 +480,11 @@ export class MarkupParser {
     if ('id' in element.attributes) throw new MarkupError('A node is named by its line, A (x,y) [[…]], not by an #id in its directive', at);
     const placed = Object.keys(element.attributes).some((key) => key === 'x' || key === 'y' || key === 'at' || POSITION_REFERENCES.has(key));
     const { at: point, class: words, ...rest } = own;
-    const attrs: Attributes = { ...MarkupParser._partAttributes(block, 'node'), ...element.attributes, ...rest };
+    const attrs: Attributes = { ...element.attributes, ...rest };
     if (!placed) attrs.at = point;
     const named = block.node;
-    const classes = [named, element.attributes.class, words].filter(Boolean).join(' ');
+    const base = id.slice(0, id.lastIndexOf('.'));
+    const classes = [named, ...this._passedClasses(block, 'node', base), element.attributes.class, words].filter(Boolean).join(' ');
     if (classes) attrs.class = classes;
     const node = new ElementSpec(id, element.kind, element.spans, attrs, element.source, at, element.level, element.list);
     node.role = named ? null : 'node';
@@ -516,10 +539,10 @@ export class MarkupParser {
     });
     if (attrs.hide === '+') throw new MarkupError("hide=+ counts from an element's own step: give the tiles hide=N", line);
     // What the tiles pass to every verdict, under what its include passes.
-    const passed = MarkupParser._partAttributes(attrs, 'verdict');
+    const passed = this._passedClasses(attrs, 'verdict', `tiles-${line}`);
     for (const item of members) {
-      if (!(item instanceof ElementSpec) || item.verdictOf === null) continue;
-      for (const [key, value] of Object.entries(passed)) if (!(key in item.attributes)) item.attributes[key] = value;
+      if (!(item instanceof ElementSpec) || item.verdictOf === null || !passed.length) continue;
+      item.attributes.class = [...passed, item.attributes.class].filter(Boolean).join(' ');
     }
     this._stepBlock(members, attrs, line);
     return members;
@@ -702,7 +725,7 @@ export class MarkupParser {
     }
     const items: SlideItem[] = [];
     const make = (id: string, kind: string, spans: InlineSpan[], own: Attributes, role: string, at: number) => {
-      items.push(MarkupParser._part(id, kind, spans, own, role, attrs, at));
+      items.push(this._part(id, kind, spans, own, role, attrs, at, base));
     };
     for (const process of processes) {
       if (GROUP_ANCHORS.has(process)) throw new MarkupError(`A process may not be named after an anchor: ${process}`, line);
@@ -760,7 +783,7 @@ export class MarkupParser {
     const edge = new RegExp(`^\\s*${end}\\s*(->|--)\\s*${end}(?![\\w.(])(.*)$`);
     const items: SlideItem[] = [];
     const make = (id: string, kind: string, own: Attributes, role: string, at: number) => {
-      items.push(MarkupParser._part(id, kind, [], own, role, attrs, at));
+      items.push(this._part(id, kind, [], own, role, attrs, at, base));
     };
     body.forEach((text, k) => {
       const at = line + 1 + k;
@@ -779,6 +802,8 @@ export class MarkupParser {
           if (label !== null && label !== '') own.label = label;
           const element = this._directiveNode(drawn[1], `${base}.${name ?? k + 1}`, own, attrs, at);
           element.localName = name;
+          // The directive sees the node's name as its id (a default label, say).
+          if (name !== null) element.attributes.id = name;
           items.push(element);
           return;
         }
@@ -792,6 +817,7 @@ export class MarkupParser {
         if (label !== null && label !== '') own.label = label;
         make(`${base}.${name ?? k + 1}`, kind, this._drawn(own, tail.words), 'node', at);
         (items[items.length - 1] as ElementSpec).localName = name;
+        if (name !== null) (items[items.length - 1] as ElementSpec).attributes.id = name;
         return;
       }
       const joined = edge.exec(text);

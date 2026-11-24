@@ -11,8 +11,10 @@ const parse = (body: string, options: { steps?: 'explicit' | 'sequential'; style
   new MarkupParser().parse(`${options.styles ? `::: styles\n${options.styles}\n:::\n` : ''}::: slide {#s}\n${body}\n:::`, { steps: options.steps });
 const items = (body: string, options?: Parameters<typeof parse>[1]) => parse(body, options).slides[0].items.filter((item): item is ElementSpec => item instanceof ElementSpec);
 const byId = (list: SlideItem[], id: string) => list.find((item): item is ElementSpec => item instanceof ElementSpec && item.id === id)!;
+// A node's attributes, its name (the id its directive sees) aside.
 const own = (item: ElementSpec) => {
   const attrs = { ...item.attributes };
+  if (item.part === 'node') delete attrs.id;
   return attrs;
 };
 
@@ -186,7 +188,7 @@ describe('a graph', () => {
     expect(list.find((item) => item.role === 'edge')!.attributes.stroke_width).toBe('3');
     // A node style made for circles gives a rectangle what it takes, and no radius.
     const mixed = items('::: graph {#g}\nA (0,0)\nt (1,0) rectangle\n:::', { styles: 'node: radius=0.4 color=#111111' });
-    expect(byId(mixed, 'g.t').attributes).toEqual({ x: '1', y: '0', color: '#111111', width: '0.6', height: '0.6' });
+    expect(byId(mixed, 'g.t').attributes).toEqual({ id: 't', x: '1', y: '0', color: '#111111', width: '0.6', height: '0.6' });
     expect(byId(mixed, 'g.A').attributes.radius).toBe('0.4');
   });
 
@@ -263,6 +265,17 @@ describe('a graph\'s nodes of any kind, and its parallel edges', () => {
     const built = await slide('', '::: graph {#g}\nA (0,0) [[circle: radius=0.5]]\nB (3,0)\nA -> B {#e buff=0}\n:::');
     expect(element(built, 'g.e').getLeft()[0]).toBeCloseTo(0.5, 6);
     expect(() => items('::: graph\nA (0,0) [[arrow: (0,0) -> (1,1)]]\n:::')).toThrow(/A node is drawn by one directive that makes an element/);
+  });
+
+  it('gives a node drawn by a directive or a shape its name as id, and text() a clear refusal', async () => {
+    const list = items('::: graph {#g}\nA (0,0) [[node:]]\nB (2,0)\n(4,0)\n:::');
+    expect([byId(list, 'g.A').attributes.id, byId(list, 'g.B').attributes.id, byId(list, 'g.3').attributes.id]).toEqual(['A', 'B', undefined]);
+    const module = { default: (options: { text: (s: unknown) => Promise<unknown> }) => options.text(undefined) };
+    const { SlideBuilder } = await import('../src/markup/slide');
+    const { MarkupParser: Parser } = await import('../src/markup/parser');
+    const { Presenter, PresenterConfig } = await import('../src/runtime');
+    const root = new SlideBuilder({}).build(new Parser().parse('::: slide {#s}\n[[broken:]]\n:::'), { directiveModules: { broken: module as never } });
+    await expect(new Presenter({ config: new PresenterConfig({}) }).play(root)).rejects.toThrow(/asked for the text of an undefined value: text\(\) takes a string/);
   });
 
   it('keeps a node\'s default size when the block names its class', () => {

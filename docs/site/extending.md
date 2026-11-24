@@ -90,8 +90,10 @@ A directive of the deck's own is any `[[name: …]]` the dialect does not know: 
 `directives/name.ts`, a module exporting a function (`default`, or `directive`) that receives the
 directive's attributes as written, its `name` (so one module may serve several), the deck's typography (`fontSize`, `width`, `color`, `foreground`, `layout`,
 the hand-drawn options under `sketch`) and three helpers, `text` for inline markup in the deck's
-font, `icon` for a built-in icon and `artwork` for one of the deck's own, and returns a mobject or
-a list of them. The result is an element like any other: `x`, `y`, the relative positions, `step`,
+font (a string: anything else, an attribute the directive was not given say, is reported with the
+directive's line), `icon` for a built-in icon and `artwork` for one of the deck's own, and returns a
+mobject or a list of them. Drawing a graph's node (`A (0,0) [[name: …]]`), it receives the node's
+name as its `id`. The result is an element like any other: `x`, `y`, the relative positions, `step`,
 `enter`, `exit`, `class` and the animation directives all apply to its `#id`, and the attributes
 the module reads (`level`, `label`) are free. Where artworks are symbols, directives are the
 diagram vocabulary that needs data: a gauge, a timeline, a gate with its inputs.

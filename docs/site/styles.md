@@ -58,7 +58,8 @@ The parts of a block take the style of their role only when the block names no c
 `::: graph {node=place edge=arc}` gives its nodes `.place` and its edges `.arc` instead, so each
 block chooses its own look and a deck's `.node` class meant for other elements reaches no graph
 by surprise. The block passes `<role>_<attribute>` to its parts as well (`node_radius=0.2`), as an
-include passes `verdict_<attribute>` to its verdict and a shape `label_color` to its label.
+include passes `verdict_<attribute>` to its verdict and a shape `label_color` to its label: an
+anonymous class of the block's, over the classes it names, which fills in only what fits each part.
 
 ## Resolution
 

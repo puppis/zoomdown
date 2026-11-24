@@ -753,7 +753,8 @@ has an `A` and no element is `A` itself. A node line may have no name (`(3,1)`),
 join anchors (`p.right -> t.left`). They take the extra style roles `lifeline`, `process`, `message`,
 `event`, `node` and `edge`, from which each takes only what its kind takes. A block names the
 classes of a role's parts in place of its style (`node=place edge=arc`, `message=request`), and
-passes `<role>_<attribute>` to them under what a line writes (`message_buff=0.09`,
+passes `<role>_<attribute>` to them as an anonymous class, which fills in only what fits each part,
+under what a line writes (`message_buff=0.09`,
 `process_font_size=20`, `node_radius=0.2`). An include passes `verdict_<attribute>` to its verdict
 (`verdict_width`, `verdict_at`, `verdict_class`), and `::: tiles` to all its tiles' verdicts. See
 [Space-time diagrams](shapes.html#space-time-diagrams) and [Graphs](shapes.html#graphs).

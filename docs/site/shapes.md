@@ -273,8 +273,9 @@ whose names are [local to the block](#names-local-to-a-block): the lifelines `#i
 those of their kind, each only what its kind takes, unless the block names their classes:
 `::: timeline {message=request event=step process=small-name}` gives the messages `.request`,
 and so on, in place of the role's style (a class each block can choose, which no other element
-of the deck takes by surprise). The block also passes `<part>_<attribute>` to its parts, under
-what a line writes: `message_buff=0.09`, `process_font_size=20`, `event_radius=0.12`,
+of the deck takes by surprise). The block also passes `<part>_<attribute>` to its parts, as an
+anonymous class over the classes it names and under what a line writes, so each part takes only
+what fits its kind: `message_buff=0.09`, `process_font_size=20`, `event_radius=0.12`,
 `lifeline_color=faded`. In a [group](groups.html) the diagram is part of the group.
 
 ## Graphs
@@ -299,7 +300,7 @@ p2 -> p1 "back" {bend=-40}
 | `A (x,y)` | a node `A`, a circle at `x`, `y` (scaled by `scale` from the block's `x`, `y`); `rectangle`, `ellipse` or `dot` after the coordinates changes its shape |
 | `(x,y)` | a node without a name, a lattice point say, that no line refers to |
 | `A (x,y) "label"` | the same, its [label](#labels) inside |
-| `A (x,y) [[icon: server]]` | a node drawn by any directive (an icon, an artwork, a shape, a directive of the deck's own such as `[[process: value=1]]`), centered on its point unless the directive places it |
+| `A (x,y) [[icon: server]]` | a node drawn by any directive (an icon, an artwork, a shape, a directive of the deck's own such as `[[process: value=1]]`), centered on its point unless the directive places it; the directive sees the node's name as its `id` (a default label) |
 | `A -> B "3"` | an edge: an arrow from `A` to `B`, labeled; `--` draws a line; `p.right -> t.left` joins two anchors |
 | anything else | any element, which may name the nodes |
 
@@ -314,8 +315,9 @@ does. `offset=0.1` shifts any straight arrow or line sideways, its ends still on
 it. With `labels=true` every node without a label of its own is labeled by its name. Nodes and
 edges take the deck's styles `node` and `edge` after those of their kind, each only what its kind
 takes, unless the block names their classes (`::: graph {node=place edge=arc}`, in place of the
-roles' styles), and the block passes `node_<attribute>` and `edge_<attribute>` to them under what a
-line writes (`node_radius=0.2`, `edge_stroke_width=3`). The block's `step` and `hide` step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole).
+roles' styles), and the block passes `node_<attribute>` and `edge_<attribute>` to them as an
+anonymous class, under what a line writes: `node_radius=0.3 node_width=0.5 node_height=0.5` gives
+the circles their radius and the rectangles their width and height. The block's `step` and `hide` step it [as a whole, line by line](fragments.html#blocks-step-as-a-whole).
 
 ## Names local to a block
 

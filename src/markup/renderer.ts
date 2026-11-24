@@ -862,7 +862,12 @@ export class MarkupRenderer {
     const options: DirectiveOptions = {
       name, attributes: attrs, color, fontSize, width, foreground: this.layout.color, layout: this.layout,
       sketch: sketchOptions(element, { color, strokeWidth, fillColor, fillOpacity }),
-      text: (markup, size = fontSize, maxWidth = width) => this.text(this._parser.parseInlineSpans(markup, element.line), size, maxWidth, color, attrs.font),
+      text: (markup, size = fontSize, maxWidth = width) => {
+        if (typeof markup !== 'string') {
+          throw new MarkupError(`[[${element.source}: …]] asked for the text of ${markup === undefined ? 'an undefined value' : JSON.stringify(markup)}: text() takes a string (an attribute the directive was not given?)`, element.line);
+        }
+        return this.text(this._parser.parseInlineSpans(markup, element.line), size, maxWidth, color, attrs.font);
+      },
       icon: (iconName, iconOptions = {}) => {
         if (!ICON_KINDS.has(iconName)) throw new MarkupError(`[[${name}: …]] asks for an icon ${JSON.stringify(iconName)} that is not built in`, element.line);
         return makeIcon(iconName as IconName, { size: 1, color, strokeWidth, fillColor, fillOpacity, ...iconOptions });
