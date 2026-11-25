@@ -32,8 +32,9 @@ export function designPoints(width: number, height: number): Array<{ x: number; 
 }
 
 /**
- * The aids of a slide drawn for its design (`debug`): a frame around its canvas, seen wherever the
- * slide is, and faint dots at its coordinates, seen while the camera is on it. The dots are one
+ * The aids of a slide drawn for its design (`debug`): a frame around its canvas, seen while the
+ * camera is on it or on its parent, where it marks the tile, and faint dots at its coordinates, seen
+ * while the camera is on it. Both fade as the camera moves away. The dots are one
  * mesh under the content, sized so that they look the same on slides of every size.
  */
 export class SlideGuides {
@@ -71,12 +72,20 @@ export class SlideGuides {
     return dots;
   }
 
-  /** Show the guides, or none; `near` is how much the camera is on the slide, from 0 to 1. */
-  show(shown: boolean, near: number): void {
-    this.frame.getThreeObject().visible = shown;
+  /** Show the frame and the dots as much as they are seen, each from 0 to 1. */
+  show(frame: number, dots: number): void {
+    const object = this.frame.getThreeObject();
+    object.visible = frame > 0;
+    if (frame > 0) {
+      // Its stroke alone: a material without opacity (the fill's) stays so.
+      object.traverse((node) => {
+        const { material } = node as THREE.Mesh;
+        for (const each of Array.isArray(material) ? material : material ? [material] : []) if (each.opacity > 0) each.opacity = frame;
+      });
+    }
     if (!this.dots) return;
-    this.dots.visible = shown && near > 0;
-    this.dots.material.opacity = DOT_OPACITY * near;
+    this.dots.visible = dots > 0;
+    this.dots.material.opacity = DOT_OPACITY * dots;
   }
 
   dispose(): void {

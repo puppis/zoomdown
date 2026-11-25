@@ -66,7 +66,8 @@ every construct of this page live, each next to the listing that produced it; op
   fading it in on entry.
 - `debug` on a slide, include or subslide draws a frame around it and faint dots at its whole
   coordinates (larger on the axes and every five units), to lay it out by; the style `slide: debug`
-  does so for every slide and `debug=false` leaves one out. Exports, printouts and videos never
+  does so for every slide and `debug=false` leaves one out. Only the slide the camera is on shows its
+  dots, its frame and its children's frames. Exports, printouts and videos never
   draw them.
 - `transition=cut` on a slide, include or subslide replaces the view at once when the camera moves
   into that slide, like turning a PDF page (the move out of it follows the next destination);

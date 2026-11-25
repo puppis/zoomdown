@@ -185,9 +185,10 @@ include that places it, or on a code-authored child.
 ### debug
 
 `debug` on a slide, an include or a subslide draws that slide for its design: a **frame** around its
-canvas, in `presenter.slideBorderColor` and `slideBorderWidth`, seen wherever the slide is, in its
-parent's view too; and faint **dots** at its coordinates, under its content, seen while the camera
-is on it. A dot stands at each pair of whole coordinates, the origin in the middle of the canvas;
+canvas, in `presenter.slideBorderColor` and `slideBorderWidth`, seen while the camera is on the slide
+or on its parent; and faint **dots** at its coordinates, under its content, seen while the camera is
+on it. Both fade as the camera moves away, so only one slide's dots, its frame and its children's
+frames are seen at a time. A dot stands at each pair of whole coordinates, the origin in the middle of the canvas;
 the dots on the axes are larger, and those at multiples of five largest. A canvas more than 64
 units wide has one dot every 2, 5, 10, … units. The dots take the deck's text color.
 

@@ -62,22 +62,44 @@ describe('a slide drawn for its design (debug)', () => {
     expect((contexts.get('B') as SlideContext).display.overlays.length).toBe(1);
   });
 
-  it('shows its dots while the camera is on it, its frame always, and neither when guides are off', async () => {
-    const { presenter, contexts } = await prepared(STYLE + DECK());
-    const look = (name: string) => {
-      const ctx = contexts.get(name) as SlideContext;
-      const { center, width } = presenter.cameraTarget(ctx);
-      presenter.camera = { center, width };
-      presenter.prepareRender(800, 450, { min: [-100, -100, 0], max: [100, 100, 0] }, width);
-      return ['A', 'B'].map((other) => {
-        const guides = (contexts.get(other) as SlideContext).display.guides;
-        return [guides?.dots?.visible, guides?.frame.getThreeObject().visible];
+  it('shows its dots, its frame and its children\'s frames while the camera is on it, and no others', async () => {
+    // A over B and D, side by side; B over C.
+    const source = '::: slide {#a}\n# A\n\n[[include: #b x=-4 y=0 width=6]]\n\n[[include: #d x=4 y=0 width=6]]\n:::\n\n::: slide {#b}\n# B\n\n[[include: #c x=0 y=0 width=6]]\n:::\n\n::: slide {#c}\n# C\n:::\n\n::: slide {#d}\n# D\n:::';
+    const { presenter, contexts } = await prepared(STYLE + source);
+    const seen = () => {
+      presenter.prepareRender(800, 450, { min: [-100, -100, 0], max: [100, 100, 0] }, presenter.camera.width);
+      return [...contexts].map(([name, ctx]) => {
+        const guides = ctx.display.guides;
+        return `${name}${guides?.frame.getThreeObject().visible ? ' frame' : ''}${guides?.dots?.visible ? ' dots' : ''}`;
       });
     };
-    expect(look('A')).toEqual([[true, true], [false, true]]);
-    expect(look('B')).toEqual([[false, true], [true, true]]);
+    const look = (name: string) => {
+      presenter.camera = { ...presenter.cameraTarget(contexts.get(name) as SlideContext) };
+      return seen();
+    };
+    expect(look('A')).toEqual(['A frame dots', 'B frame', 'C', 'D frame']);
+    expect(look('B')).toEqual(['A', 'B frame dots', 'C frame', 'D']);
+    expect(look('C')).toEqual(['A', 'B', 'C frame dots', 'D']);
+    // On its way, the camera sees the guides of one slide at a time, fading with the distance.
+    const dots = (name: string) => (contexts.get(name) as SlideContext).display.guides?.dots;
+    const full = (look('A'), dots('A')?.material.opacity as number);
+    const a = presenter.cameraTarget(contexts.get('A') as SlideContext);
+    presenter.camera = { center: a.center, width: a.width * 0.85 };
+    expect(seen()[0]).toBe('A frame dots');
+    expect(dots('A')?.material.opacity).toBeGreaterThan(0);
+    expect(dots('A')?.material.opacity).toBeLessThan(full);
+    presenter.camera = { center: a.center, width: a.width * 5 };
+    expect(seen()).toEqual(['A', 'B', 'C', 'D']);
+    look('A');
     presenter.guides = false;
-    expect(look('A')).toEqual([[false, false], [false, false]]);
+    expect(seen()).toEqual(['A', 'B', 'C', 'D']);
+  });
+
+  it('gives way to the inner of two slides that fill the view alike', async () => {
+    const { presenter, contexts } = await prepared(STYLE + DECK().replace('width=4', 'width=16'));
+    presenter.camera = { ...presenter.cameraTarget(contexts.get('A') as SlideContext) };
+    presenter.prepareRender(800, 450, { min: [-100, -100, 0], max: [100, 100, 0] }, presenter.camera.width);
+    expect([...contexts.values()].map((ctx) => ctx.display.guides?.dots?.visible)).toEqual([false, true]);
   });
 });
 

@@ -1078,11 +1078,27 @@ export class Presenter {
         ctx.leaveOut(slide.parent?.onlyThis ?? false);
       }
     }
+    this._guided = [...this.contexts.values()].some((ctx) => ctx.display.guides !== null);
     this.startSlide = startingSlide(root);
     if (this.startSlide && !this.enabled(this.startSlide)) throw new Error('startHere slide is excluded by onlyThis');
     this._keys = slideKeys(root);
     this._report('prepared', undefined, { total: this.contexts.size });
     return this;
+  }
+
+  /** Whether any slide has guides, drawn for its design. */
+  private _guided = false;
+
+  /** The slide the camera is on, or nearest to while it moves (of two that fill the view alike, the inner), and how near. */
+  private _cameraFocus(): { ctx: SlideContext | null; near: number } {
+    let best: { ctx: SlideContext | null; near: number } = { ctx: null, near: 0 };
+    for (const ctx of this.contexts.values()) {
+      // Only where the camera can stop: no hidden slide, none left out, no placeholder of an undefined one.
+      if (ctx.slide.hidden || !this.enabled(ctx.slide) || ctx.slide instanceof PlaceholderSlide) continue;
+      const near = cameraNearness(this.cameraTarget(ctx), this.camera);
+      if (near > 0 && near >= best.near) best = { ctx, near };
+    }
+    return best;
   }
 
   /** Whether a partial rendering draws a slide: when it is selected, or stands for an undefined one in a selected slide. */
@@ -1429,6 +1445,7 @@ export class Presenter {
    * scaling, opacity multipliers and draw order.
    */
   prepareRender(rendererWidth: number, rendererHeight: number, view: { min: Vec3; max: Vec3 }, cameraWidth: number): void {
+    const focus = this._guided ? this._cameraFocus() : null;
     // Draw orders are stable: each slide owns a band of them, in the order the tree is walked, so
     // that a later sibling always draws over an earlier one (the pages of a document stacked in a
     // slide, say) whichever of the two changed last; a display numbers its members within its band.
@@ -1440,7 +1457,12 @@ export class Presenter {
       ctx.display.setCulled(outside);
       let order = index * ORDER_BAND;
       ctx.display.prepareRender(rendererWidth, rendererHeight, cameraWidth, () => order++);
-      if (ctx.display.guides) ctx.display.guides.show(this.guides, cameraNearness(this.cameraTarget(ctx), this.camera));
+      if (focus && ctx.display.guides) {
+        // The guides are those of the slide the camera is on: its dots, its frame and its children's frames.
+        const own = this.guides && ctx === focus.ctx ? focus.near : 0;
+        const child = this.guides && ctx.slide.parent !== null && ctx.slide.parent === focus.ctx?.slide ? focus.near : 0;
+        ctx.display.guides.show(Math.max(own, child), own);
+      }
       index += 1;
     }
   }

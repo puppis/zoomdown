@@ -182,11 +182,13 @@ that `x=`, `y=` and the edges of the slide can be read off the screen while it i
 ```
 
 The dots stand at whole coordinates around the origin in the middle of the slide, larger along the
-two axes and largest every five units, and show while the camera is on the slide; the frame shows in
-the parent's view as well, where it marks the tile. With `only-this` on some slides, those alone
-have dots, and the frames are theirs and their children's. To have them on every slide, say so once,
-in the `slide` style, whose attributes every slide takes unless it writes its own (`debug=false`
-leaves one slide out):
+two axes and largest every five units. Only the slide the camera is on shows its guides: its dots,
+its frame, and the frames of its children, which mark their tiles; they fade as the camera moves
+away, so that the grids and the frames of nested slides never overlap. With `only-this` on some
+slides, those alone have dots, and the frames are theirs and their children's.
+
+To have the guides on every slide, say so once, in the `slide` style, whose attributes every slide
+takes unless it writes its own (`debug=false` leaves one slide out):
 
 ```markdown
 ::: styles
