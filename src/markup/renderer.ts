@@ -1568,6 +1568,9 @@ export class MarkupRenderer {
     let start3: [number, number, number] = a;
     let end3: [number, number, number] = b;
     let path: Spline | null = null;
+    // The length of the straight way, which sizes the tip of a wave as well; a curve's is its own.
+    let straight: number | null = null;
+    let tipDirection: Vec | undefined;
     if (!curved) {
       const direction: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
       const length = Math.hypot(...direction);
@@ -1580,32 +1583,34 @@ export class MarkupRenderer {
       else a = [a[0] + across[0], a[1] + across[1], a[2]];
       if (target && !anchorOf(end)) b = boundaryPoint(target, [-direction[0], -direction[1], -direction[2]], -offset);
       else b = [b[0] + across[0], b[1] + across[1], b[2]];
+      const unit = direction.map((v) => v / length) as [number, number, number];
+      const [from, to] = endGaps(element, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+      start3 = [a[0] + unit[0] * from, a[1] + unit[1] * from, a[2] + unit[2] * from];
+      end3 = [b[0] - unit[0] * to, b[1] - unit[1] * to, b[2] - unit[2] * to];
+      straight = Math.hypot(end3[0] - start3[0], end3[1] - start3[1], end3[2] - start3[2]);
       if ('wavy' in attrs) {
-        // A wave runs between the borders; the space at its ends is cut from the wave itself.
-        const wave = new Spline(waveCubics([a[0], a[1]], [b[0], b[1]], Number(attrs.wavy), numberValue(attrs, 'amplitude', element.line, 0.15) as number));
-        const [from, to] = endGaps(element, wave.length);
-        path = from > 0 || to > 0 ? wave.part(from, wave.length - to) : wave;
-      } else {
-        const unit = direction.map((v) => v / length) as [number, number, number];
-        const [from, to] = endGaps(element, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
-        start3 = [a[0] + unit[0] * from, a[1] + unit[1] * from, a[2] + unit[2] * from];
-        end3 = [b[0] - unit[0] * to, b[1] - unit[1] * to, b[2] - unit[2] * to];
-        if (isArrow && tip !== 'triangle') path = new Spline([lineCubic([start3[0], start3[1]], [end3[0], end3[1]])]);
-      }
+        // A wave runs where the straight connection would, between the same ends, and settles on it
+        // at the base of the tip: the tip is the straight arrow's, and points where that one points.
+        const reach = tip === 'none' ? 0 : Math.min(tipSize(tip, width, straight, explicit('tip_length'), explicit('tip_width'))[0], 0.75 * straight);
+        const last: Vec = [end3[0] - unit[0] * reach, end3[1] - unit[1] * reach];
+        const wave = waveCubics([start3[0], start3[1]], last, Number(attrs.wavy), numberValue(attrs, 'amplitude', element.line, 0.15) as number);
+        path = new Spline(reach > 0 ? [...wave, lineCubic(last, [end3[0], end3[1]])] : wave);
+        tipDirection = [unit[0], unit[1]];
+      } else if (isArrow && tip !== 'triangle') path = new Spline([lineCubic([start3[0], start3[1]], [end3[0], end3[1]])]);
     } else {
       // A curve: the space at each end is measured along it.
       const curve = curvePath(element, source, target, [a[0], a[1]], [b[0], b[1]], !!anchorOf(start), !!anchorOf(end));
       const [from, to] = endGaps(element, curve.length);
       path = from > 0 || to > 0 ? curve.part(from, curve.length - to) : curve;
     }
-    const length = path ? path.length : Math.hypot(end3[0] - start3[0], end3[1] - start3[1]);
+    const length = straight ?? (path as Spline).length;
     const [tipLength, tipWidth] = tipSize(tip, width, element.lifeline ?? length, explicit('tip_length'), explicit('tip_width'));
     let connection: Mobject;
     let strokes: BridgePath['strokes'];
     let shaftEnd: Point2;
     if (path) {
       // Any other tip or way: the stroke along the path, and the tip on its last stretch.
-      const drawn = drawPath(path, { color, width, ...(dash ? { dash } : {}), sketch: sketchy, tip, tipLength, tipWidth });
+      const drawn = drawPath(path, { color, width, ...(dash ? { dash } : {}), sketch: sketchy, tip, tipLength, tipWidth, ...(tipDirection ? { tipDirection } : {}) });
       connection = drawn.mobject;
       (connection as OutlineMobject).markupOutline = curveMobject([path.cubics]);
       const shaft = sketchy ? (connection as ShaftMobject).markupShaft : undefined;

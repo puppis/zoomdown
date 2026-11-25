@@ -8,7 +8,8 @@
  * table of samples made once, when the slide is laid out; what is drawn keeps the exact curves.
  *
  * A tip follows the curve's last stretch: it points along the chord from where its base meets the
- * curve to the end, so that it sits on the curve however tightly it turns. A filled triangle
+ * curve to the end, so that it sits on the curve however tightly it turns. A wave runs to the base
+ * of its tip, which is the straight arrow's. A filled triangle
  * covers the end of the stroke; an open tip is two strokes meeting at the end, which the stroke
  * reaches.
  */
@@ -285,7 +286,7 @@ export function throughPoints(points: readonly Vec[]): Cubic[] {
  * A regular wave from `start` to `end`: `waves` periods of a sine `amplitude` away from the
  * straight line at most, its first crest to the left of the way (to the right with a negative
  * amplitude). Over its first and last quarter period the wave grows from the line and settles
- * back on it, so that it leaves and arrives along the line and a tip points the way it goes.
+ * back on it, so that it leaves and arrives along the line.
  */
 export function waveCubics(start: Vec, end: Vec, waves: number, amplitude: number): Cubic[] {
   const length = distance(start, end);
@@ -373,6 +374,8 @@ export interface PathStyle {
   /** The tip's length along the path and how far it spreads on each side of it. */
   tipLength: number;
   tipWidth: number;
+  /** Where the tip points, when it is not along the curve's last stretch. */
+  tipDirection?: Vec;
 }
 
 /** A drawn path: its mobject, and how far along the path its stroke runs before a tip takes over. */
@@ -392,10 +395,10 @@ export function drawPath(path: Spline, style: PathStyle): DrawnPath {
   const tipBase = style.tip === 'none' ? path.length : path.backFromEnd(style.tipLength);
   let corners: Vec[] = [];
   if (style.tip !== 'none') {
-    // The tip points along the chord from the curve at its base to the end.
+    // The tip points along the chord from the curve at its base to the end, unless told where.
     const base = path.pointAt(tipBase);
     const chord = distance(base, end);
-    const u: Vec = chord > 1e-9 ? [(end[0] - base[0]) / chord, (end[1] - base[1]) / chord] : path.directionAt(path.length);
+    const u: Vec = style.tipDirection ? style.tipDirection : chord > 1e-9 ? [(end[0] - base[0]) / chord, (end[1] - base[1]) / chord] : path.directionAt(path.length);
     const back: Vec = [end[0] - u[0] * style.tipLength, end[1] - u[1] * style.tipLength];
     const n: Vec = [-u[1] * style.tipWidth, u[0] * style.tipWidth];
     const left: Vec = [back[0] + n[0], back[1] + n[1]];

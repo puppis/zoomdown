@@ -159,8 +159,8 @@ A connection may curve instead of running straight:
   it larger or smaller.
 - `wavy` waves along the straight line: that many waves, at most `amplitude` (0.15) from the line,
   to its left first (a negative amplitude starts to the right). The waves grow from the line over
-  their first quarter and settle back on it over their last, so the path leaves and arrives along
-  the line and a tip points the way it goes.
+  their first quarter and settle back on it over their last, at the base of the tip: a wavy arrow
+  has the ends and the tip of the straight one, pointing the same way.
 - `via` passes smoothly through points (a centripetal Catmull-Rom spline, which never loops
   between close points): `+(x,y)` is an offset from the start, the center or anchor of the
   element it leaves, so the curve moves with its elements; `++(x,y)` is an offset from the point
@@ -175,8 +175,8 @@ A connection may curve instead of running straight:
 
 A curve stops at each element's border along its own way: a bend and a loop leave and arrive at
 their angles, and a curve through points is cut where it first leaves the element it starts
-from and where it last enters the other. An arrow's tip points along the curve's last stretch,
-its base on the curve. Labels sit beside the curve at `label_pos` of its length, by its
+from and where it last enters the other. The tip of any curve but a wave points along the curve's
+last stretch, its base on the curve. Labels sit beside the curve at `label_pos` of its length, by its
 direction there; dashes, hand-drawn strokes and `halo_bridge` follow it, and a curved connection
 is a path that [`[[move_along]]`](animations.html#move_along) follows. One of `bend`, `loop`, `wavy` and
 `via` at a time.

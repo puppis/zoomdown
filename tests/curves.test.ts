@@ -178,11 +178,11 @@ describe('curved arrows and lines', () => {
     const flush = await connection('arrow', { from: '#a', to: '#b', wavy: '2', amplitude: '0.2', buff: '0' }, objects);
     expect(distance(ends(flush)[0], [0.25, 0])).toBeLessThan(1e-9);
     expect(distance(ends(flush)[1], [2.75, 0])).toBeLessThan(1e-9);
-    // An arrow's gap is cut from the wave itself, close to the line where the wave starts.
+    // Its ends, gaps included, are those of the straight arrow.
     const wave = await connection('arrow', { from: '#a', to: '#b', wavy: '2', amplitude: '0.2' }, objects);
     const [start, end] = ends(wave);
-    expect(Math.abs(start[1])).toBeLessThan(0.03);
-    expect(Math.abs(end[1])).toBeLessThan(0.03);
+    expect(distance(start, [0.33, 0])).toBeLessThan(1e-9);
+    expect(distance(end, [2.67, 0])).toBeLessThan(1e-9);
     expect(Math.max(...(BRIDGE_PATHS.get(wave) as BridgePath).strokes.flat().map(([, y]) => y))).toBeGreaterThan(0.15);
     const via = await connection('line', { from: '#a', to: '#b', via: '+(1,1) +(2,-1)' }, objects);
     const stroke = (BRIDGE_PATHS.get(via) as BridgePath).strokes[0];
@@ -190,6 +190,34 @@ describe('curved arrows and lines', () => {
     // It starts where it leaves the first circle and ends where it enters the second.
     expect(Math.hypot(stroke[0][0], stroke[0][1])).toBeCloseTo(0.25, 6);
     expect(distance(stroke[stroke.length - 1], [3, 0])).toBeCloseTo(0.25, 6);
+  });
+
+  it('wavy: have the tip of the straight arrow, whatever the waves, the gaps and the tip', async () => {
+    const triangle = (arrow: Mobject) => (arrow.children.find((child) => child instanceof Polygon) as Polygon).getVertices();
+    for (const to of ['(4,0)', '(1,3)', '(-2,-0.5)']) {
+      const end = to.slice(1, -1).split(',').map(Number);
+      const unit = end.map((v) => v / Math.hypot(end[0], end[1]));
+      const extras: Array<Record<string, string>> = [{}, { buff: '0.4' }, { buff_end: '0' }, { tip_length: '0.16', tip_width: '0.08' }, { dashed: 'true' }, { offset: '0.3' }];
+      for (const extra of extras) {
+        for (const wavy of ['0.3', '1.2', '2', '4', '7.5']) {
+          const straight = await connection('arrow', { to, ...extra });
+          const wave = await connection('arrow', { to, wavy, amplitude: '0.25', ...extra });
+          const [tip, left, right] = triangle(wave);
+          const base = [(left[0] + right[0]) / 2, (left[1] + right[1]) / 2];
+          const length = distance(tip, base);
+          expect((tip[0] - base[0]) / length, `${to} ${wavy}`).toBeCloseTo(unit[0], 9);
+          expect((tip[1] - base[1]) / length, `${to} ${wavy}`).toBeCloseTo(unit[1], 9);
+          // Its point is where the straight arrow's is, and the stroke meets its base.
+          expect(distance(tip, (BRIDGE_PATHS.get(straight) as BridgePath).ends[1])).toBeLessThan(1e-9);
+          expect(distance((BRIDGE_PATHS.get(wave) as BridgePath).shaftEnds[1], base)).toBeLessThan(1e-6);
+        }
+      }
+    }
+    // An open tip too.
+    const open = await connection('arrow', { wavy: '3', amplitude: '0.3', tip: 'open' });
+    const strokes = open.children[open.children.length - 1] as VMobject;
+    const ys = strokes.getPoints().map(([, y]) => y);
+    expect(Math.max(...ys)).toBeCloseTo(-Math.min(...ys), 9);
   });
 
   it('carry a way to move along them, and their tip on their last stretch', async () => {
