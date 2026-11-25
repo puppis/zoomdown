@@ -341,7 +341,7 @@ along the path whatever the end joins. An arrow's `tip` is
 reaches) or `none`; `tip_length` and `tip_width` (half its width) set its size, uncapped. A
 connection curves with one of `bend` (degrees, as TikZ's `bend left`; `looseness`), `loop`
 (`above`, `below`, `left`, `right` or degrees, from an element back to itself; `looseness`),
-`wavy` (a number of waves; `amplitude`, 0.15) and `via` (points `+(x,y)` from the start,
+`wavy` (a number of waves; `amplitude`, 0.1) and `via` (points `+(x,y)` from the start,
 `++(x,y)` from the point before, `(x,y)` on the slide); a curve stops at each element's border
 along its own way, its tip follows its last stretch, and labels, dashes and `halo_bridge` follow
 it. Connections are created after all other elements, cannot anchor other elements, and are not

@@ -1623,7 +1623,7 @@ export class MarkupRenderer {
         // at the base of the tip: the tip is the straight arrow's, and points where that one points.
         const reach = tip === 'none' ? 0 : Math.min(tipSize(tip, width, straight, explicit('tip_length'), explicit('tip_width'))[0], 0.75 * straight);
         const last: Vec = [end3[0] - unit[0] * reach, end3[1] - unit[1] * reach];
-        const wave = waveCubics([start3[0], start3[1]], last, Number(attrs.wavy), numberValue(attrs, 'amplitude', element.line, 0.15) as number);
+        const wave = waveCubics([start3[0], start3[1]], last, Number(attrs.wavy), numberValue(attrs, 'amplitude', element.line, WAVE_AMPLITUDE) as number);
         path = new Spline(reach > 0 ? [...wave, lineCubic(last, [end3[0], end3[1]])] : wave);
         tipDirection = [unit[0], unit[1]];
       } else if (isArrow && tip !== 'triangle') path = new Spline([lineCubic([start3[0], start3[1]], [end3[0], end3[1]])]);
@@ -1696,6 +1696,9 @@ export class MarkupRenderer {
     return result;
   }
 }
+
+/** How far a wavy connection reaches from its line unless `amplitude` says otherwise: a wave read as such, close to its line. */
+export const WAVE_AMPLITUDE = 0.1;
 
 /** The space an arrow leaves at each end unless `buff` says otherwise, so that its tip does not touch what it reaches. */
 export const ARROW_GAP = 0.08;

@@ -660,7 +660,7 @@ labels, `label_pos`, `slanted`, dashes, hand-drawn strokes and `halo_bridge` fol
 | `loop` | `above`, `below`, `left`, `right`, degrees | | a loop from an element back to itself (`from` and `to` the same element), on the side named or toward that angle (0 right, 90 above) |
 | `looseness` | positive number | 1 | how far a bend or a loop reaches; requires `bend` or `loop` |
 | `wavy` | positive number of waves | | a regular wave along the straight line, growing from it over the first quarter wave and settling back over the last; a wavy arrow keeps the ends of the straight one, and its tip points the same way |
-| `amplitude` | units | 0.15 | how far the wave reaches from the line, to the left of the way first (negative: to the right); requires `wavy` |
+| `amplitude` | units | 0.1 | how far the wave reaches from the line, to the left of the way first (negative: to the right); requires `wavy` |
 | `via` | `(x,y)`, `+(x,y)`, `++(x,y)` … | | a smooth curve through the points: `+(x,y)` from the start (the center or anchor it leaves), so that it moves with its elements, `++(x,y)` from the point before, `(x,y)` on the slide |
 | `opacity` | 0 to 1 | 1 | |
 | `step`, `hide`, `run_time`, `lag`, `href` | | | as for elements; connections fade only |

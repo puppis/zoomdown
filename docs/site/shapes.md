@@ -157,7 +157,7 @@ A connection may curve instead of running straight:
   named, `above`, `below`, `left` or `right`, or toward an angle in degrees (0 right, 90 above),
   leaving 35 degrees to one side of it and coming back 35 degrees to the other. `looseness` makes
   it larger or smaller.
-- `wavy` waves along the straight line: that many waves, at most `amplitude` (0.15) from the line,
+- `wavy` waves along the straight line: that many waves, at most `amplitude` (0.1) from the line,
   to its left first (a negative amplitude starts to the right). The waves grow from the line over
   their first quarter and settle back on it over their last, at the base of the tip: a wavy arrow
   has the ends and the tip of the straight one, pointing the same way.

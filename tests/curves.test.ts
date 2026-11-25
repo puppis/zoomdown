@@ -192,6 +192,12 @@ describe('curved arrows and lines', () => {
     expect(distance(stroke[stroke.length - 1], [3, 0])).toBeCloseTo(0.25, 6);
   });
 
+  it('wavy: reach a tenth of a unit from their line unless an amplitude says otherwise', async () => {
+    const reach = async (attrs: Record<string, string>) => Math.max(...(BRIDGE_PATHS.get(await connection('line', { wavy: '3', ...attrs })) as BridgePath).strokes.flat().map(([, y]) => Math.abs(y)));
+    expect(await reach({})).toBeCloseTo(0.1, 2);
+    expect(await reach({ amplitude: '0.15' })).toBeCloseTo(0.15, 2);
+  });
+
   it('wavy: have the tip of the straight arrow, whatever the waves, the gaps and the tip', async () => {
     const triangle = (arrow: Mobject) => (arrow.children.find((child) => child instanceof Polygon) as Polygon).getVertices();
     for (const to of ['(4,0)', '(1,3)', '(-2,-0.5)']) {
