@@ -135,7 +135,7 @@ function instantiateSlide(spec: CodeSlideSpec, namespace: SlideNamespace | null)
   return child;
 }
 
-/** The return choice `skip_return=` or `return_to_parent=` make; null when neither is written. */
+/** The return choice `skip-return` or `return-to-parent` makes; null when neither is written. */
 function returnChoice(attrs: Record<string, string>): boolean | null {
   if ('return_to_parent' in attrs) return attrs.return_to_parent === 'true';
   if ('skip_return' in attrs) return attrs.skip_return !== 'true';

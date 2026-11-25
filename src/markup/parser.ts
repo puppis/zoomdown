@@ -20,7 +20,7 @@ import {
   type ListItem,
   NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, roleStyledKeys, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
   RELATIVE_STEP, type StepMode,
-  elementStep, hasSeparator, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, span, stepValue, textReference,
+  elementStep, hasSeparator, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, shownName, span, stepValue, textReference,
 } from './ast';
 
 type Env = { line?: number };
@@ -323,7 +323,7 @@ export class MarkupParser {
       if (!block) continue;
       const line = firstLine + index;
       const attrs = block[1] ? parseAttributes(block[1], line) : {};
-      for (const key of Object.keys(attrs)) if (key !== 'step') throw new MarkupError(`Notes take step=N and nothing else, not ${key}=`, line);
+      for (const key of Object.keys(attrs)) if (key !== 'step') throw new MarkupError(`Notes take step=N and nothing else, not ${shownName(key)}=`, line);
       const step = 'step' in attrs ? stepValue(attrs, 'step', line) : null;
       const end = MarkupParser._containerEnd(kept, index);
       notes.push({ step, markdown: kept.slice(index + 1, end).join('\n'), line });
@@ -541,7 +541,7 @@ export class MarkupParser {
     }
     for (const key of Object.keys(attrs)) {
       if (!['cols', 'buff', 'width', 'height', 'step', 'hide'].includes(key) && !POSITION.includes(key) && !/^verdict_./.test(key)) {
-        throw new MarkupError(`Tiles take cols, buff, width, height, step, hide, a position and their verdicts' attributes (verdict_…), not ${key}=`, line);
+        throw new MarkupError(`Tiles take cols, buff, width, height, step, hide, a position and their verdicts' attributes (verdict_…), not ${shownName(key)}=`, line);
       }
     }
     const cols = 'cols' in attrs ? Number(attrs.cols) : Infinity;
@@ -606,7 +606,7 @@ export class MarkupParser {
     delete attrs.class;
     for (const key of Object.keys(attrs)) {
       if (!['gap', 'buff', 'step', 'hide'].includes(key) && !TEXT.includes(key) && !POSITION.includes(key)) {
-        throw new MarkupError(`An align block takes gap, buff, step, hide, a position and the attributes of its rows' text, not ${key}=`, line);
+        throw new MarkupError(`An align block takes gap, buff, step, hide, a position and the attributes of its rows' text, not ${shownName(key)}=`, line);
       }
     }
     const gap = numberValue(attrs, 'gap', line);
@@ -766,7 +766,7 @@ export class MarkupParser {
   private static _drawingAttrs(attrs: Attributes, allowed: string[], what: string, line: number, roles: string[]): void {
     for (const key of Object.keys(attrs)) {
       if (allowed.includes(key) || roles.includes(key) || roles.some((role) => key.startsWith(`${role}_`) && key.length > role.length + 1)) continue;
-      throw new MarkupError(`A ${what} takes ${allowed.join(', ')}, the classes of its ${roles.join(', ')} parts and their attributes (${roles[0]}_…), not ${key}=`, line);
+      throw new MarkupError(`A ${what} takes ${allowed.join(', ')}, the classes of its ${roles.join(', ')} parts and their attributes (${roles[0]}_…), not ${shownName(key)}=`, line);
     }
     if (attrs.hide === '+') throw new MarkupError(`hide=+ counts from an element's own step: give the ${what} hide=N`, line);
     if ('id' in attrs && !IDENTIFIER.test(attrs.id)) throw new MarkupError(`Invalid ${what} ID ${JSON.stringify(attrs.id)}`, line);
@@ -893,7 +893,7 @@ export class MarkupParser {
       const split = /^(?:(.*?)\s+)?(\{[^{}]*=[^{}]*\})\s*$/.exec(named[2]);
       const written = (split ? split[1] ?? '' : named[2]).trim();
       const own = split ? parseAttributes(split[2], line + 1 + k) : {};
-      for (const key of Object.keys(own)) if (key !== 'length') throw new MarkupError(`A process's line takes its name and length=, not ${key}=`, line + 1 + k);
+      for (const key of Object.keys(own)) if (key !== 'length') throw new MarkupError(`A process's line takes its name and length=, not ${shownName(key)}=`, line + 1 + k);
       names.set(named[1], written || null);
       if ('length' in own) {
         const end = Number(own.length);
@@ -1818,7 +1818,7 @@ export class ASTTransformer {
     }
     if (scope) {
       for (const key of ['step', 'hide', 'focus_only', 'play']) {
-        if (key in item.attributes) throw new MarkupError(`Group members cannot use ${key}; apply it to the group`, item.line);
+        if (key in item.attributes) throw new MarkupError(`Group members cannot use ${shownName(key)}; apply it to the group`, item.line);
       }
     }
     const allowed = ASTTransformer.allowedAttributes(item);
@@ -2011,7 +2011,7 @@ export class ASTTransformer {
   /** The boolean flags of a slide or include are true or false, and the two sides of the return choice are not both given. */
   private static _checkFlags(attrs: Attributes, line: number): void {
     for (const flag of ['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug']) {
-      if (!['true', 'false'].includes(attrs[flag] ?? 'false')) throw new MarkupError(`${flag.replace(/_/g, '-')} must be true or false`, line);
+      if (!['true', 'false'].includes(attrs[flag] ?? 'false')) throw new MarkupError(`${shownName(flag)} must be true or false`, line);
     }
     if ('skip_return' in attrs && 'return_to_parent' in attrs) throw new MarkupError('Use skip-return or return-to-parent, not both', line);
   }
@@ -2255,10 +2255,9 @@ export class ASTTransformer {
     const unknown = Object.keys(attrs).filter((key) => !allowed.has(key)).sort();
     if (unknown.length) {
       // A flag is named as the documentation writes it, and one of a slide says where it goes.
-      const shown = (key: string) => (BARE_FLAGS.has(key) ? key.replace(/_/g, '-') : key);
       const flag = unknown.find((key) => BARE_FLAGS.has(key) && key !== 'focus_only');
-      const hint = flag && !allowed.has(flag) ? ` (${shown(flag)} goes on a slide, as in ::: slide {#id ${shown(flag)}}, or on the include or subslide that places it)` : '';
-      throw new MarkupError(`Unknown attributes: ${unknown.map(shown).join(', ')}${hint}`, line);
+      const hint = flag && !allowed.has(flag) ? ` (${shownName(flag)} goes on a slide, as in ::: slide {#id ${shownName(flag)}}, or on the include or subslide that places it)` : '';
+      throw new MarkupError(`Unknown attributes: ${unknown.map(shownName).join(', ')}${hint}`, line);
     }
     for (const key of [...GEOMETRY, 'font_size', 'size', 'buff', 'radius', 'corner_radius', 'stroke_width', 'fill_opacity', 'opacity', 'dx', 'dy', 'run_time', 'lag',
       'start_angle', 'scale', 'roughness', 'bowing', 'hachure_angle', 'hachure_gap', 'fill_weight', 'seed', 'smoothness', 'tremble_amplitude', 'tremble_rate',

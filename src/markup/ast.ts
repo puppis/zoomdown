@@ -271,13 +271,18 @@ export class MarkupDocument {
   }
 }
 
-/** Boolean attributes that may be written bare: `skip_return` means `skip_return=true`. */
+/** Boolean attributes that may be written bare: `skip-return` means `skip-return=true`; here by their names with underscores. */
 export const BARE_FLAGS = new Set(['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug', 'focus_only']);
 
 /** A flag written with hyphens, as the relative placements are (`only-this`), by its name with underscores; any other name as it is. */
 export function flagName(name: string): string {
   const plain = name.replace(/-/g, '_');
   return BARE_FLAGS.has(plain) ? plain : name;
+}
+
+/** An attribute's name as the documentation and the messages write it: a flag's words joined by hyphens, any other as it is. */
+export function shownName(name: string): string {
+  return BARE_FLAGS.has(name) ? name.replace(/_/g, '-') : name;
 }
 
 export const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
@@ -663,7 +668,7 @@ export function parseAttributes(source: string, line: number, options: { commas?
     else throw new MarkupError(`Expected an attribute such as x=2; found ${JSON.stringify(token)}`, line);
     // A snippet's arguments are named by its placeholders, whatever their names.
     if (options.css !== false) key = flagName(key);
-    if (key in result) throw new MarkupError(`Duplicate attribute ${JSON.stringify(key)}`, line);
+    if (key in result) throw new MarkupError(`Duplicate attribute ${JSON.stringify(shownName(key))}`, line);
     result[key] = value;
   }
   if ('style' in result && options.css !== false) {

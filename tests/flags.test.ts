@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { BARE_FLAGS, flagName, normalizeStyles, parseAttributes } from '../src/markup/ast';
 import { MarkupParser } from '../src/markup/parser';
+import { SlideBuilder } from '../src/markup/slide';
+import { Presenter, PresenterConfig } from '../src/runtime';
+import { installFakeCanvas } from './helpers/slides';
+
+beforeAll(installFakeCanvas);
 
 describe('flags of several words', () => {
   it('are written with hyphens or underscores alike', () => {
@@ -15,7 +20,7 @@ describe('flags of several words', () => {
   });
 
   it('are one flag in either spelling', () => {
-    expect(() => parseAttributes('{only-this only_this=false}', 1)).toThrow(/Duplicate attribute "only_this"/);
+    expect(() => parseAttributes('{only-this only_this=false}', 1)).toThrow(/Duplicate attribute "only-this"/);
   });
 
   it('reach slides and includes', () => {
@@ -31,6 +36,32 @@ describe('flags of several words', () => {
     expect(deck('Some text {#t skip_return nonsense=2}')).toThrow(/Unknown attributes: nonsense, skip-return \(skip-return goes on a slide/);
     expect(deck('Some text {#t nonsense=2}')).toThrow(/^Line 2: Unknown attributes: nonsense$/);
     expect(deck('[[include: #b x=0 y=0 width=3 focus-only]]')).toThrow(/Unknown attributes: focus-only$/);
+  });
+
+  it('are named with hyphens by every message, in whichever spelling they are written', async () => {
+    const slide = (body: string, attrs = '') => `::: slide {#a ${attrs}}\n${body}\n:::`;
+    const pair = (a: string, b: string) => `::: slide {#a ${a}}\nA\n\n[[include: #b x=0 y=0 width=3]]\n:::\n\n::: slide {#b ${b}}\nB\n:::`;
+    const spellings = ['only_this', 'start_here', 'skip_return', 'return_to_parent', 'focus_only'].flatMap((flag) => [flag, flag.replace(/_/g, '-')]);
+    const sources = spellings.flatMap((flag) => [
+      slide(`Text {#t ${flag} ${flag}}`), slide(`Text {#t ${flag}=maybe}`), slide('Text', `${flag}=maybe`), slide(`[[circle: #c ${flag}=maybe radius=1]]`),
+      slide(`::: {.group #g}\nText {${flag}}\n:::`), slide(`::: align {${flag}}\na && b\n:::`), slide(`::: timeline {${flag} processes="p q"}\np@0 -> q@1\n:::`),
+      slide(`::: graph {${flag}}\nA (0,0)\n:::`), slide(`::: timeline {processes="p q"}\np: name {${flag}}\n:::`), slide(`::: notes {${flag}}\nsay\n:::`),
+      `${slide(`::: tiles {${flag}}\n[[include: #b]]\n:::`)}\n\n::: slide {#b}\nB\n:::`, slide(`[[animate: #t x=2 step=1 ${flag}]]\n\nText {#t}`),
+    ]);
+    sources.push(slide('Text', 'skip_return return_to_parent'), pair('start_here', 'start_here'), slide('Text {#t focus_only step=1}'));
+    let refused = 0;
+    for (const source of sources) {
+      try {
+        new MarkupParser().parse(source);
+      } catch (error) {
+        refused += 1;
+        expect((error as Error).message, source).not.toMatch(/start_here|only_this|skip_return|return_to_parent|focus_only/);
+      }
+    }
+    expect(refused).toBeGreaterThan(80);
+    // What is found when the deck is built names them too.
+    const root = new SlideBuilder().build(new MarkupParser().parse(pair('only_this', 'start_here')));
+    await expect(new Presenter({ config: new PresenterConfig({}) }).prepare(root)).rejects.toThrow(/The starting slide .* \(start-here; startHere in code\) is left out by only-this/);
   });
 
   it('leave the arguments of a snippet as they are written', () => {

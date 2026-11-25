@@ -1080,7 +1080,7 @@ export class Presenter {
     }
     this._guided = [...this.contexts.values()].some((ctx) => ctx.display.guides !== null);
     this.startSlide = startingSlide(root);
-    if (this.startSlide && !this.enabled(this.startSlide)) throw new Error('startHere slide is excluded by onlyThis');
+    if (this.startSlide && !this.enabled(this.startSlide)) throw new Error(`The starting slide ${this.startSlide.name} (start-here; startHere in code) is left out by only-this (onlyThis): give it only-this too`);
     this._keys = slideKeys(root);
     this._report('prepared', undefined, { total: this.contexts.size });
     return this;
@@ -1398,7 +1398,7 @@ export class Presenter {
     }
     this.history.finish();
     if (this.startSlide !== null && !this.history.clips.some((clip) => clip.slide === this.startSlide && clip.kind === 'entry')) {
-      throw new Error('startHere slide was not visited (it may have been skipped)');
+      throw new Error(`The starting slide ${this.startSlide.name} (start-here; startHere in code) was not visited: it may have been skipped`);
     }
     this._report('traversed', undefined, {
       index: this._visits,

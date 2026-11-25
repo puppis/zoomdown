@@ -337,7 +337,7 @@ export class Visit {
 export function startingSlide(root: Slide): Slide | null {
   const selected = [...walk(root)].filter((slide) => slide.startHere);
   if (selected.length > 1) {
-    throw new Error('startHere may be true on at most one slide: ' + selected.map((f) => f.name).join(', '));
+    throw new Error('At most one slide may be the starting one (start-here; startHere in code): ' + selected.map((f) => f.name).join(', '));
   }
   return selected[0] ?? null;
 }
