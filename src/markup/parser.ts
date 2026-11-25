@@ -1492,7 +1492,7 @@ export class ASTTransformer {
       for (const item of slide.items) {
         if (item instanceof EventSpec && elements.has(item.target)) {
           const target = elements.get(item.target) as ElementSpec;
-          if (target.attributes.focus_only === 'true') throw new MarkupError('focus_only elements cannot have visibility events', item.line);
+          if (target.attributes.focus_only === 'true') throw new MarkupError('focus-only elements cannot have visibility events', item.line);
           if (scopeOf.get(item.target)) throw new MarkupError(`#${item.target} is a group member; show or hide its group instead`, item.line);
           const style = item.attributes.enter ?? item.attributes.exit;
           // A style that is not built in is an effect of the deck's own, found in its effects folders when the deck is built.
@@ -1557,7 +1557,7 @@ export class ASTTransformer {
         else if (item instanceof CodeSlideSpec && item.attributes.start_here === 'true') importedStarts += 1;
       }
     }
-    if ([...starts.values()].filter(Boolean).length + importedStarts > 1) throw new MarkupError('start_here may be true on at most one slide');
+    if ([...starts.values()].filter(Boolean).length + importedStarts > 1) throw new MarkupError('start-here may be true on at most one slide');
     return new MarkupDocument([...slides.values()], root, document.basePath, {}, roots);
   }
 
@@ -1879,9 +1879,9 @@ export class ASTTransformer {
       throw new MarkupError('Brace side must be left, right, top or bottom', item.line);
     }
     const focusOnly = item.attributes.focus_only ?? 'false';
-    if (!['true', 'false'].includes(focusOnly)) throw new MarkupError('focus_only must be true or false', item.line);
+    if (!['true', 'false'].includes(focusOnly)) throw new MarkupError('focus-only must be true or false', item.line);
     if (focusOnly === 'true' && (Number(item.attributes.step ?? '0') !== 0 || 'hide' in item.attributes || 'play' in item.attributes)) {
-      throw new MarkupError('focus_only elements are static; omit step, hide and play', item.line);
+      throw new MarkupError('focus-only elements are static; omit step, hide and play', item.line);
     }
     if (SHAPES.has(item.kind)) ASTTransformer._checkShape(item);
     if ('play' in item.attributes && !['once', 'loop'].includes(item.attributes.play)) {
@@ -1905,9 +1905,9 @@ export class ASTTransformer {
   /** The boolean flags of a slide or include are true or false, and the two sides of the return choice are not both given. */
   private static _checkFlags(attrs: Attributes, line: number): void {
     for (const flag of ['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug']) {
-      if (!['true', 'false'].includes(attrs[flag] ?? 'false')) throw new MarkupError(`${flag} must be true or false`, line);
+      if (!['true', 'false'].includes(attrs[flag] ?? 'false')) throw new MarkupError(`${flag.replace(/_/g, '-')} must be true or false`, line);
     }
-    if ('skip_return' in attrs && 'return_to_parent' in attrs) throw new MarkupError('Use skip_return or return_to_parent, not both', line);
+    if ('skip_return' in attrs && 'return_to_parent' in attrs) throw new MarkupError('Use skip-return or return-to-parent, not both', line);
   }
 
   private static _checkTransition(attrs: Attributes, line: number): void {
@@ -2103,7 +2103,7 @@ export class ASTTransformer {
       const to = resolve(attrs.to, 'transform target') as ElementSpec;
       if (to === target) throw new MarkupError('transform needs two different elements', item.line);
       if ((target as ElementSpec).attributes.focus_only === 'true' || to.attributes.focus_only === 'true') {
-        throw new MarkupError('focus_only elements cannot be transformed', item.line);
+        throw new MarkupError('focus-only elements cannot be transformed', item.line);
       }
     } else {
       if (!('path' in attrs) || !attrs.path.startsWith('#')) throw new MarkupError('move_along requires path=#shape', item.line);

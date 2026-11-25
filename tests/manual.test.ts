@@ -12,8 +12,11 @@ const manual = readFileSync(join(__dirname, '..', 'docs', 'site', 'manual-markup
 /** Every name written in backticks anywhere in the manual. */
 const names = new Set([...manual.matchAll(/`([^`\n]+)`/g)].map((match) => match[1]));
 
+/** Flags are documented with hyphens (`only-this`), whichever way a deck writes them. */
+const documented = (name: string): string => (BARE_FLAGS.has(name) ? name.replace(/_/g, '-') : name);
+
 function expectAll(set: Iterable<string>, what: string): void {
-  const missing = [...set].filter((name) => !names.has(name));
+  const missing = [...set].map(documented).filter((name) => !names.has(name));
   expect(missing, `${what} missing from the manual`).toEqual([]);
 }
 

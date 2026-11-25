@@ -111,7 +111,7 @@ The heading and the two items appear at click 1, the warning at click 2 and gone
 where the last line appears. Inserting a click is adding one `step=+`: the clicks after it move
 on by themselves.
 
-Captions (`step=-1`) and static decorations (`focus_only`) without a step stand apart: the element
+Captions (`step=-1`) and static decorations (`focus-only`) without a step stand apart: the element
 after them counts from the one before them. A group takes a step as a whole, and its members none.
 A child without `step` is visited at the click after the element before it (`step=+`), so the
 children written one after the other are visited at successive clicks, and the element written
@@ -180,7 +180,7 @@ clicks; backward and outline jumps show the recorded states without starting pla
 
 `[[skip_next: step=N]]` omits exactly one following event: a fragment step, a child visit (with
 its whole subtree) or the return to the parent, even across numeric gaps. On a child's last step
-it suppresses the zoom back to the parent, which is also what `skip_return` on the include
+it suppresses the zoom back to the parent, which is also what `skip-return` on the include
 does more declaratively.
 
 ## Animated images

@@ -29,7 +29,7 @@ A fenced block (`` ``` `` or `~~~`) is a verbatim listing. Its info string names
 optionally followed by the usual `{…}` attributes: `#id`, `x`/`y` (left edge and first
 baseline, like prose), `width` (the block shrinks uniformly if a line is wider), `height`,
 `font_size` (default `layout.codeSize`, 80 % of the text size), `color`, `anchor`, `step`/`hide`,
-`focus_only`, `.class` and the relative constraints, and `math` (see [Formulas in
+`focus-only`, `.class` and the relative constraints, and `math` (see [Formulas in
 pseudocode](#formulas-in-pseudocode)). Lines never wrap and tabs become four spaces.
 A `::: {.element …}` container around the fence works as for other blocks.
 

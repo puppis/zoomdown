@@ -35,11 +35,11 @@ Member IDs without an explicit `#id` are prefixed with the group ID (`automaton.
 
 The group is then a single element: `x`, `y` place its `origin` (the local `(0,0)`) unless
 `anchor=` names a bounding-box point such as `center`; relative constraints, `at=`, `dx`/`dy`, `width` (the
-members' wrapping width), `opacity`, `step`, `hide`, `focus_only` and `enter`/`exit` apply to the
+members' wrapping width), `opacity`, `step`, `hide`, `focus-only` and `enter`/`exit` apply to the
 whole. A group can be an `at=` or relative reference, an arrow endpoint, a brace or box target, and
 the target of an [animation](animations.html).
 
-Members cannot carry `step`, `hide`, `focus_only` or `play`, and `show`/`hide`/`animate`
+Members cannot carry `step`, `hide`, `focus-only` or `play`, and `show`/`hide`/`animate`
 directives cannot target them: animate the group.
 
 `font_size`, `font`, `color` and `line_height` on a group pass to its members, nested groups

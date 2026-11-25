@@ -197,7 +197,7 @@ describe('phase 1 markup features', () => {
     expect(() => parse('[[dot: #p]]\n[[brace: #p, #b, side=diagonal]]')).toThrow(/Brace side/);
   });
 
-  it('validates anchors, offsets, opacity and skip_return', () => {
+  it('validates anchors, offsets, opacity and skip-return', () => {
     expect(parse('![i](x.png){#i x=0 y=0 anchor=top-left opacity=0.5 dx=0.2}').slides).toHaveLength(1);
     expect(() => parse('![i](x.png){#i x=0 y=0 anchor=left-baseline}')).toThrow(/Baseline anchors/);
     expect(() => parse('[t]{#t x=0 anchor=middle}')).toThrow(/Unknown anchor/);
@@ -205,7 +205,7 @@ describe('phase 1 markup features', () => {
     expect(() => parse('[t]{#t x=0 opacity=1.5}')).toThrow(/opacity must be/);
     const tree = new MarkupParser().parse('::: slide {#r skip_return=true}\n[[include: #c anchor=right x=1 skip_return=true]]\n:::\n::: slide {#c}\nx\n:::');
     expect(tree.slides[0].attributes.skip_return).toBe('true');
-    expect(() => new MarkupParser().parse('::: slide {#r skip_return=maybe}\nx\n:::')).toThrow(/skip_return must be/);
+    expect(() => new MarkupParser().parse('::: slide {#r skip_return=maybe}\nx\n:::')).toThrow(/skip-return must be/);
     expect(() => parse('[[include: #c anchor=left-baseline]]')).toThrow(/Baseline anchors/);
   });
 

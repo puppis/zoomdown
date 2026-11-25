@@ -6,14 +6,14 @@ description: Elements that appear only while their slide is focused, such as an 
 <a class="try" href="tour.html#slide=focus">Open in the tour ↗</a>
 
 ```markdown
-[[rectangle: #paper x=0 y=0 width=20 height=11.25 fill_color="#1E293B" fill_opacity=1 stroke_width=0 focus_only=true]]
+[[rectangle: #paper x=0 y=0 width=20 height=11.25 fill_color="#1E293B" fill_opacity=1 stroke_width=0 focus-only=true]]
 
 ## Decorations visible only in focus
 
-[This caption fades in with focus and out when the camera leaves]{#caption x=-9.35 y=0.6 width=19 focus_only=true color=TEAL}
+[This caption fades in with focus and out when the camera leaves]{#caption x=-9.35 y=0.6 width=19 focus-only=true color=TEAL}
 ```
 
-Static text, math, images, listings, shapes, icons, tables, charts and groups with `focus_only=true` fade in when their
+Static text, math, images, listings, shapes, icons, tables, charts and groups with `focus-only=true` fade in when their
 slide is focused and out when the camera leaves, including to a child. They are drawn behind the
 slide's ordinary content, still take part in layout and can anchor other elements.
 

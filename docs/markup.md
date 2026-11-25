@@ -52,15 +52,16 @@ every construct of this page live, each next to the listing that produced it; op
 - `title="…"` names the slide in the outline; otherwise its first heading, then its ID, is used.
 - An include referring to an undefined slide draws a red placeholder rather than failing; the
   placeholder is never a stop, so the deck keeps running while the slide is still unwritten.
-- `start_here=true` on a slide, include or subslide opens playback at that slide (at most one).
-  `only-this=true` (or `only_this`, as any flag may be written) draws and plays only the slides that
-  say so while editing; every other, their own children included, becomes a placeholder.
+- `start-here=true` on a slide, include or subslide opens playback at that slide (at most one).
+  `only-this=true` draws and plays only the slides that say so while editing; every other, their
+  own children included, becomes a placeholder.
 - When a child ends, the camera goes straight to the next sibling when nothing happens in between,
   and zooms back to the parent when the parent has a step of its own before the next child, and
-  after the last one. `return_to_parent` on a slide, include or subslide zooms back after that child
-  even when a sibling follows at once; `skip_return` leaves it straight for the next stop even when
+  after the last one. `return-to-parent` on a slide, include or subslide zooms back after that child
+  even when a sibling follows at once; `skip-return` leaves it straight for the next stop even when
   the parent plays first or it is the last one. The two are one choice seen from both sides
-  (`skip_return=false` is `return_to_parent`); a flag written bare means `=true`.
+  (`skip-return=false` is `return-to-parent`); a flag written bare means `=true`, and its words may
+  be joined by underscores as well (`skip_return`).
 - `preview=true` on a slide, include or subslide shows its content before its first visit instead of
   fading it in on entry.
 - `debug` on a slide, include or subslide draws a frame around it and faint dots at its whole
@@ -270,7 +271,7 @@ polygons at least three `points` (closed, fillable); arcs `radius`, `angle` and 
 name too, while its other anchors are on the arc's box); polylines at least two distinct `points`. All accept
 `color` (the layout color by default), `stroke_width` (default 2), `fill_color` and `fill_opacity`
 (0 by default; polylines have no fill), `opacity`, the positioning attributes below, `step`,
-`hide` and `focus_only`. Point-defined shapes without positioning keep their coordinates. Shapes
+`hide` and `focus-only`. Point-defined shapes without positioning keep their coordinates. Shapes
 serve as anchors and connection endpoints. A shape's `label` goes in its middle (or beside it,
 `label_side=above|below|left|right`) and its `sublabel` beside it (`sublabel_side`, below by
 default), `label_buff`/`sublabel_buff` (0.1) away, at `font_size` and `sublabel_font_size`, in
@@ -448,7 +449,7 @@ A fenced block (`` ``` `` or `~~~`, or an indented block) is a verbatim listing.
 names the language, optionally followed by the usual `{…}` attributes: `#id`, `x`/`y` (left edge
 and first baseline, like prose), `width` (the block shrinks uniformly if a line is wider),
 `height`, `font_size` (default `layout.codeSize`, 80 % of the text size), `color`, `anchor`,
-`step`/`hide`, `focus_only` and relative placement. Lines never wrap, tabs become four spaces, and
+`step`/`hide`, `focus-only` and relative placement. Lines never wrap, tabs become four spaces, and
 a `::: {.element …}` container around the fence works as for other blocks.
 
 A listing's `$…$` are formulas when its language profile has `"math": true` (pseudocode) or the
@@ -604,7 +605,7 @@ flow starts at the local origin, explicit coordinates and `at=` are local, and m
 reference members of the same group. The group is then one element of the slide: `x`, `y` place
 its `origin` (the local `(0,0)`) unless `anchor=` names a bounding-box point; relative constraints,
 `at=`, `dx`/`dy`, `width` (the members' wrapping width), `opacity`, `step`, `hide` and
-`focus_only` apply to the whole; it can be an `at=` or relative reference, an arrow endpoint and a
+`focus-only` apply to the whole; it can be an `at=` or relative reference, an arrow endpoint and a
 brace or box target. `font_size`, `font`, `color` and `line_height` on a group pass to its members
 (nested groups included) that take them and do not set their own, as CSS inherits them: a list of
 items in one size needs no style on every item, and a shape takes the color only.
@@ -614,7 +615,7 @@ items in one size needs no style on every item, and a shape takes the color only
 - Client-server
 - Peer-to-peer
 :::
-``` Members cannot carry `step`, `hide`, `focus_only` or `play`, and `show`/`hide`
+``` Members cannot carry `step`, `hide`, `focus-only` or `play`, and `show`/`hide`
 cannot target them. Member IDs without an explicit `#id` are prefixed with the group ID.
 
 ## Fragments and click steps
@@ -646,7 +647,7 @@ With `layout.steps: sequential` steps follow the source: an element or a directi
 takes the step of the element before it (0 at the top of the slide), `step=+` is the click after
 that one, an explicit `step=N` is taken by the elements after it without a step, `hide=+` is the
 click after the element's own step, and a child without `step` is visited at the click after the
-element before it. Captions (`step=-1`) and `focus_only` decorations without a step are left out
+element before it. Captions (`step=-1`) and `focus-only` decorations without a step are left out
 of the count; group members take no step. `+` is refused without sequential steps.
 
 `[[next: step=N]]` advances automatically once step N (and the child visits it triggers) has
@@ -703,12 +704,12 @@ Group members cannot be animated individually; animate the group.
 ## Decorations visible only in focus
 
 ```markdown
-[[rectangle: #paper x=0 y=0 width=16 height=9 fill_color=white fill_opacity=1 stroke_width=0 focus_only=true]]
+[[rectangle: #paper x=0 y=0 width=16 height=9 fill_color=white fill_opacity=1 stroke_width=0 focus-only=true]]
 
-## Detail {#heading x=0 y=5 focus_only=true}
+## Detail {#heading x=0 y=5 focus-only=true}
 ```
 
-Static text, math, images, listings and shapes with `focus_only=true` fade in when their slide is
+Static text, math, images, listings and shapes with `focus-only=true` fade in when their slide is
 focused and out when the camera leaves, including to a child. They are drawn behind the ordinary
 content, still take part in layout and can anchor other elements. They cannot carry `step`, `hide`
 or `play`, and `show`/`hide` directives cannot target them.

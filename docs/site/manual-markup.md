@@ -24,7 +24,7 @@ directive they are separated by spaces or commas; elsewhere by spaces. Each attr
 | `#name` | the identifier of the element, slide or child: the same as `id=name` |
 | `.name` | a [style class](#style-roles-and-classes) to apply; several are allowed, in order |
 | `below:#id` | a [relative position](#relative-placement), equivalent to `below=#id`, for `below`, `above`, `left-of`, `right-of`, `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` |
-| `flag` | a bare flag means `flag=true`: `start_here`, `only-this`, `skip_return`, `return_to_parent`, `preview`, `debug`, `focus_only` |
+| `flag` | a bare flag means `flag=true`: `start-here`, `only-this`, `skip-return`, `return-to-parent`, `preview`, `debug`, `focus-only` |
 | `style="color: red"` | an alternative to `color=`; only the CSS `color` property is accepted, and not together with `color=` |
 
 An attribute given twice is an error, and so is a name a construct does not take ("Unknown
@@ -106,10 +106,10 @@ may hold `::: {.group}`, `::: {.element}` and `::: notes` blocks.
 | `title` | text | the first heading, else the id | the name shown in the outline and the breadcrumb |
 | `width`, `height` | units | `layout.defaultSlideSize`, 16 × 9 | the canvas; one of them keeps the default proportions |
 | `flow_top`, `flow_left` | units | `layout.margin`, 0.65 | where the flow starts: the distance from the top edge to the top of the first flowing block, and from the left edge to the flow's left edge; nonnegative and less than the height and width |
-| `start_here` | flag | false | playback opens at this slide's entry; at most one slide (or include) may say so |
+| `start-here` | flag | false | playback opens at this slide's entry; at most one slide (or include) may say so |
 | `only-this` | flag | false | render only the slides that say so (a partial render while editing); every other, their own children included, becomes a placeholder, and the starting slide must be among them |
-| `return_to_parent` | `true`, `false` | unset | after this slide's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset) |
-| `skip_return` | flag | unset | `return_to_parent=false`, from the other side; not together with it |
+| `return-to-parent` | `true`, `false` | unset | after this slide's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset) |
+| `skip-return` | flag | unset | `return-to-parent=false`, from the other side; not together with it |
 | `transition` | `zoom`, `cut`, a name | unset | how the camera arrives at this slide; a name is a module of the deck's `transitions/` folder |
 | `preview` | flag | false | show the content before the first visit instead of fading it in on entry |
 | `debug` | flag | false | draw the slide for its design: a frame around its canvas and faint dots at its coordinates, never in an export; see [debug](#debug) |
@@ -137,7 +137,7 @@ and the relative references, plus:
 | `width`, `height` | units | width 6, or the parent's width minus the margins when smaller | the child's size in the parent; one of them keeps the child's proportions |
 | `angle` | radians | 0 | rotation of the child's viewport |
 | `step` | integer ≥ 1 | after the numbered steps, in source order | the step at which the child is visited; children without a step are visited after the last numbered one, in order |
-| `start_here`, `only-this`, `return_to_parent`, `skip_return`, `transition`, `preview`, `debug` | as for slides | | the same flags, set from the parent's side |
+| `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview`, `debug` | as for slides | | the same flags, set from the parent's side |
 | `verdict` | inline text | none | a line under the tile, `#child-verdict`, centered and wrapped at the tile's width, shown at the click after the visit; styled by the `verdict` style, which may place it elsewhere (includes only) |
 
 An include written after another include, with nothing that flows between them (directives,
@@ -176,10 +176,10 @@ pages, by the document's bookmarks when it has them. The exports copy or embed t
 
 ### Flags of slides and children
 
-`start_here`, `only-this`, `skip_return`, `return_to_parent`, `preview`, `debug` and `focus_only`
-may be written bare, and their words joined by underscores or hyphens alike: `only_this` is the
-same flag. `skip_return` and `return_to_parent` are two sides of one choice and cannot both be
-given. At most one slide of the deck may say `start_here`, whether on the slide itself, on the
+`start-here`, `only-this`, `skip-return`, `return-to-parent`, `preview`, `debug` and `focus-only`
+may be written bare, and their words joined by hyphens or underscores alike: `only_this` is the
+same flag as `only-this`. `skip-return` and `return-to-parent` are two sides of one choice and cannot both be
+given. At most one slide of the deck may say `start-here`, whether on the slide itself, on the
 include that places it, or on a code-authored child.
 
 ### debug
@@ -313,7 +313,7 @@ Text elements take the common attributes:
 | `line_height` | ems | `layout.lineHeight`, else the font's own | the distance between the baselines of two lines; see [Line height](#line-height) |
 | `opacity` | 0 to 1 | 1 | uniform opacity |
 | `step`, `hide`, `enter`, `exit`, `run_time`, `lag` | | | visibility and its timing, see [Steps and motion](#steps-and-motion) |
-| `focus_only` | flag | false | a decoration shown only while the slide is focused |
+| `focus-only` | flag | false | a decoration shown only while the slide is focused |
 | `class` | names | | style classes, the same as `.name` tokens |
 | `href` | link | | makes the block a link |
 
@@ -802,7 +802,7 @@ A caption {below:#c}
 A group lays out its members in coordinates of its own, flow starting at the local origin
 `(0,0)`, and is then one element: positioned, shown, hidden, animated and enclosed as a whole.
 Members are elements, shapes, connections, attachments and nested groups; includes, subslides
-and step directives are not allowed inside, and members take no `step`, `hide`, `focus_only`
+and step directives are not allowed inside, and members take no `step`, `hide`, `focus-only`
 or `play` of their own. Relative references stay within a group.
 
 | Attribute | Values | Default | Meaning |
@@ -811,7 +811,7 @@ or `play` of their own. Relative references stay within a group.
 | `x`, `y` | units | flow | place the group's origin, unless `anchor` names another point |
 | `anchor` | the anchors, or `origin` | `origin` | `origin` is the local (0, 0), where the members' flow starts |
 | `width` | units | the available width | the flow width inside the group |
-| `at`, `dx`, `dy`, `buff`, the relative references, `angle`, `class`, `opacity`, `step`, `hide`, `enter`, `exit`, `run_time`, `lag`, `focus_only`, `href` | | | as for elements; a group turns about its origin |
+| `at`, `dx`, `dy`, `buff`, the relative references, `angle`, `class`, `opacity`, `step`, `hide`, `enter`, `exit`, `run_time`, `lag`, `focus-only`, `href` | | | as for elements; a group turns about its origin |
 | `font_size`, `font`, `color`, `line_height` | | | passed to the members, nested groups included, that take them and do not set their own (a shape takes the color only), as CSS inherits them |
 | `tremble`, `tremble_amplitude`, `tremble_rate` | | | shake the group's geometry |
 
@@ -938,7 +938,7 @@ With `layout.steps: sequential`, steps follow the source: an element or a direct
 `step` takes the step of the element before it (0 at the top of the slide), `step=+` is the click
 after that one, an explicit `step=N` (`step=0` included) is taken by the elements after it without
 a step, and `hide=+` is the click after the element's own step. A child without `step` is visited
-at the click after the element before it. Captions (`step=-1`) and `focus_only` decorations
+at the click after the element before it. Captions (`step=-1`) and `focus-only` decorations
 without a step are left out of the count, and group members take no step. `+` is refused without
 sequential steps. See [Steps that follow the source](fragments.html#steps-that-follow-the-source).
 
@@ -965,9 +965,9 @@ same step is an error. Group members are shown and hidden through their group.
 
 A name that is not built in is `effects/<name>.ts` of the deck.
 
-### focus_only and preview
+### focus-only and preview
 
-`focus_only` marks a static decoration (no `step`, `hide` or `play`) shown only while its slide
+`focus-only` marks a static decoration (no `step`, `hide` or `play`) shown only while its slide
 is focused: it fades when the camera leaves and cannot be shown, hidden, transformed or
 animated. `preview` on a slide, an include or a subslide shows the child's content before its
 first visit, instead of fading it in on entry; the presenter's `revealOnEntry: false` does so
@@ -1024,7 +1024,7 @@ hyphens). `color` and `scale` tune the effects that take them; `step`, `run_time
 
 Morphs a visible element into a hidden one, which is the visible element afterwards; later
 `show` and `hide` directives address the new element. Give the target `step=N` for the
-transform's own step: the morph reveals it instead of a fade. Neither may be `focus_only`, and
+transform's own step: the morph reveals it instead of a fade. Neither may be `focus-only`, and
 the two must differ. Attributes: `step`, `run_time`, `lag`, `rate`.
 
 ### [[move_along]]
@@ -1220,7 +1220,7 @@ file or snippet) it comes from. Besides the constraints listed above, the parser
 - `::: slide` or `::: styles` expected at the top level and something else found; inside a
   slide, a container that is not `{.element …}`, `{.group …}` or `notes`;
 - an `.element` wrapper around anything but one block; a group holding an include, a subslide
-  or a directive; a group member with `step`, `hide`, `focus_only` or `play`;
+  or a directive; a group member with `step`, `hide`, `focus-only` or `play`;
 - an unknown attribute, a duplicate one, a malformed value, an unknown color, an unknown style
   class, an unknown anchor, a baseline anchor on anything but text, `origin` on anything but
   a group;

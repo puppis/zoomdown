@@ -19,7 +19,7 @@ description: Rectangles, circles, dots, ellipses, polygons, arcs and polylines; 
 
 A shape takes an `#id` when something refers to it, as any element does. All accept `color` (the layout color by default), `stroke_width`
 (default 2), `fill_color` and `fill_opacity` (0 by default; polylines have no fill), `opacity`,
-the placement attributes of [Positioning](positioning.html), `step`, `hide` and `focus_only`.
+the placement attributes of [Positioning](positioning.html), `step`, `hide` and `focus-only`.
 
 `fill_gradient` fills a shape with a linear gradient through two colors or more, from the first
 to the last in `gradient_direction` (`right`, `left`, `up` or `down`). Its colors may be

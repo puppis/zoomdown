@@ -48,7 +48,7 @@ strokes for the details, drawn with the same outline width inside a square box.
 | `tremble`, `tremble_amplitude`, `tremble_rate` | | [vibration](animations.html#tremble) over a range of steps |
 
 Icons also take `opacity`, `step`, `hide`, `enter`, `exit`, `run_time`, `lag`, the placement
-attributes of [Positioning](positioning.html) and `focus_only`. With a `label`, the icon and its
+attributes of [Positioning](positioning.html) and `focus-only`. With a `label`, the icon and its
 label form one element: the arrow endpoints and the bounding box include the label, while a
 [blob](enclosures.html) flows around the symbol and the label separately.
 
