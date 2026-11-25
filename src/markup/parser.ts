@@ -1460,6 +1460,9 @@ function rewriteReferences(item: SlideItem, lookup: (name: string) => string | u
 /** What the `slide` style sets on every slide; anything else it holds does not fit a slide. */
 const SLIDE_STYLE = new Set(['width', 'height', 'flow_top', 'flow_left', 'transition', 'preview', 'debug']);
 
+/** Names as a sentence lists them: `x`, `x and buff`, `x, y and below`. */
+const listed = (names: readonly string[]): string => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0]);
+
 /** Validate a component tree and compile fragment state into animation steps. */
 export class ASTTransformer {
   /** `steps`: how the slides number their steps (`layout.steps`), settled while validating. */
@@ -2184,7 +2187,7 @@ export class ASTTransformer {
     if ('scale' in attrs && Number(attrs.scale) <= 0) throw new MarkupError('scale must be positive', item.line);
     if (item.action === 'animate') {
       if (![...ANIMATE_PROPS].some((key) => key in attrs)) throw new MarkupError('animate needs a target property such as x, y, at, angle, scale, opacity or color', item.line);
-      if ('at' in attrs && ('x' in attrs || 'y' in attrs)) throw new MarkupError('at= replaces x and y', item.line);
+      if ('at' in attrs && ('x' in attrs || 'y' in attrs)) throw new MarkupError(`at= cannot be combined with ${listed(['x', 'y'].filter((key) => key in attrs))}: it sets both coordinates. Keep one of them`, item.line);
       if ('anchor' in attrs) {
         if (target) ASTTransformer._checkAnchorFor(target, attrs.anchor, item.line);
         else if (!GROUP_ANCHORS.has(attrs.anchor) || attrs.anchor === 'origin' || BASELINE_ANCHORS.has(attrs.anchor)) {
@@ -2298,8 +2301,12 @@ export class ASTTransformer {
       throw new MarkupError('dx and dy require coordinates, at= or a relative constraint', item.line);
     }
     if ('at' in attrs) {
-      if (keys.some((key) => POSITION_REFERENCES.has(key) || ['x', 'y', 'buff'].includes(key))) {
-        throw new MarkupError('at= replaces x, y and relative constraints', item.line);
+      const others = keys.filter((key) => POSITION_REFERENCES.has(key) || ['x', 'y', 'buff'].includes(key));
+      if (others.length) {
+        const what = others.every((key) => key === 'buff')
+          ? 'buff is the distance that below, above, left-of and right-of keep, or from the block before. To move an element away from where at= places it, use dx and dy'
+          : `at= places the element by itself. Keep one of them${others.includes('buff') ? ' (buff goes with a direction)' : ''}; dx and dy move an element placed by at=`;
+        throw new MarkupError(`at= cannot be combined with ${listed(others)}: ${what}`, item.line);
       }
       const at = parseAt(attrs.at, item.line);
       if (at.anchor) ASTTransformer._checkAnchorFor(item, at.anchor, item.line);
@@ -2315,11 +2322,13 @@ export class ASTTransformer {
     if ('baseline-aligned' in attrs && (!(item instanceof ElementSpec) || !TEXT_LIKE.has(item.kind))) {
       throw new MarkupError('baseline-aligned is only supported on text, math and code', item.line);
     }
-    if (keys.filter((key) => key in NEIGHBORS).length > 1) throw new MarkupError('Specify only one relative direction', item.line);
+    const directions = keys.filter((key) => key in NEIGHBORS);
+    if (directions.length > 1) throw new MarkupError(`${listed(directions)} cannot be combined: an element stands in one direction of another. Keep one of them; an alignment (left-aligned, top-aligned, …) or a coordinate may set the other axis`, item.line);
     for (const [coordinate, constraints] of [['x', HORIZONTAL_POSITION], ['y', VERTICAL_POSITION]] as const) {
       const specified = keys.filter((key) => constraints.has(key));
       if (specified.length > 1 || (specified.length && coordinate in attrs)) {
-        throw new MarkupError(`Conflicting ${coordinate} positioning constraints`, item.line);
+        const both = [...specified, ...(coordinate in attrs ? [coordinate] : [])];
+        throw new MarkupError(`${listed(both)} cannot be combined: each sets the ${coordinate === 'x' ? 'horizontal' : 'vertical'} position. Keep one of them`, item.line);
       }
     }
     if ('buff' in attrs && !keys.some((key) => key in NEIGHBORS) && !ASTTransformer._flowsDown(item)) {

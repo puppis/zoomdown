@@ -244,7 +244,9 @@ describe('phase 2 markup features', () => {
     expect(() => parseAt('middle:#a', 1)).toThrow(/Unknown anchor/);
     const document = parse('[[dot: #ref x=0 y=0]]\n[t]{#t at=top-left:#ref.bottom-right dx=0.2}');
     expect(positionTargets(document.slides[0].items[1] as ElementSpec)).toEqual(new Set(['ref']));
-    expect(() => parse('[[dot: #ref x=0 y=0]]\n[t]{#t at=#ref x=1}')).toThrow(/at= replaces/);
+    expect(() => parse('[[dot: #ref x=0 y=0]]\n[t]{#t at=#ref x=1}')).toThrow(/at= cannot be combined with x: at= places the element by itself\. Keep one of them; dx and dy move/);
+    expect(() => parse('[[dot: #ref x=0 y=0]]\n[t]{#t at=#ref below:#ref buff=1}')).toThrow(/at= cannot be combined with below and buff: .*\(buff goes with a direction\)/);
+    expect(() => parse('[[dot: #ref x=0 y=0]]\n[t]{#t below:#ref right-of:#ref}')).toThrow(/below and right-of cannot be combined: an element stands in one direction/);
     expect(() => parse('[t]{#t at=#nope}')).toThrow(/Unknown at= reference/);
     expect(() => parse('[[dot: #ref x=0 y=0]]\n[t]{#t at=origin:#ref}')).toThrow(/origin is an anchor of groups/);
     expect(() => parse('[[dot: #ref x=0 y=0]]\n[t]{#t at=#ref.left-baseline}')).toThrow(/Baseline anchors/);
@@ -308,7 +310,7 @@ describe('phase 3 animation directives', () => {
     expect(() => parse('[x]{#x step=2}\n[[animate: #x, step=1, dx=1]]')).toThrow(/hidden at step 1/);
     expect(() => parse('[[animate: #nope, step=1, dx=1]]')).toThrow(/Unknown animate target/);
     expect(() => parse('[[dot: #d x=0 y=0]]\n[[animate: #d, step=1]]')).toThrow(/needs a target property/);
-    expect(() => parse('[[dot: #d x=0 y=0]]\n[[animate: #d, step=1, x=1, at=(0,0)]]')).toThrow(/at= replaces/);
+    expect(() => parse('[[dot: #d x=0 y=0]]\n[[animate: #d, step=1, x=1, at=(0,0)]]')).toThrow(/at= cannot be combined with x: it sets both coordinates/);
     // A name that is not built in is an effect of the deck's own, looked up in its effects folders when the deck is built.
     expect(() => parse('[[dot: #d x=0 y=0]]\n[[effect: sparkle #d, step=1]]')).not.toThrow();
     expect(() => parse('[[dot: #d x=0 y=0]]\n[[effect: 2fast #d, step=1]]')).toThrow(/Unknown effect/);
