@@ -1,5 +1,5 @@
 {
-  // Ctrl+B / ⌘B exports one HTML file next to the deck; the variants start the preview server
+  // Tools > Build exports one HTML file next to the deck; the variants start the preview server
   // or write the static folder export. The `zoomdown_exec` target (zoomdown.py in this package)
   // runs the command with the PATH of your login shell, so it is found even when Sublime Text
   // was started from the Dock or a launcher, and adds `--editor` to the preview so that E or

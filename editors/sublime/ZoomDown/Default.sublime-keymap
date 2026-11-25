@@ -4,5 +4,10 @@
   { "keys": ["ctrl+alt+j"], "command": "zoomdown_jump",
     "context": [{ "key": "selector", "operator": "equal", "operand": "text.html.markdown.zoomdown" }] },
   { "keys": ["ctrl+alt+p"], "command": "zoomdown_run", "args": { "task": "build" },
+    "context": [{ "key": "selector", "operator": "equal", "operand": "text.html.markdown.zoomdown" }] },
+  // In a deck the build keys export it too, but without Sublime Text's build, which saves the open files.
+  { "keys": ["ctrl+b"], "command": "zoomdown_run", "args": { "task": "build" },
+    "context": [{ "key": "selector", "operator": "equal", "operand": "text.html.markdown.zoomdown" }] },
+  { "keys": ["f7"], "command": "zoomdown_run", "args": { "task": "build" },
     "context": [{ "key": "selector", "operator": "equal", "operand": "text.html.markdown.zoomdown" }] }
 ]

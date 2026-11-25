@@ -96,9 +96,10 @@ and a PDF viewer do with SyncTeX:
 - **Inverse search**, browser → editor: the **E** key opens the source line of the current stop
   in the editor, and **Alt + click** opens the line of the element under the pointer: the text,
   formula, image, shape or listing you clicked, also inside a child's preview tile, or the
-  `[[include: …]]` line when you click a tile's empty area. The modifier is the "Click: open the
-  source of the element" gesture of the Pointer settings (Control works too, the context menu is
-  suppressed). For this the server must know your editor: `zoomdown serve … --editor <name>`,
+  `[[include: …]]` line when you click a tile's empty area. Alt is only the default: the player's
+  [settings](player.html#settings) record any other keys and mouse button for it, under Pointer ▸
+  "Click: open the source of the element" ▸ Set gesture, such as Shift+Command and a click, or the
+  right button (the context menu is then suppressed). For this the server must know your editor: `zoomdown serve … --editor <name>`,
   where the name is `emacs`, `sublime`, `code` (also `codium`, `cursor`), `vim`, `gvim`, `mvim`,
   `textmate`, `zed`, `jetbrains` (the first IDE launcher on the `PATH`) or one of `idea`,
   `webstorm`, `pycharm`, `phpstorm`, `goland`, `clion`, `rubymine`, `rider`, `rustrover`, or any
@@ -151,7 +152,8 @@ folder). It provides:
   whose first line opens a slide or styles block, select it automatically, others (a deck kept
   as `.md` with front matter, say) through View ▸ Syntax. The keys and the build system below
   act in this syntax only, so other Markdown files keep Sublime Text's own.
-- **Ctrl+Alt+B** starts the preview in the build panel and **Ctrl+Alt+P** exports one HTML file.
+- **Ctrl+Alt+B** starts the preview in the build panel and **Ctrl+Alt+P** (or Ctrl+B, ⌘B, F7)
+  exports one HTML file.
   On macOS use **⌘⌥B**, **⌘⌥J** and **⌘⌥P**: Sublime Text reads a Control+Option combination
   through the character that Option types on your layout, which is the letter itself only on a US
   keyboard.
@@ -160,12 +162,10 @@ folder). It provides:
   `subl` launcher of the running Sublime Text, wherever it is installed).
 - Command Palette entries: "ZoomDown: Preview deck", "Stop the preview" (which also ends an export
   still running), "Jump to this line in the browser", "Build HTML file", "Build static folder".
-- A build system, so Ctrl+B / ⌘B exports one HTML file as well, with the variants "Preview" and
-  "Build folder" under Tools ▸ Build With….
+- A build system, with the variants "Preview" and "Build folder" under Tools ▸ Build With….
 
-The keys and the Command Palette entries never save. Ctrl+B and Tools ▸ Build are Sublime Text's
-own: they save the open files first while Tools ▸ Save All on Build is checked, for decks as for
-anything else.
+The keys and the Command Palette entries never save. Only Tools ▸ Build and Build With…, which are
+Sublime Text's own, save the open files first while Tools ▸ Save All on Build is checked.
 
 Everything runs through `zoomdown_exec`, a small plugin in the package: it asks your login
 shell (the one in `$SHELL`) for its `PATH` once and runs the command with it, so `zoomdown` is

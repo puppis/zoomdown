@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  ACTIONS, DEFAULT_POINTER_BINDINGS, DEFAULT_RENDERING, actionFor, sanitizePads, defaultSettings, describeModifiers, keyCombo, loadSettings, modifierCombo, pointerActionFor, renderPixelRatio, sanitizeRendering, saveSettings,
+  ACTIONS, DEFAULT_POINTER_BINDINGS, DEFAULT_RENDERING, actionFor, sanitizePads, defaultSettings, describeGesture, gestureOf, keyCombo, loadSettings, modifierCombo, pointerActionFor, renderPixelRatio, sanitizeRendering, saveSettings, validGesture,
 } from '../src/player/settings';
 
 describe('player settings', () => {
@@ -52,8 +52,46 @@ describe('player settings', () => {
   it('normalizes held modifiers in a fixed order', () => {
     expect(modifierCombo({ shiftKey: false, ctrlKey: false, altKey: false, metaKey: false })).toBe('');
     expect(modifierCombo({ shiftKey: true, ctrlKey: true, altKey: false, metaKey: false })).toBe('Shift+Control');
-    expect(describeModifiers(null)).toBe('Off');
-    expect(describeModifiers('')).toMatch(/Plain/);
+    expect(modifierCombo({ shiftKey: true, ctrlKey: false, altKey: false, metaKey: true })).toBe('Shift+Meta');
+  });
+
+  it('reads a gesture from a press of the mouse: the keys held and the button', () => {
+    const press = (button: number, keys: Partial<Record<'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey', boolean>> = {}) =>
+      gestureOf({ shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, ...keys, button });
+    expect(press(0)).toBe('');
+    expect(press(0, { metaKey: true, shiftKey: true })).toBe('Shift+Meta');
+    expect(press(1)).toBe('Middle');
+    expect(press(2, { altKey: true })).toBe('Alt+Right');
+    // The back and forward buttons and a pen's eraser have uses of their own.
+    for (const button of [3, 4, 5]) expect(press(button)).toBeNull();
+  });
+
+  it('names gestures by how the mouse is used', () => {
+    expect(describeGesture(null, 'click')).toBe('Off');
+    expect(describeGesture('', 'drag')).toBe('Plain drag');
+    expect(describeGesture('', 'hold')).toBe('Hover');
+    expect(describeGesture('Shift', 'hold')).toMatch(/^Hold (Shift|⇧)$/);
+    expect(describeGesture('Shift+Meta', 'click')).toMatch(/^(Shift\+Win|⇧⌘) \+ click$/);
+    expect(describeGesture('Middle', 'click')).toBe('Middle click');
+    expect(describeGesture('Alt+Right', 'click')).toMatch(/^(Alt|⌥) \+ right click$/);
+  });
+
+  it('takes any keys in their order for a gesture, and another button for clicks only', () => {
+    for (const gesture of ['', 'Shift+Meta', 'Shift+Control+Alt+Meta', 'Middle', 'Shift+Right']) expect(validGesture('edit', gesture)).toBe(true);
+    for (const gesture of ['Meta+Shift', 'Shift+Shift', 'Back', 'Right+Shift', 'Shift+', 'Hyper', 'Middle+Right']) expect(validGesture('edit', gesture), gesture).toBe(false);
+    for (const action of ['pen', 'pointer'] as const) {
+      expect(validGesture(action, 'Shift+Meta')).toBe(true);
+      expect(validGesture(action, 'Middle')).toBe(false);
+    }
+  });
+
+  it('keeps saved gestures with a pair of keys or a button', () => {
+    const settings = defaultSettings();
+    settings.pointer = { pen: '', pointer: 'Shift', advance: 'Middle', edit: 'Shift+Meta' };
+    saveSettings(settings);
+    expect(loadSettings().pointer).toEqual(settings.pointer);
+    localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: 'Middle' } }));
+    expect(loadSettings().pointer.pen).toBe('');
   });
 
   it('keeps valid saved gestures and the pointer mode, ignoring corrupt values', () => {

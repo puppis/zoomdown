@@ -197,22 +197,23 @@ export const DEFAULT_BINDINGS: Record<ActionName, string[]> = {
   settings: [','],
 };
 
-/** Mouse gestures on the stage: which modifier keys, held while clicking or dragging, select each tool. */
+/** Mouse gestures on the stage: the keys held, and for a click also the mouse button, that select each tool. */
 export type PointerAction = 'pen' | 'pointer' | 'advance' | 'edit';
 
 export interface PointerActionInfo {
   name: PointerAction;
   label: string;
+  /** How the mouse is used: a click may take any button, a drag and a held tool the main one. */
+  kind: 'drag' | 'hold' | 'click';
 }
 
 export const POINTER_ACTIONS: PointerActionInfo[] = [
-  { name: 'pen', label: 'Pen: drag to draw' },
-  { name: 'pointer', label: 'Spotlight or laser while held; drag to highlight' },
-  { name: 'advance', label: 'Click: next stop (off unless you bind a key)' },
-  { name: 'edit', label: 'Click: open the source of the element in the editor (preview server)' },
+  { name: 'pen', label: 'Pen: drag to draw', kind: 'drag' },
+  { name: 'pointer', label: 'Spotlight or laser while held; drag to highlight', kind: 'hold' },
+  { name: 'advance', label: 'Click: next stop (off unless you set a gesture)', kind: 'click' },
+  { name: 'edit', label: 'Click: open the source of the element in the editor (preview server)', kind: 'click' },
 ];
 
-/** Modifier combinations a pointer action can be bound to; `''` is a plain click or drag. */
 /**
  * Defaults of earlier versions that changed since: settings saved with exactly these keys were
  * never customized, so they follow the new defaults instead of pinning the old ones.
@@ -247,9 +248,11 @@ export function renderPixelRatio(rendering: RenderingSettings): number {
   return typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
 }
 
-export const MODIFIER_COMBOS = ['', 'Shift', 'Control', 'Alt', 'Meta', 'Shift+Control', 'Shift+Alt', 'Control+Alt'];
-
-/** Modifier combination of each pointer action; null leaves the action without a gesture. */
+/**
+ * The gesture of each pointer action: the keys held, in the order of `modifierCombo`, then the
+ * mouse button unless it is the main one (`Shift+Meta`, `Alt+Right`, `Middle`); `''` is the mouse
+ * used plainly, null leaves the action without a gesture.
+ */
 export type PointerBindings = Record<PointerAction, string | null>;
 
 /** Click-to-advance has no gesture by default: a click on a slide draws, and only the keys move between stops. */
@@ -338,26 +341,57 @@ export function describeCombo(combo: string): string {
   return combo.split('+').map((part) => PRETTY[part] ?? (part.length === 1 ? part.toUpperCase() : part)).join(IS_MAC ? '' : '+');
 }
 
-/** The modifier combination held during a pointer event, in the order of `MODIFIER_COMBOS`. */
-export function modifierCombo(event: { shiftKey: boolean; ctrlKey: boolean; altKey: boolean; metaKey: boolean }): string {
-  const parts: string[] = [];
-  if (event.shiftKey) parts.push('Shift');
-  if (event.ctrlKey) parts.push('Control');
-  if (event.altKey) parts.push('Alt');
-  if (event.metaKey) parts.push('Meta');
-  return parts.join('+');
+interface HeldKeys { shiftKey: boolean; ctrlKey: boolean; altKey: boolean; metaKey: boolean }
+
+const HELD = ['Shift', 'Control', 'Alt', 'Meta'];
+
+/** The modifier keys held during an event, in the order Shift, Control, Alt, Meta. */
+export function modifierCombo(event: HeldKeys): string {
+  const held = [event.shiftKey, event.ctrlKey, event.altKey, event.metaKey];
+  return HELD.filter((_, index) => held[index]).join('+');
 }
 
-/** Human-readable form of a pointer binding. */
-export function describeModifiers(combo: string | null): string {
-  if (combo === null) return 'Off';
-  if (combo === '') return 'Plain (no key)';
-  return combo.split('+').map((part) => PRETTY[part] ?? part).join(IS_MAC ? '' : '+');
+/** The mouse buttons a click gesture may name, by their number in an event; the others (back, forward, a pen's eraser) have uses of their own. */
+const BUTTONS: Record<number, string> = { 0: '', 1: 'Middle', 2: 'Right' };
+
+/** The gesture of a press of the mouse, as in `PointerBindings`, or null for a button no gesture may use. */
+export function gestureOf(event: HeldKeys & { button: number }): string | null {
+  const button = BUTTONS[event.button];
+  return button === undefined ? null : [modifierCombo(event), button].filter(Boolean).join('+');
 }
 
-/** The pointer action bound to a modifier combination, if any. */
-export function pointerActionFor(settings: PlayerSettings, combo: string): PointerAction | null {
-  for (const action of POINTER_ACTIONS) if (settings.pointer[action.name] === combo) return action.name;
+/** The keys and the button of a gesture. */
+function gestureParts(gesture: string): { keys: string[]; button: string } {
+  const parts = gesture.split('+').filter(Boolean);
+  const button = parts.length && !HELD.includes(parts[parts.length - 1]) ? parts.pop() as string : '';
+  return { keys: parts, button };
+}
+
+/** Whether a pointer action can have a gesture: keys in their order, each once, and for a click a button. */
+export function validGesture(action: PointerAction, gesture: string): boolean {
+  const { keys, button } = gestureParts(gesture);
+  if ([...keys, button].filter(Boolean).join('+') !== gesture || HELD.filter((key) => keys.includes(key)).join('+') !== keys.join('+')) return false;
+  return button === '' || (Object.values(BUTTONS).includes(button) && POINTER_ACTIONS.find((info) => info.name === action)?.kind === 'click');
+}
+
+/** Human-readable form of the keys held, as in ⇧⌘. */
+export function describeModifiers(combo: string): string {
+  return combo.split('+').filter(Boolean).map((part) => PRETTY[part] ?? part).join(IS_MAC ? '' : '+');
+}
+
+/** Human-readable form of a gesture for a use of the mouse: `⇧⌘ + click`, `Hold Shift`, `Plain drag`, `Middle click`. */
+export function describeGesture(gesture: string | null, use: PointerActionInfo['kind'] | 'scroll'): string {
+  if (gesture === null) return 'Off';
+  const { keys, button } = gestureParts(gesture);
+  const held = describeModifiers(keys.join('+'));
+  if (use === 'hold') return held ? `Hold ${held}` : 'Hover';
+  if (held) return `${held} + ${button ? `${button.toLowerCase()} ` : ''}${use}`;
+  return `${button || 'Plain'} ${use}`;
+}
+
+/** The pointer action bound to a gesture, if any. */
+export function pointerActionFor(settings: PlayerSettings, gesture: string): PointerAction | null {
+  for (const action of POINTER_ACTIONS) if (settings.pointer[action.name] === gesture) return action.name;
   return null;
 }
 
@@ -392,7 +426,7 @@ export function loadSettings(): PlayerSettings {
     if (saved?.pointer) {
       for (const action of POINTER_ACTIONS) {
         const combo = saved.pointer[action.name];
-        if (combo === null || (typeof combo === 'string' && MODIFIER_COMBOS.includes(combo))) settings.pointer[action.name] = combo;
+        if (combo === null || (typeof combo === 'string' && validGesture(action.name, combo))) settings.pointer[action.name] = combo;
       }
     }
     if (saved?.pointerMode === 'spotlight' || saved?.pointerMode === 'laser') settings.pointerMode = saved.pointerMode;

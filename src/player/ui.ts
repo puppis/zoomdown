@@ -9,9 +9,9 @@ import type { Player } from './player';
 import type { Stage } from './stage';
 import playerCss from './player.css?inline';
 import {
-  ACTIONS, ACTION_GROUPS, CORNERS, DEFAULT_POINTER_BINDINGS, DEFAULT_RECORDING, DEFAULT_TIP_SIZE, MODIFIER_COMBOS, PIP_SIZES, POINTER_ACTIONS, TIP_SIZES,
-  type ActionInfo, type ActionName, type Feature, type PlayerSettings, type PointerAction, type PointerMode,
-  actionFor, defaultSettings, describeCombo, describeModifiers, enabledFeatures, featureOf, keyCombo, loadSettings, modifierCombo, pointerActionFor, saveSettings,
+  ACTIONS, ACTION_GROUPS, CORNERS, DEFAULT_POINTER_BINDINGS, DEFAULT_RECORDING, DEFAULT_TIP_SIZE, PIP_SIZES, POINTER_ACTIONS, TIP_SIZES,
+  type ActionInfo, type ActionName, type Feature, type PlayerSettings, type PointerAction, type PointerActionInfo, type PointerMode,
+  actionFor, defaultSettings, describeCombo, describeGesture, describeModifiers, enabledFeatures, featureOf, gestureOf, keyCombo, loadSettings, modifierCombo, pointerActionFor, saveSettings, validGesture,
 } from './settings';
 import {
   DEFAULT_PEN_STYLE, InkSurface, PEN_PRESETS, PEN_PRESET_LABELS, newStrokeId, type InkSample, type InkStroke, type InkTool, type PenPreset,
@@ -365,6 +365,8 @@ export class PlayerUI {
   private readonly _dialog: HTMLDialogElement;
   private readonly _shortcuts: HTMLElement;
   private _capturing: ActionName | null = null;
+  /** The pointer action whose gesture the settings dialog is waiting for, and how to stop waiting. */
+  private _capturingGesture: { action: PointerAction; end: () => void } | null = null;
 
   constructor(host: HTMLElement, deck: ResolvedDeck, options: PlayerUIOptions = {}) {
     this._deck = deck;
@@ -617,20 +619,13 @@ export class PlayerUI {
 
   private _renderShortcuts(): void {
     const keys = (action: ActionName) => this._settings.bindings[action].map(describeCombo).join(' / ') || '—';
-    const held = (action: PointerAction) => {
-      const combo = this._settings.pointer[action];
-      return combo === null ? null : combo === '' ? '' : `${describeModifiers(combo)} + `;
-    };
-    const pen = held('pen');
-    const pointer = held('pointer');
-    const advance = held('advance');
-    const edit = this._editSource ? held('edit') : null;
+    const { pen, pointer, advance, edit } = this._settings.pointer;
     const gestures = [
-      pen === null ? null : `${pen || 'Plain '}drag: draw with the pen while drawing is on (${keys('draw')} toggles it, the whiteboard turns it on; ${keys('color1')}–${keys('color4')} are the colors, which turn it on, and off again for the color in use; a stylus always draws)`,
-      pointer === null ? null : `${pointer ? `Hold ${pointer.slice(0, -3)}` : 'Hover'}: spotlight or laser (${keys('pointer')} switches)`,
-      pointer === null ? null : `${pointer || 'Plain '}drag: highlight · ${pointer || ''}scroll: resize`,
-      advance === null ? null : `${advance || 'Plain '}click: next stop`,
-      edit === null ? null : `${edit || 'Plain '}click: open the element's source in the editor`,
+      pen === null ? null : `${describeGesture(pen, 'drag')}: draw with the pen while drawing is on (${keys('draw')} toggles it, the whiteboard turns it on; ${keys('color1')}–${keys('color4')} are the colors, which turn it on, and off again for the color in use; a stylus always draws)`,
+      pointer === null ? null : `${describeGesture(pointer, 'hold')}: spotlight or laser (${keys('pointer')} switches)`,
+      pointer === null ? null : `${describeGesture(pointer, 'drag')}: highlight · ${pointer ? describeGesture(pointer, 'scroll') : 'scroll'}: resize`,
+      advance === null ? null : `${describeGesture(advance, 'click')}: next stop`,
+      edit === null || !this._editSource ? null : `${describeGesture(edit, 'click')}: open the element's source in the editor`,
     ].filter((line): line is string => line !== null);
     const lines = [
       `${keys('next')}: continue`, `${keys('previous')}: previous stop`, `${keys('replay')}: replay`, `${keys('home')}: overview`,
@@ -919,6 +914,7 @@ export class PlayerUI {
    * must be up first.
    */
   private _whenModifiersReleased(action: () => void): void {
+    if (this._modifiers === '') return action();
     let done = false;
     const run = () => {
       if (done) return;
@@ -3031,7 +3027,7 @@ export class PlayerUI {
   private _reverseToggle!: HTMLInputElement;
   private _bindingsTable!: HTMLElement;
   private _pointerModeSelect!: HTMLSelectElement;
-  private readonly _pointerSelects = new Map<PointerAction, HTMLSelectElement>();
+  private _gestureTable!: HTMLElement;
   private _penPreset!: HTMLSelectElement;
   private readonly _penRanges = new Map<'thinning' | 'smoothing' | 'streamline' | 'pencilPressure' | 'pencilWidth', HTMLInputElement>();
   private readonly _penToggles = new Map<'taper' | 'simulatePressure', HTMLInputElement>();
@@ -3091,16 +3087,10 @@ export class PlayerUI {
     const gestures = el('div', { class: 'bindings' });
     gestures.append(el('div', { class: 'binding gesture' },
       el('span', { class: 'action', text: 'Tool shown while the pointer gesture is held' }), this._pointerModeSelect));
-    for (const action of POINTER_ACTIONS) {
-      const select = el('select', { 'aria-label': action.label });
-      for (const combo of MODIFIER_COMBOS) select.append(el('option', { value: combo, text: describeModifiers(combo) }));
-      select.append(el('option', { value: 'off', text: describeModifiers(null) }));
-      select.addEventListener('change', () => this._assignPointer(action.name, select.value === 'off' ? null : select.value));
-      this._pointerSelects.set(action.name, select);
-      gestures.append(el('div', { class: 'binding gesture' }, el('span', { class: 'action', text: action.label }), select));
-    }
+    this._gestureTable = el('div', { class: 'bindings' });
     const resetPointer = el('button', { text: 'Restore default gestures' });
     resetPointer.addEventListener('click', () => {
+      this._capturingGesture?.end();
       this._settings.pointer = { ...DEFAULT_POINTER_BINDINGS };
       this._settings.pointerMode = 'spotlight';
       saveSettings(this._settings);
@@ -3329,8 +3319,9 @@ export class PlayerUI {
     const categories: Array<[string, string, HTMLElement]> = [
       ['pointer', 'Pointer', el('section', { role: 'tabpanel', id: 'zd-settings-pointer' },
         el('h3', { text: 'Pointer' }),
-        el('p', { class: 'note', text: 'Each gesture is the mouse used with the chosen keys held. Scrolling while the spotlight or laser is shown resizes it. The pen colors are in the bar at the bottom, where the color in use is pressed while drawing is on; the tip size is under Pen below. Strokes belong to the slide they were drawn on and clear when you move to another slide; the whiteboard keeps its own.' }),
+        el('p', { class: 'note', text: 'Each gesture is the mouse used with some keys held. Choose “Set gesture”, hold the keys you want and click, with any button for the two click gestures (Esc cancels, and so does a plain click elsewhere; a plain click on the button sets a gesture without keys). Click a gesture to remove it; a gesture already used moves to the new action. Scrolling while the spotlight or laser is shown resizes it. The pen colors are in the bar at the bottom, where the color in use is pressed while drawing is on; the tip size is under Pen below. Strokes belong to the slide they were drawn on and clear when you move to another slide; the whiteboard keeps its own.' }),
         gestures,
+        this._gestureTable,
         resetPointer,
       )],
       ['pen', 'Pen', el('section', { role: 'tabpanel', id: 'zd-settings-pen' },
@@ -3407,6 +3398,7 @@ export class PlayerUI {
     this._showSettingsCategory(remembered ?? 'pointer');
     dialog.addEventListener('close', () => {
       this._capturing = null;
+      this._capturingGesture?.end();
       this._stopDeviceTest();
     });
     return dialog;
@@ -3671,7 +3663,7 @@ export class PlayerUI {
       ? 'Recordings are saved in a recordings/ folder next to the deck, one zip bundle per talk (its media files and timeline), written while the talk is recorded.'
       : 'Without the preview server a recording is offered as a zip bundle to download (its media files and timeline), to put in a recordings/ folder next to the deck as it is.';
     this._pointerModeSelect.value = this._settings.pointerMode;
-    for (const [action, select] of this._pointerSelects) select.value = this._settings.pointer[action] ?? 'off';
+    this._renderGestures();
     const pen = this._settings.pen;
     this._tipSelect.value = String(this._settings.tipSize);
     this._penPreset.value = pen.preset;
@@ -3798,12 +3790,113 @@ export class PlayerUI {
     await draw();
   }
 
-  /** Bind a pointer action to a modifier combination, freeing it from any other action. */
-  private _assignPointer(action: PointerAction, combo: string | null): void {
-    if (combo !== null) {
-      for (const other of POINTER_ACTIONS) if (other.name !== action && this._settings.pointer[other.name] === combo) this._settings.pointer[other.name] = null;
+  private _renderGestures(): void {
+    this._gestureTable.replaceChildren(...POINTER_ACTIONS.map((action) => this._gestureRow(action)));
+  }
+
+  private _gestureRow(action: PointerActionInfo): HTMLElement {
+    const gesture = this._settings.pointer[action.name];
+    const capturing = this._capturingGesture?.action === action.name;
+    const shown = describeGesture(gesture, action.kind);
+    const chip = gesture === null
+      ? el('span', { class: 'off', text: shown })
+      : el('button', { class: 'chip', title: `Remove ${shown}`, text: shown });
+    chip.addEventListener('click', () => { if (gesture !== null) this._assignPointer(action.name, null); });
+    const set = el('button', { class: 'add', text: capturing ? 'Hold keys, click…' : 'Set gesture', 'aria-label': `Set gesture: ${action.label}` });
+    set.addEventListener('click', () => this._captureGesture(action));
+    return el('div', { class: `binding${capturing ? ' capturing' : ''}` },
+      el('span', { class: 'action', text: action.label }),
+      el('span', { class: 'keys' }, chip),
+      set,
+    );
+  }
+
+  /**
+   * Wait for the gesture of a pointer action: the next press of the mouse, with the keys held. A
+   * plain press of the main button counts on the row's own button only; elsewhere it stops waiting
+   * and does what it would, so that Close closes the dialog. Esc stops waiting too.
+   */
+  private _captureGesture(action: PointerActionInfo): void {
+    this._capturingGesture?.end();
+    const abort = new AbortController();
+    const options = { capture: true, signal: abort.signal };
+    const capture = {
+      action: action.name,
+      end: () => {
+        abort.abort();
+        if (this._capturingGesture !== capture) return;
+        this._capturingGesture = null;
+        this._renderGestures();
+      },
+    };
+    this._capturingGesture = capture;
+    this._renderGestures();
+    // Looked up each time: the form may be drawn afresh while it waits (a tablet comes or goes).
+    const button = () => this._gestureTable.querySelector<HTMLElement>('.capturing .add');
+    const say = (text: string) => { const shown = button(); if (shown) shown.textContent = text; };
+    button()?.focus();
+    const swallow = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    /** What is held so far, on the button. */
+    const show = (event: KeyboardEvent) => {
+      const held = describeModifiers(modifierCombo(event));
+      say(held ? `${held} + click…` : 'Hold keys, click…');
+    };
+    window.addEventListener('keydown', (event) => {
+      swallow(event);
+      if (event.key === 'Escape') capture.end();
+      else show(event);
+    }, options);
+    window.addEventListener('keyup', (event) => {
+      swallow(event);
+      show(event);
+    }, options);
+    window.addEventListener('pointerdown', (event) => {
+      const gesture = gestureOf(event);
+      if (gesture === '' && !(event.target instanceof Node && button()?.contains(event.target))) {
+        capture.end();
+        return;
+      }
+      // Not cancelled: the press goes on as a mouse event, which is where a menu, a scroll or a paste is cancelled.
+      event.stopPropagation();
+      if (gesture === null || !validGesture(action.name, gesture)) {
+        say(action.kind === 'click' ? 'Another button…' : 'Main button only…');
+        return;
+      }
+      capture.end();
+      this._swallowClick();
+      this._assignPointer(action.name, gesture);
+    }, options);
+    // A press that is not taken as the gesture must open no menu, scroll or paste either.
+    for (const type of ['mousedown', 'contextmenu', 'auxclick'] as const) {
+      window.addEventListener(type, (event) => { if (gestureOf(event) !== '') swallow(event); }, options);
     }
-    this._settings.pointer[action] = combo;
+  }
+
+  /** Keep the rest of a press already handled (its release, its click, its menu) from doing anything. */
+  private _swallowClick(): void {
+    const abort = new AbortController();
+    const options = { capture: true, signal: abort.signal };
+    for (const type of ['mousedown', 'pointerup', 'mouseup', 'click', 'auxclick', 'contextmenu'] as const) {
+      window.addEventListener(type, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        // The click ends it; so does the release of a button without one, after the menu it may open.
+        if (type === 'click') abort.abort();
+        if (type === 'pointerup') window.setTimeout(() => abort.abort(), 50);
+      }, options);
+    }
+    for (const type of ['pointerdown', 'blur'] as const) window.addEventListener(type, () => abort.abort(), options);
+  }
+
+  /** Bind a pointer action to a gesture, freeing it from any other action. */
+  private _assignPointer(action: PointerAction, gesture: string | null): void {
+    if (gesture !== null) {
+      for (const other of POINTER_ACTIONS) if (other.name !== action && this._settings.pointer[other.name] === gesture) this._settings.pointer[other.name] = null;
+    }
+    this._settings.pointer[action] = gesture;
     saveSettings(this._settings);
     this._syncSettingsForm();
     this._renderShortcuts();
@@ -3908,6 +4001,13 @@ export class PlayerUI {
     // While a recording plays, the pointer has no tool: no tap advances, nothing draws, no spotlight but the recorded one.
     if (this._playback) return null;
     return pointerActionFor(this._settings, this._modifiers);
+  }
+
+  /** The pointer action a press of the mouse selects: its button counts as well as the keys held. */
+  private _pressedTool(event: MouseEvent): PointerAction | null {
+    if (this._playback) return null;
+    const gesture = gestureOf(event);
+    return gesture === null ? null : pointerActionFor(this._settings, gesture);
   }
 
   private _drawingTool(pointerType?: string): InkTool | null {
@@ -4286,17 +4386,19 @@ export class PlayerUI {
         return;
       }
       if (event.pointerType === 'pen') this._penSeen = performance.now();
-      if (event.button !== 0 || interactive(event)) return;
+      if (interactive(event)) return;
+      const tool = this._pressedTool(event);
+      if (event.button !== 0 && tool === null) return;
       this._modifiers = modifierCombo(event);
       this._pointer = { x: event.clientX, y: event.clientY };
-      const tool = this._activeTool();
+      // Another button's press goes on as a mouse event, cancelled below.
       if (tool === 'advance') {
-        event.preventDefault();
+        if (event.button === 0) event.preventDefault();
         void this._player?.next();
         return;
       }
       if (tool === 'edit') {
-        event.preventDefault();
+        if (event.button === 0) event.preventDefault();
         const at = { x: event.clientX, y: event.clientY };
         if (this._editSource) this._whenModifiersReleased(() => this._editSource?.(at));
         else this.notice('Open the deck with zoomdown serve to jump to the editor');
@@ -4319,9 +4421,14 @@ export class PlayerUI {
     };
     document.addEventListener('pointerup', release, { signal: this._abort.signal });
     stage.addEventListener('pointercancel', release);
+    // A button bound to a tool must not also scroll or paste (the middle one) as the browser would have it.
+    stage.addEventListener('mousedown', (event) => {
+      if (event.button !== 0 && !interactive(event) && this._pressedTool(event) !== null) event.preventDefault();
+    });
     stage.addEventListener('contextmenu', (event) => {
       // Control + click is a context menu on macOS; keep it for the tools bound to Control.
       if (event.ctrlKey && pointerActionFor(this._settings, modifierCombo(event)) !== null) event.preventDefault();
+      else if (event.button === 2 && !interactive(event) && this._pressedTool(event) !== null) event.preventDefault();
     });
     stage.addEventListener('pointerleave', (event) => {
       if (event.pointerType === 'touch') return;

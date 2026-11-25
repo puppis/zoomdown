@@ -45,11 +45,15 @@ screen is filmed.
 
 The gear button (or the `,` key) opens the settings dialog: six categories listed on the left, one shown at a time (the arrow keys move along the list, and the dialog reopens on the category last looked at):
 
-- **Pointer**: the tool shown by the pointer gesture (spotlight or laser) and the modifier keys
-  of each gesture: the pen, the spotlight/highlighter, click-to-advance and the click that opens
-  an element's source in the editor (Alt by default). Each can be "Plain"
-  (no key), one of Shift, Control, Alt, ⌘/Win or a pair of them, or "Off"; choosing keys already
-  used by another gesture frees them from it.
+- **Pointer**: the tool shown by the pointer gesture (spotlight or laser) and the four gestures: the
+  pen, the spotlight/highlighter, click-to-advance and the click that opens an element's source in
+  the editor (Alt + click by default). "Set gesture" records one: hold the keys you want, any of
+  Shift, Control, Alt and ⌘/Win together, and click. The button you click with counts for the two
+  click gestures, so they can be a middle or a right click, with or without keys (a right click set
+  here opens no menu on the slides); the pen and the spotlight take the main button only. For a
+  gesture without keys, click "Set gesture" itself once more; Esc, or a plain click elsewhere,
+  leaves things as they were. Clicking a gesture removes it ("Off"), and recording one already used
+  by another action moves it.
 - **Pen**: how pressure and motion shape a stroke; see [The pen](#the-pen).
 - **Recording**: the microphone and camera, where the camera picture sits, whether a recording
   asks for the screen when it starts, whether a talk is rendered as a video when its recording
@@ -91,8 +95,8 @@ With the default gestures:
   Pointer setting) switches between the two. Shift + scroll resizes either; **Shift + drag** draws a
   highlighter stroke.
 - A click never moves between stops unless you ask for it: the "Click: next stop" gesture is
-  off by default, and binding it to a key (for example Alt) in the settings makes that key +
-  click behave like the `→` key.
+  off by default, and recording one in the settings (a key + click, or another mouse button) makes
+  it behave like the `→` key.
 
 - **Alt + click** an element to open its source line in your editor, when the deck is served by
   `zoomdown serve --editor …` (the element nearest to the pointer counts, a text inside a tile
