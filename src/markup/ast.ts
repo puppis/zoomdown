@@ -257,6 +257,12 @@ export class MarkupDocument {
 /** Boolean attributes that may be written bare: `skip_return` means `skip_return=true`. */
 export const BARE_FLAGS = new Set(['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug', 'focus_only']);
 
+/** A flag written with hyphens, as the relative placements are (`only-this`), by its name with underscores; any other name as it is. */
+export function flagName(name: string): string {
+  const plain = name.replace(/-/g, '_');
+  return BARE_FLAGS.has(plain) ? plain : name;
+}
+
 export const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 export const CONTAINER = /^\s*:::\s*(.*?)\s*$/;
 export const DIRECTIVE = /^\s*\[\[(include|subslide|import|pdf|arrow|line|rectangle|circle|polyline|dot|ellipse|polygon|arc|icon|artwork|brace|box|blob|iframe|show|hide|animate|effect|transform|move_along|next|skip_next):\s*(.*?)\]\]\s*$/;
@@ -446,7 +452,7 @@ export function normalizeStyles(styles: Record<string, string | Record<string, u
       } catch (error) {
         throw new MarkupError(`Style ${name}: ${String((error as Error).message).replace(/^Line \d+: /, '')}`);
       }
-    } else result[name] = Object.fromEntries(Object.entries(value).map(([key, item]) => [key, String(item)]));
+    } else result[name] = Object.fromEntries(Object.entries(value).map(([key, item]) => [flagName(key), String(item)]));
   }
   return result;
 }
@@ -636,8 +642,10 @@ export function parseAttributes(source: string, line: number, options: { commas?
     } else if (token.includes(':') && POSITION_REFERENCES.has(token.split(':', 1)[0])) {
       const index = token.indexOf(':');
       [key, value] = [token.slice(0, index), token.slice(index + 1)];
-    } else if (BARE_FLAGS.has(token)) [key, value] = [token, 'true'];
+    } else if (BARE_FLAGS.has(flagName(token))) [key, value] = [token, 'true'];
     else throw new MarkupError(`Expected an attribute such as x=2; found ${JSON.stringify(token)}`, line);
+    // A snippet's arguments are named by its placeholders, whatever their names.
+    if (options.css !== false) key = flagName(key);
     if (key in result) throw new MarkupError(`Duplicate attribute ${JSON.stringify(key)}`, line);
     result[key] = value;
   }

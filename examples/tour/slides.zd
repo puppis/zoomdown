@@ -1176,7 +1176,7 @@ The camera leaves a child for the next sibling and zooms back to the parent only
 ::: slide {#visited-second}
 ## Visited second (step 2)
 
-Mark one slide or include with `start_here=true` to open playback there. While editing, `only_this=true` on a slide or include prepares only that subtree and turns everything else into red placeholders. {x=-7.35 width=14.7 font_size=22}
+Mark one slide or include with `start_here=true` to open playback there. While editing, `only-this` on a slide or include draws only that slide and turns all others, its children too, into red placeholders. {x=-7.35 width=14.7 font_size=22}
 :::
 
 ::: slide {#imports width=20}

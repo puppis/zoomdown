@@ -155,14 +155,15 @@ at once ([Flags](#flags)).
 | Attribute | On | Effect |
 | --- | --- | --- |
 | `start_here=true` | slide, include, subslide | open playback at this slide (at most one in a deck) |
-| `only_this=true` | slide, include | prepare only this subtree while editing; everything else becomes a placeholder |
+| `only-this=true` | slide, include, subslide | draw and play only the slides that say so, while editing; every other slide, a child of one that does included, becomes a placeholder. A slide with `start_here` must be among them, and an export is as partial as the preview |
 | `return_to_parent` | slide, include, subslide | zoom back to the parent after this child even when a sibling follows at once; `return_to_parent=false` is `skip_return` |
 | `skip_return` | slide, include, subslide | leave this child straight for the next stop even when it is the last one, without zooming back to the parent; `skip_return=false` is `return_to_parent` |
 | `transition=cut` | slide, include, subslide | arrive at this slide without a camera animation; `transition=zoom` restores the zoom under a `cut` deck; any other name is a camera transition of the deck's own ([Extending a deck](extending.html#camera-transitions)) |
 | `preview=true` | slide, include, subslide | show the child's content before its first visit instead of fading it in on entry, as the tiles of the tour's front page do |
 | `debug=true` | slide, include, subslide | draw the slide for its design: see [Designing a slide](#designing-a-slide) |
 
-A flag written bare means `=true`: `[[include: #proof skip_return]]`. By default a child returns
+A flag written bare means `=true`: `[[include: #proof skip_return]]`, and its words may be joined
+by underscores or hyphens alike (`only_this` is `only-this`). By default a child returns
 to its parent only when it is the last one visited, so the camera moves from sibling to sibling
 and comes back once at the end; `return_to_parent` and `skip_return` force either choice for one
 child. They are the two sides of one choice and are never written together.
