@@ -171,6 +171,7 @@ export class MarkupSlide extends Slide {
       returnToParent: returnChoice(spec.attributes),
       transition: (spec.attributes.transition as TransitionMode | undefined) ?? null,
       preview: (spec.attributes.preview ?? 'false') === 'true',
+      debug: (spec.attributes.debug ?? 'false') === 'true',
     });
     this.spec = spec;
     this.renderer = options.renderer;
@@ -853,6 +854,8 @@ export class SlideBuilder {
           : new MarkupSlide(slide, { renderer, locate }),
       ]),
     );
+    // A document's own pages, and a slide not defined yet, are not designed here.
+    for (const slide of document.slides) if (slide.placeholder) (this.slides.get(slide.id) as Slide).debug = false;
     const definitions = new Map(document.slides.map((slide) => [slide.id, slide]));
     const order = [...document.roots];
     for (let i = 0; i < order.length; i++) {
@@ -875,6 +878,8 @@ export class SlideBuilder {
         if ('skip_return' in attrs || 'return_to_parent' in attrs) child.returnToParent = returnChoice(attrs);
         if ('transition' in attrs) child.transition = attrs.transition as TransitionMode;
         if ('preview' in attrs) child.preview = attrs.preview === 'true';
+        if ('debug' in attrs) child.debug = attrs.debug === 'true';
+        else if (item instanceof CodeSlideSpec) child.debug ??= item.debug;
         let width = numberValue(attrs, 'width', item.line);
         const height = numberValue(attrs, 'height', item.line);
         if (width === null && height === null) width = Math.min(6, parent.width - 2 * renderer.layout.margin);

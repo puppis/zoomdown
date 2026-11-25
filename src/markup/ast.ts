@@ -128,6 +128,9 @@ export class IncludeSpec {
 
 /** A code-authored child (`[[subslide: ClassName ...]]`) with parent-local placement attributes. */
 export class CodeSlideSpec {
+  /** Whether the deck's `slide` style draws it for its design, unless its class or its directive says otherwise. */
+  debug = false;
+
   constructor(readonly className: string, readonly attributes: Attributes = {}, readonly line = 1) {}
 }
 
@@ -252,7 +255,7 @@ export class MarkupDocument {
 }
 
 /** Boolean attributes that may be written bare: `skip_return` means `skip_return=true`. */
-export const BARE_FLAGS = new Set(['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'focus_only']);
+export const BARE_FLAGS = new Set(['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug', 'focus_only']);
 
 export const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 export const CONTAINER = /^\s*:::\s*(.*?)\s*$/;

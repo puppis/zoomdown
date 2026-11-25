@@ -16,6 +16,7 @@ import {
 } from 'manim-web';
 import { Transform } from './geometry';
 import { DISPLAY_GROUP_FLAG } from './patches';
+import type { SlideGuides } from './guides';
 
 /** Scene membership protocol used by engine animation setup and cleanup. */
 /** The stroke scale (a display's `_strokeVersion`) each top-level object last took. */
@@ -160,6 +161,8 @@ export interface DisplayOptions {
   gridOpacity: number;
   backgrounds?: Mobject[];
   overlays?: Mobject[];
+  /** The frame and dots of a slide drawn for its design; absent otherwise. */
+  guides?: SlideGuides | null;
 }
 
 /** One persistent Three.js group per slide, synchronized from local membership. */
@@ -177,6 +180,7 @@ export class Display {
   gridOpacity: number;
   backgrounds: Mobject[];
   overlays: Mobject[];
+  readonly guides: SlideGuides | null;
   transform = new Transform();
   /** True until the next render assigns draw order to new Three.js objects. */
   orderDirty = true;
@@ -197,10 +201,12 @@ export class Display {
     this.earlyOpacity = options.earlyOpacity ?? 1;
     this.gridOpacity = options.gridOpacity;
     this.backgrounds = [...(options.backgrounds ?? [])];
-    this.overlays = [...(options.overlays ?? [])];
+    this.guides = options.guides ?? null;
+    this.overlays = [...(options.overlays ?? []), ...(this.guides ? [this.guides.frame] : [])];
     this.group.userData[DISPLAY_GROUP_FLAG] = true;
     this.group.matrixAutoUpdate = false;
     this.group.add(this.gridGroup, this.contentGroup, this.earlyGroup, this.overlayGroup);
+    if (this.guides) this.group.add(this.guides.dots);
   }
 
   /** The members that fade in with the slide, and those shown before its first visit. */
@@ -309,6 +315,7 @@ export class Display {
       // that follows it. The family is listed parents first, so each Three.js node ends with the
       // order of the innermost mobject it belongs to.
       const attached = this._attached;
+      if (this.guides) this.guides.dots.renderOrder = nextOrder();
       for (const members of [attached.grid, attached.content, attached.early, attached.overlay]) {
         for (const mob of members) {
           const order = nextOrder();
@@ -349,6 +356,7 @@ export class Display {
   }
 
   dispose(): void {
+    this.guides?.dispose();
     this.group.parent?.remove(this.group);
   }
 }

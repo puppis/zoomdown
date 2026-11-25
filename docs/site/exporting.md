@@ -26,7 +26,8 @@ row, *What*, offers this deck as a web page and each recorded talk as a video (s
   the deck, as `build/<name>.html` or `build/<name>/`. Or the browser's downloads, the folder
   form as a zip.
 
-The server builds the deck exactly as `zoomdown build` does, in some seconds for a small deck
+The frames and dots of slides marked [`debug`](slides.html#designing-a-slide) stay out of every
+export. The server builds the deck exactly as `zoomdown build` does, in some seconds for a small deck
 (the tour takes about ten), while the dialog counts the time; closing it abandons the export.
 An earlier export of the same name is replaced, at the place chosen or in `build/`, but a folder
 holding anything else is never touched: the dialog asks for another name instead. The `build/`

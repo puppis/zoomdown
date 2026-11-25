@@ -24,7 +24,7 @@ directive they are separated by spaces or commas; elsewhere by spaces. Each attr
 | `#name` | the identifier of the element, slide or child: the same as `id=name` |
 | `.name` | a [style class](#style-roles-and-classes) to apply; several are allowed, in order |
 | `below:#id` | a [relative position](#relative-placement), equivalent to `below=#id`, for `below`, `above`, `left-of`, `right-of`, `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` |
-| `flag` | a bare flag means `flag=true`: `start_here`, `only_this`, `skip_return`, `return_to_parent`, `preview`, `focus_only` |
+| `flag` | a bare flag means `flag=true`: `start_here`, `only_this`, `skip_return`, `return_to_parent`, `preview`, `debug`, `focus_only` |
 | `style="color: red"` | an alternative to `color=`; only the CSS `color` property is accepted, and not together with `color=` |
 
 An attribute given twice is an error, and so is a name a construct does not take ("Unknown
@@ -112,6 +112,7 @@ may hold `::: {.group}`, `::: {.element}` and `::: notes` blocks.
 | `skip_return` | flag | unset | `return_to_parent=false`, from the other side; not together with it |
 | `transition` | `zoom`, `cut`, a name | unset | how the camera arrives at this slide; a name is a module of the deck's `transitions/` folder |
 | `preview` | flag | false | show the content before the first visit instead of fading it in on entry |
+| `debug` | flag | false | draw the slide for its design: a frame around its canvas and faint dots at its coordinates, never in an export; see [debug](#debug) |
 
 Rules: a slide identifier is unique; every slide is included by at most one other; the slides
 nothing includes are the **roots**, visited first to last with a cut between them, and a deck
@@ -136,7 +137,7 @@ and the relative references, plus:
 | `width`, `height` | units | width 6, or the parent's width minus the margins when smaller | the child's size in the parent; one of them keeps the child's proportions |
 | `angle` | radians | 0 | rotation of the child's viewport |
 | `step` | integer ≥ 1 | after the numbered steps, in source order | the step at which the child is visited; children without a step are visited after the last numbered one, in order |
-| `start_here`, `only_this`, `return_to_parent`, `skip_return`, `transition`, `preview` | as for slides | | the same flags, set from the parent's side |
+| `start_here`, `only_this`, `return_to_parent`, `skip_return`, `transition`, `preview`, `debug` | as for slides | | the same flags, set from the parent's side |
 | `verdict` | inline text | none | a line under the tile, `#child-verdict`, centered and wrapped at the tile's width, shown at the click after the visit; styled by the `verdict` style, which may place it elsewhere (includes only) |
 
 An include written after another include, with nothing that flows between them (directives,
@@ -175,10 +176,34 @@ pages, by the document's bookmarks when it has them. The exports copy or embed t
 
 ### Flags of slides and children
 
-`start_here`, `only_this`, `skip_return`, `return_to_parent`, `preview` and `focus_only` may be
+`start_here`, `only_this`, `skip_return`, `return_to_parent`, `preview`, `debug` and `focus_only` may be
 written bare. `skip_return` and `return_to_parent` are two sides of one choice and cannot both
 be given. At most one slide of the deck may say `start_here`, whether on the slide itself, on the
 include that places it, or on a code-authored child.
+
+### debug
+
+`debug` on a slide, an include or a subslide draws that slide for its design: a **frame** around its
+canvas, in `presenter.slideBorderColor` and `slideBorderWidth`, seen wherever the slide is, in its
+parent's view too; and faint **dots** at its coordinates, under its content, seen while the camera
+is on it. A dot stands at each pair of whole coordinates, the origin in the middle of the canvas;
+the dots on the axes are larger, and those at multiples of five largest. A canvas more than 64
+units wide has one dot every 2, 5, 10, … units. The dots take the deck's text color.
+
+The style of the `slide` role turns it on for every slide, subslides included, with no mark on any
+of them, and `debug=false` leaves one out:
+
+```markdown
+::: styles
+slide: debug
+:::
+```
+
+The same line in the front matter (`styles: { slide: debug }`), or in a file the deck
+[extends](#extends), serves one deck or all those of a course. Exports never draw any of it, nor do
+printouts and videos, so a deck can be handed out with its `debug` in place; a talk presented
+from the preview or the desktop app shows it. The pages of a PDF and the placeholders of undefined
+slides have none of their own.
 
 ### ::: styles
 
@@ -1057,7 +1082,9 @@ roles, and a style named after one applies to all of them. The roles are `body` 
 and list items), `heading` and `h1` to `h6`, `image`, `math`, `code`, `table`, `chart`,
 `iframe`, `group`, `custom`, `shape` with the shape's kind (`rectangle`, `circle`, `dot`,
 `ellipse`, `polygon`, `polyline`, `arc`), `icon` with `icon-<name>`, `connection` with `arrow`
-or `line`, `attachment` with `brace`, `box` or `blob`, and `include` for children. Layers
+or `line`, `attachment` with `brace`, `box` or `blob`, and `include` for children. The role `slide`
+gives every slide what it does not write itself, of `width` and `height` (both, by a slide that
+writes neither), `flow_top`, `flow_left`, `transition`, `preview` and `debug`. Layers
 apply in this order, each filling in what the earlier ones left unset: the construct's own
 attributes win; then its classes, the last written first; then its roles, the most specific
 first. `id` and `class` are never copied from a style. A class that no style defines is an
@@ -1160,7 +1187,7 @@ matter in the same way.
 | `pauseOnReturn` | true | stop after returning to a parent |
 | `showSlideBorders` | false | draw every canvas border (a design aid) |
 | `slideBorderColor`, `slideBorderWidth` | `#FC6255`, 3 | the border's style |
-| `showSlideGrid` | false | draw a coordinate grid on the focused slide |
+| `showSlideGrid` | false | draw a coordinate grid, with numbers, on the focused slide, exports included; the [`debug`](#debug) flag draws lighter dots, and never in an export |
 | `reversePlayback` | true | play a stop's animations backwards on the left key |
 | `revealOnEntry` | true | children fade in when first entered; `false` shows every slide's content from the start |
 | `renderCanvas`, `stillTime` | | accepted for older configurations; without effect |

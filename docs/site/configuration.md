@@ -143,7 +143,7 @@ and the options' folders come before the front matter's.
 | `pauseOnReturn` | true | stop after returning to a parent |
 | `showSlideBorders` | false | draw every slide's canvas border (design aid) |
 | `slideBorderColor`, `slideBorderWidth` | `#FC6255`, 3 | border style |
-| `showSlideGrid` | false | draw a coordinate grid on the focused slide |
+| `showSlideGrid` | false | draw a coordinate grid, with numbers, on the focused slide, exports included; the [`debug`](slides.html#designing-a-slide) flag draws lighter dots, and never in an export |
 | `reversePlayback` | true | play stops backwards on the left key |
 | `revealOnEntry` | true | children start invisible and fade in when first entered; `false` shows every slide's content from the start; `preview=true` on an include does it for one child |
 

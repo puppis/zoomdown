@@ -110,6 +110,9 @@ export class Stage {
     const ratio = canvas.width && this._width ? canvas.width / this._width : 1;
     const saved = { width: this._width, height: this._height };
     this._printing = true;
+    const presenter = this.presenter;
+    const guides = presenter?.guides ?? true;
+    if (presenter) presenter.guides = false;
     this._resize(Math.max(2, Math.round(width / ratio)), Math.max(2, Math.round(height / ratio)));
     const capture = (): HTMLCanvasElement => {
       this.refreshText(Infinity);
@@ -126,6 +129,7 @@ export class Stage {
       await body(capture);
     } finally {
       this._printing = false;
+      if (presenter) presenter.guides = guides;
       this._resize(saved.width, saved.height);
       this.fit();
       this.refreshText();

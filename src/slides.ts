@@ -76,6 +76,8 @@ export interface SlideOptions {
   transition?: TransitionMode | null;
   /** Show this slide's content before its first visit instead of fading it in on entry. */
   preview?: boolean;
+  /** Draw the slide for its design, with a frame and faint dots at its coordinates; unset, as its parent. Never in an export. */
+  debug?: boolean | null;
   /** Lightweight topology callback receiving this slide. */
   declare?: (slide: Slide) => void;
 }
@@ -136,6 +138,7 @@ export interface AddChildOptions extends PlacementStyle {
   skipReturn?: boolean;
   transition?: TransitionMode | null;
   preview?: boolean;
+  debug?: boolean | null;
 }
 
 /** A logical canvas and resumable program in a presentation tree. */
@@ -163,6 +166,8 @@ export class Slide {
   transition: TransitionMode | null;
   /** Content visible before the first visit (a tile on an overview, say). */
   preview: boolean;
+  /** Drawn for its design, with a frame and faint dots at its coordinates; null follows the parent. */
+  debug: boolean | null;
   /** Where the slide is defined in the deck's source, when it was written in Markdown. */
   source: SourceLocation | null = null;
   /** Where the parent places the slide (its include or subslide directive), when written in Markdown. */
@@ -194,6 +199,7 @@ export class Slide {
     this.startHere = Boolean(options.startHere);
     this.transition = checkTransition(options.transition);
     this.preview = Boolean(options.preview);
+    this.debug = options.debug ?? null;
     this._declareCallback = options.declare ?? null;
     this._buildCallback = options.build ?? null;
     this._programCallback = options.program ?? null;
@@ -247,6 +253,7 @@ export class Slide {
     if (options.returnToParent !== undefined || options.skipReturn !== undefined) child.returnToParent = returnChoice(options);
     if (options.transition !== undefined) child.transition = checkTransition(options.transition);
     if (options.preview !== undefined) child.preview = Boolean(options.preview);
+    if (options.debug !== undefined) child.debug = options.debug;
     let { width, height } = options;
     if (width == null && height == null) width = this.width / 2;
     if (width == null) width = positive(height as number, 'height') * child.width / child.height;

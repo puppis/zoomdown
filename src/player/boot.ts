@@ -34,6 +34,8 @@ export interface RunDeckOptions {
    * colors and styles alone, and reads keys only while it has the focus. Defaults to false.
    */
   embedded?: boolean;
+  /** Show the frame and dots of the slides drawn for their design (`debug`); exports leave them out. Defaults to true. */
+  guides?: boolean;
   /** Features to leave out, as `{ camera: false, record: false }`; everything is on by default. */
   features?: Partial<Record<Feature, boolean>>;
 }
@@ -130,6 +132,7 @@ export async function runDeck(definition: DeckDefinition | ResolvedDeck, options
       if (message && log) console.info(`[zoomdown] [+${((performance.now() - started) / 1000).toFixed(1)}s] ${message}`);
     },
   });
+  presenter.guides = options.guides ?? true;
   stage.attach(presenter);
   const links = new LinkLayer(ui.stageHost, stage, presenter);
   const iframes = new IframeLayer(ui.stageHost, stage, presenter);

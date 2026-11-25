@@ -521,7 +521,7 @@ async function buildInto(options, { deckPath, kind, deckDir, outDir, stageDir })
 import * as module from ${JSON.stringify(modulePath)};
 const definition = ${options.scene ? `module[${JSON.stringify(options.scene)}]` : 'module.default'};
 if (!definition) throw new Error('Deck module has no export ${options.scene ?? 'default'}');
-runDeck({ ...definition, showOutline: definition.showOutline || ${options.showOutline} });`;
+runDeck({ ...definition, showOutline: definition.showOutline || ${options.showOutline} }, { guides: false });`;
   } else if (kind === 'pdf') {
     // The document travels with the export: as a file next to the page, or inside it as a data URL.
     let url;
@@ -670,7 +670,7 @@ runDeck(await loadMarkupDeck({
   slideModules: ${moduleMap('slides')},
   directiveModules: ${moduleMap('directives')},
   transitionModules: ${moduleMap('transitions')},
-}));`;
+}), { guides: false });`;
   }
   const entryFile = join(stageDir, 'entry.ts');
   await fs.writeFile(entryFile, entrySource);

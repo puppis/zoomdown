@@ -2864,6 +2864,10 @@ export class PlayerUI {
     const aspect = frameAspect(choice.aspect, playback.timeline, this._deckAspect);
     const { width } = frameSize(choice.size, aspect);
     this._exporting = true;
+    // A video shows no guides of the slides being designed, whatever the page does.
+    const presenter = this._stage?.presenter ?? null;
+    const guides = presenter?.guides ?? true;
+    if (presenter) presenter.guides = false;
     this._exportProgress.textContent = 'Exporting… 0%';
     this._exportProgress.hidden = false;
     this._playRange.disabled = true;
@@ -2912,6 +2916,7 @@ export class PlayerUI {
       this.notice(`Export failed: ${(error as Error).message}`);
     } finally {
       this._exporting = false;
+      if (presenter) presenter.guides = guides;
       this._exportProgress.hidden = true;
       this._playRange.disabled = false;
       this._playToggle.disabled = false;

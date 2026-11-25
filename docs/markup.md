@@ -62,6 +62,10 @@ every construct of this page live, each next to the listing that produced it; op
   (`skip_return=false` is `return_to_parent`); a flag written bare means `=true`.
 - `preview=true` on a slide, include or subslide shows its content before its first visit instead of
   fading it in on entry.
+- `debug` on a slide, include or subslide draws a frame around it and faint dots at its whole
+  coordinates (larger on the axes and every five units), to lay it out by; the style `slide: debug`
+  does so for every slide and `debug=false` leaves one out. Exports, printouts and videos never
+  draw them.
 - `transition=cut` on a slide, include or subslide replaces the view at once when the camera moves
   into that slide, like turning a PDF page (the move out of it follows the next destination);
   `transition=zoom` restores the animation for one slide when `presenter.transition` is `cut` for
@@ -570,7 +574,8 @@ A style is a named attribute set, defined in the front matter (`styles`, as maps
 strings) or in a `::: styles` block of the Markdown file, which wins for the same name. Elements, includes and subslides opt in with `.name` tokens (several allowed, later ones
 win). Styles named after a **role** apply automatically: `heading` (also `h1` … `h6`), `body`,
 `math`, `code`, `image`, `shape` (also `rectangle`, `circle`, …), `connection` (`arrow`, `line`),
-`attachment` (`brace`, `box`), `group` and `include`. Resolution order: the element's own
+`attachment` (`brace`, `box`), `group` and `include`; `slide` gives every slide its size, `flow_top`,
+`flow_left`, `transition`, `preview` and `debug`. Resolution order: the element's own
 attributes, then its classes, then its roles, then the layout defaults. Styles fill in only what
 fits: a class or a role gives an element only the attributes its kind takes (a radius to a circle,
 a width to a rectangle, an anchor its kind has), and a placement only where the element's own and

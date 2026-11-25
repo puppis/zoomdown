@@ -160,11 +160,45 @@ at once ([Flags](#flags)).
 | `skip_return` | slide, include, subslide | leave this child straight for the next stop even when it is the last one, without zooming back to the parent; `skip_return=false` is `return_to_parent` |
 | `transition=cut` | slide, include, subslide | arrive at this slide without a camera animation; `transition=zoom` restores the zoom under a `cut` deck; any other name is a camera transition of the deck's own ([Extending a deck](extending.html#camera-transitions)) |
 | `preview=true` | slide, include, subslide | show the child's content before its first visit instead of fading it in on entry, as the tiles of the tour's front page do |
+| `debug=true` | slide, include, subslide | draw the slide for its design: see [Designing a slide](#designing-a-slide) |
 
 A flag written bare means `=true`: `[[include: #proof skip_return]]`. By default a child returns
 to its parent only when it is the last one visited, so the camera moves from sibling to sibling
 and comes back once at the end; `return_to_parent` and `skip_return` force either choice for one
 child. They are the two sides of one choice and are never written together.
+
+## Designing a slide
+
+`debug` on a slide draws a frame around its canvas and barely visible dots at its coordinates, so
+that `x=`, `y=` and the edges of the slide can be read off the screen while it is laid out:
+
+```markdown
+::: slide {#results width=20 debug}
+## Results
+
+[Accuracy went up by 12 %]{#gain x=-9 y=1 step=1}
+:::
+```
+
+The dots stand at whole coordinates around the origin in the middle of the slide, larger along the
+two axes and largest every five units, and show while the camera is on the slide; the frame shows
+in the parent's view as well, where it marks the tile. To have them on every slide, say so once, in
+the `slide` style, whose attributes every slide takes unless it writes its own (`debug=false`
+leaves one slide out):
+
+```markdown
+::: styles
+slide: debug
+:::
+```
+
+In the front matter that is `styles: { slide: debug }`, and in a file of settings the decks of a
+course extend, it serves them all. Nothing needs to be removed before a deck goes out: exports,
+printouts and videos never draw the frame and the dots. They are there only in the preview and in
+the desktop app, so take the line out before presenting from one of those.
+
+The `slide` style sets `width` and `height`, `flow_top`, `flow_left`, `transition` and `preview` for
+every slide in the same way.
 
 ## Cuts instead of zooms
 

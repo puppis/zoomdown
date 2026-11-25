@@ -1351,6 +1351,9 @@ function rewriteReferences(item: SlideItem, lookup: (name: string) => string | u
   }
 }
 
+/** What the `slide` style sets on every slide; anything else it holds does not fit a slide. */
+const SLIDE_STYLE = new Set(['width', 'height', 'flow_top', 'flow_left', 'transition', 'preview', 'debug']);
+
 /** Validate a component tree and compile fragment state into animation steps. */
 export class ASTTransformer {
   /** `steps`: how the slides number their steps (`layout.steps`), settled while validating. */
@@ -1363,7 +1366,8 @@ export class ASTTransformer {
       if (!IDENTIFIER.test(slide.id) || slides.has(slide.id)) throw new MarkupError(`Invalid or duplicate slide ID ${JSON.stringify(slide.id)}`, slide.line);
       if (slide.id === 'LAST') throw new MarkupError(RESERVED_LAST, slide.line);
       slides.set(slide.id, slide);
-      this._checkAttrs(slide.attributes, new Set(['id', 'title', 'width', 'height', 'flow_top', 'flow_left', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', ...(slide.placeholder ? ['src'] : [])]), slide.line);
+      if (!slide.placeholder) ASTTransformer._slideStyle(slide.attributes, document.styles);
+      this._checkAttrs(slide.attributes, new Set(['id', 'title', 'width', 'height', 'flow_top', 'flow_left', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', 'debug', ...(slide.placeholder ? ['src'] : [])]), slide.line);
       ASTTransformer._checkFlags(slide.attributes, slide.line);
       ASTTransformer._checkTransition(slide.attributes, slide.line);
     }
@@ -1423,6 +1427,8 @@ export class ASTTransformer {
               if (!placed && item.part === null) before = item;
             }
           } else if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
+            // The slide style reaches a code-authored child as well, which has no definition here to take it.
+            if (item instanceof CodeSlideSpec && styles.slide?.debug === 'true') item.debug = true;
             if (scope) throw new MarkupError('Groups cannot contain includes or subslides', item.line);
             applyStyles(item, styles);
             resolveLast(item, last, where);
@@ -1884,9 +1890,21 @@ export class ASTTransformer {
     for (const s of item.spans) if (s.color) ASTTransformer._checkColor(s.color, item.line);
   }
 
+  /**
+   * What the deck's `slide` style gives every slide, under what the slide writes: the attributes a
+   * slide may have in common with others. Its size is taken whole, by a slide that writes none of it.
+   */
+  private static _slideStyle(attrs: Attributes, styles: StyleSheet): void {
+    const sized = 'width' in attrs || 'height' in attrs;
+    for (const [key, value] of Object.entries(styles.slide ?? {})) {
+      if (!SLIDE_STYLE.has(key) || key in attrs || (sized && (key === 'width' || key === 'height'))) continue;
+      attrs[key] = value;
+    }
+  }
+
   /** The boolean flags of a slide or include are true or false, and the two sides of the return choice are not both given. */
   private static _checkFlags(attrs: Attributes, line: number): void {
-    for (const flag of ['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview']) {
+    for (const flag of ['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug']) {
       if (!['true', 'false'].includes(attrs[flag] ?? 'false')) throw new MarkupError(`${flag} must be true or false`, line);
     }
     if ('skip_return' in attrs && 'return_to_parent' in attrs) throw new MarkupError('Use skip_return or return_to_parent, not both', line);
@@ -1962,7 +1980,7 @@ export class ASTTransformer {
 
   /** The attributes an include or a subslide takes. */
   static childAttributes(item: IncludeSpec | CodeSlideSpec): Set<string> {
-    return new Set([...LAYOUT, 'step', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', ...(item instanceof IncludeSpec && 'src' in item.attributes ? ['src'] : [])]);
+    return new Set([...LAYOUT, 'step', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', 'debug', ...(item instanceof IncludeSpec && 'src' in item.attributes ? ['src'] : [])]);
   }
 
   /**

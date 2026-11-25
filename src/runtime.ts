@@ -33,7 +33,7 @@ import {
   walk,
 } from './slides';
 import { Transform, point, positive, type Vec3 } from './geometry';
-import { coordinateGrid } from './guides';
+import { cameraNearness, coordinateGrid, SlideGuides } from './guides';
 import { slideKeys } from './position';
 import { captureMember, memberChanged, restoreMember, type MemberState } from './snapshot';
 import { DISPLAY_SLIDE_KEY, installPatches } from './patches';
@@ -706,6 +706,8 @@ export class SlideContext extends LocalScene {
   /** @internal */
   phase: Phase = 'build';
   private _canvasBorder: Rectangle | null = null;
+  /** Whether the slide is drawn for its design, with a frame and the dots of its grid: by its own choice, or as its parent is. */
+  readonly debug: boolean;
 
   constructor(presenter: Presenter, slide: Slide, transform: Transform) {
     super();
@@ -713,7 +715,11 @@ export class SlideContext extends LocalScene {
     this.slide = slide;
     this.transform = transform;
     const config = presenter.config;
-    if (config.showSlideBorders && !slide.hidden) {
+    this.debug = slide.debug ?? (slide.parent ? presenter.contexts.get(slide.parent)?.debug ?? false : false);
+    const guides = this.debug && !slide.hidden
+      ? new SlideGuides(slide.width, slide.height, { color: presenter.foreground, frameColor: config.slideBorderColor, frameWidth: config.slideBorderWidth })
+      : null;
+    if (config.showSlideBorders && !guides && !slide.hidden) {
       this._canvasBorder = new Rectangle({
         width: slide.width,
         height: slide.height,
@@ -730,6 +736,7 @@ export class SlideContext extends LocalScene {
       gridOpacity: slide.parent === null && backgrounds.length ? 1 : 0,
       backgrounds,
       overlays: this._canvasBorder ? [this._canvasBorder] : [],
+      guides,
     });
     this.display.group.userData[DISPLAY_SLIDE_KEY] = slide;
   }
@@ -952,6 +959,8 @@ export class Presenter {
   camera: CameraState = { center: [0, 0, 0], width: 16 };
   active: SlideContext | null = null;
   focused: SlideContext | null = null;
+  /** Whether the frames and dots of the slides drawn for their design (`debug`) show; off in exports, prints and videos. */
+  guides = true;
   skipNextPending = false;
   root: Slide | null = null;
   startSlide: Slide | null = null;
@@ -1415,6 +1424,7 @@ export class Presenter {
       ctx.display.setCulled(outside);
       let order = index * ORDER_BAND;
       ctx.display.prepareRender(rendererWidth, rendererHeight, cameraWidth, () => order++);
+      if (ctx.display.guides) ctx.display.guides.show(this.guides, cameraNearness(this.cameraTarget(ctx), this.camera));
       index += 1;
     }
   }
