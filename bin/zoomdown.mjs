@@ -402,7 +402,7 @@ async function serve(options) {
     else console.log('No network address found; a tablet cannot reach this preview');
   }
   if (options.port !== null && options.port !== 0 && port !== options.port) console.log(`(port ${options.port} was busy)`);
-  if (options.editor) console.log(`Inverse search: E, or Alt+click unless the player's Pointer settings say otherwise, opens the source with "${options.editor}"`);
+  if (options.editor) console.log(`Inverse search: E, or Shift+Cmd+click (Shift+Ctrl+click on Windows and Linux) unless the player's Pointer settings say otherwise, opens the source with "${options.editor}"`);
   else console.log('Inverse search is off (pass --editor emacs|sublime|code|vim|jetbrains or a command with {file} and {line})');
   console.log(`Forward search: zoomdown jump <file> <line> moves this preview to the stop of a line`);
   const extra = options.watch.length ? `, and ${options.watch.map((path) => relative(process.cwd(), path) || '.').join(', ')}` : '';

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Slide } from '../src/slides';
 import { defineDeck } from '../src/deck';
 import { PlayerUI } from '../src/player/ui';
+import { DEFAULT_POINTER_BINDINGS, describeGesture } from '../src/player/settings';
 
 const deck = defineDeck({ title: 'Gestures', deck: () => new Slide('root'), background: '#ffffff', foreground: '#000000' });
 let ui: PlayerUI;
@@ -38,7 +39,7 @@ const saved = () => JSON.parse(localStorage.getItem('zoomdown:settings') ?? '{}'
 
 describe('recording a pointer gesture in the settings', () => {
   it('takes the keys held and the click, wherever it is', async () => {
-    expect(shown('open the source')).toMatch(/(Alt|⌥) \+ click/);
+    expect(shown('open the source')).toBe(describeGesture(DEFAULT_POINTER_BINDINGS.edit, 'click'));
     set('open the source').click();
     expect(waiting()).toBe(1);
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Meta', shiftKey: true, metaKey: true, cancelable: true }));
@@ -63,8 +64,9 @@ describe('recording a pointer gesture in the settings', () => {
     await press(document.body, { button: 2 });
     expect(waiting()).toBe(1);
     expect(set('drag to draw').textContent).toMatch(/Main button only/);
-    await press(document.body, { button: 0, altKey: true });
-    expect(saved().pen).toBe('Alt');
+    // The keys of the source click by default (⇧⌘ on a Mac, Shift + Ctrl elsewhere).
+    await press(document.body, { button: 0, shiftKey: true, ...(DEFAULT_POINTER_BINDINGS.edit === 'Shift+Meta' ? { metaKey: true } : { ctrlKey: true }) });
+    expect(saved().pen).toBe(DEFAULT_POINTER_BINDINGS.edit);
     // The gesture moved here from the action that had it.
     expect(saved().edit).toBeNull();
     expect(shown('open the source')).toBe('Off');
@@ -74,7 +76,7 @@ describe('recording a pointer gesture in the settings', () => {
     set('open the source').click();
     await press(ui.root);
     expect(waiting()).toBe(0);
-    expect(shown('open the source')).toMatch(/(Alt|⌥) \+ click/);
+    expect(shown('open the source')).toBe(describeGesture(DEFAULT_POINTER_BINDINGS.edit, 'click'));
     set('open the source').click();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
     expect(waiting()).toBe(0);
@@ -89,7 +91,7 @@ describe('recording a pointer gesture in the settings', () => {
     expect(shown('open the source')).toBe('Off');
     const restore = [...ui.root.querySelectorAll('button')].find((button) => button.textContent === 'Restore default gestures');
     restore?.click();
-    expect(shown('open the source')).toMatch(/(Alt|⌥) \+ click/);
+    expect(shown('open the source')).toBe(describeGesture(DEFAULT_POINTER_BINDINGS.edit, 'click'));
   });
 });
 

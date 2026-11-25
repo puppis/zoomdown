@@ -178,7 +178,7 @@ of any of them reloads it.
 `--watch PATH` (repeatable) adds a file or a folder to what reloads it,
 `--host` also listens on the network for a tablet, and `--editor` names the editor (`emacs`,
 `sublime`, `code`, `vim`, `jetbrains`, … or a command with `{file}` and `{line}`;
-`ZOOMDOWN_EDITOR` is the default) that the player's E key and Alt + click open source lines
+`ZOOMDOWN_EDITOR` is the default) that the player's E key and ⇧⌘ + click open source lines
 with. `jump` moves the running preview to the stop of a source line, and `build` exports the deck,
 both as last saved: `build` writes `index.html`, `assets/` and `deck/` into the folder, or
 `offline.html` with `--one-file`; `--without-notes` leaves the presenter's `::: notes` out of

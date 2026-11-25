@@ -11,7 +11,9 @@ describe('player settings', () => {
     expect(settings.pointer).toEqual(DEFAULT_POINTER_BINDINGS);
     expect(pointerActionFor(settings, '')).toBe('pen');
     expect(pointerActionFor(settings, 'Shift')).toBe('pointer');
-    expect(pointerActionFor(settings, 'Alt')).toBe('edit');
+    expect(pointerActionFor(settings, DEFAULT_POINTER_BINDINGS.edit as string)).toBe('edit');
+    expect(['Shift+Meta', 'Shift+Control']).toContain(DEFAULT_POINTER_BINDINGS.edit);
+    expect(pointerActionFor(settings, 'Alt')).toBeNull();
     expect(pointerActionFor(settings, 'Shift+Alt')).toBeNull();
     expect(settings.pointer.advance).toBeNull();
     expect(pointerActionFor(settings, 'Control')).toBe('measure');
@@ -86,10 +88,20 @@ describe('player settings', () => {
   });
 
   it('gives a gesture newer than the saved settings its default, unless one of theirs has its keys', () => {
-    localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: '', pointer: 'Shift', advance: null, edit: 'Alt' } }));
+    localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: '', pointer: 'Shift', advance: null, edit: 'Meta' } }));
     expect(loadSettings().pointer.measure).toBe('Control');
     localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: '', pointer: 'Shift', advance: null, edit: 'Control' } }));
     expect(loadSettings().pointer).toEqual({ pen: '', pointer: 'Shift', advance: null, edit: 'Control', measure: null });
+  });
+
+  it('moves settings saved with the former defaults, never customized, to the new ones', () => {
+    for (const pointer of [{ pen: '', pointer: 'Shift', advance: null, edit: 'Alt' }, { pen: '', pointer: 'Shift', advance: null, edit: 'Alt', measure: 'Control' }]) {
+      localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer }));
+      expect(loadSettings().pointer).toEqual(DEFAULT_POINTER_BINDINGS);
+    }
+    // One gesture changed: they are the author's own.
+    localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: '', pointer: 'Shift', advance: 'Middle', edit: 'Alt' } }));
+    expect(loadSettings().pointer.edit).toBe('Alt');
   });
 
   it('keeps saved gestures with a pair of keys or a button', () => {

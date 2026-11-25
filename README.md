@@ -127,7 +127,7 @@ node bin/zoomdown.mjs build examples/tour/slides.zd -o build/tour --one-file
 ```
 
 `serve` accepts `--port N`, `--host` (for a tablet), `--no-open`, `--editor NAME` (the editor the
-player opens source lines with: E for the current stop, Alt + click for an element, unless the
+player opens source lines with: E for the current stop, ⇧⌘ + click (Shift + Ctrl + click on Windows and Linux) for an element, unless the
 player's settings say otherwise), `--scene Name` (for module decks) and repeatable `--watch PATH`;
 `zoomdown jump <file> <line>` moves the running preview to the stop of a source line. `build` accepts `--show-outline`, `--without-notes` (an export for the audience, without the `::: notes`) and `--scene Name`. The deck argument is a
 `.zd` file (its settings in its front matter; `.md`, the extension decks had before, still works),

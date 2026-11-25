@@ -9,7 +9,7 @@ can be changed in ZoomDown.sublime-settings ("command": a name or an absolute pa
 "node /path/to/ZoomDown/bin/zoomdown.mjs").
 
 It also connects the editor and the browser in both directions: the preview is started with
-`--editor` pointing at this Sublime Text, so E or Alt+click in the player opens the source line
+`--editor` pointing at this Sublime Text, so E or Shift+Cmd+click in the player opens the source line
 here (inverse search), and `zoomdown_jump` (Ctrl+Alt+J) shows the stop of the cursor line in
 the browser (forward search).
 
@@ -131,7 +131,7 @@ class ZoomdownExecCommand(ExecCommand):
         if cmd:
             if cmd[0] == 'zoomdown':
                 cmd = zoomdown_command() + list(cmd[1:])
-            # The preview opens source lines here when the player asks (E, Alt+click).
+            # The preview opens source lines here when the player asks (E, Shift+Cmd+click).
             if 'serve' in cmd and '--editor' not in cmd:
                 cmd = cmd + ['--editor', editor_template()]
         kwargs.setdefault('path', login_shell_path())

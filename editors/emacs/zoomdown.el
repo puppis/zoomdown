@@ -18,7 +18,7 @@
 ;;
 ;; plus highlighting of slide containers, directives and attributes. Nothing here
 ;; saves the deck: the browser follows when you save it yourself. The preview is
-;; started with an editor command for the inverse search: E, or Alt+click on an
+;; started with an editor command for the inverse search: E, or Shift+Cmd+click on an
 ;; element, in the browser brings Emacs to the source line (through the Emacs
 ;; server, started if needed; see `zoomdown-inverse-search').
 ;;
@@ -85,7 +85,7 @@ These are the Ctrl+Alt+B, J and P of the other editor setups; in a deck buffer t
   :type 'boolean)
 
 (defcustom zoomdown-inverse-search t
-  "Whether the preview opens source lines in this Emacs (E or Alt+click in the browser).
+  "Whether the preview opens source lines in this Emacs (E or Shift+Cmd+click in the browser).
 Starts the Emacs server when it is not running, so that emacsclient can reach this session."
   :type 'boolean)
 
@@ -132,7 +132,7 @@ Starts the Emacs server when it is not running, so that emacsclient can reach th
 ;;;###autoload
 (defun zoomdown-preview ()
   "Serve the current deck; the browser opens, reloads on every save and keeps its position.
-With `zoomdown-inverse-search', the browser's E key and Alt+click open lines here."
+With `zoomdown-inverse-search', the browser's E key and Shift+Cmd+click open lines here."
   (interactive)
   (let ((editor (zoomdown--editor-command)))
     (zoomdown--run "*zoomdown preview*"

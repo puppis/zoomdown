@@ -8,7 +8,7 @@
 " do .md buffers whose first lines open a slide or styles block. Nothing here writes the
 " deck: the browser follows when you write it yourself.
 " The preview is started with an editor command for the inverse search: E, or
-" Alt+click on an element, in the browser moves this Vim to the source line.
+" Shift+Cmd+click on an element, in the browser moves this Vim to the source line.
 " That needs a server name: Neovim always has one; Vim needs +clientserver and
 " `vim --servername NAME` (gvim and MacVim set one by themselves).
 " Install: copy the `plugin`, `ftdetect` and `after` folders into ~/.vim or ~/.config/nvim

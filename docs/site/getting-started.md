@@ -138,7 +138,7 @@ Any editor will do: save the deck, or a file it loads, and the preview reloads w
 The `editors/` folder of the repository has ready-made setups for **VS Code, Sublime Text, Emacs,
 Vim/Neovim and JetBrains IDEs**: they bind the preview, the jump from a source line to its stop
 and the single-file export to shortcuts, let the player open a stop's source line in the editor
-(E, or Alt + click on an element), and highlight the dialect inside Markdown. None of them saves
+(E, or ⇧⌘ + click on an element), and highlight the dialect inside Markdown. None of them saves
 the deck for you. [Editors](editors.html) explains each one.
 
 ## Next steps

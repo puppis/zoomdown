@@ -94,12 +94,12 @@ and a PDF viewer do with SyncTeX:
   the jump goes to the preview of the file's folder (to every running preview when none matches,
   since a file may be imported from elsewhere).
 - **Inverse search**, browser → editor: the **E** key opens the source line of the current stop
-  in the editor, and **Alt + click** opens the line of the element under the pointer: the text,
-  formula, image, shape or listing you clicked, also inside a child's preview tile, or the
-  `[[include: …]]` line when you click a tile's empty area. Alt is only the default: the player's
-  [settings](player.html#settings) record any other keys and mouse button for it, under Pointer ▸
-  "Click: open the source of the element" ▸ Set gesture, such as Shift+Command and a click, or the
-  right button (the context menu is then suppressed). For this the server must know your editor: `zoomdown serve … --editor <name>`,
+  in the editor, and **⇧⌘ + click** (Shift + Ctrl + click on Windows and Linux) opens the line of
+  the element under the pointer: the text, formula, image, shape or listing you clicked, also inside
+  a child's preview tile, or the `[[include: …]]` line when you click a tile's empty area. That is
+  only the default: the player's [settings](player.html#settings) record any other keys and mouse
+  button for it, under Pointer ▸ "Click: open the source of the element" ▸ Set gesture, such as Alt
+  and a click, or the right button (the context menu is then suppressed). For this the server must know your editor: `zoomdown serve … --editor <name>`,
   where the name is `emacs`, `sublime`, `code` (also `codium`, `cursor`), `vim`, `gvim`, `mvim`,
   `textmate`, `zed`, `jetbrains` (the first IDE launcher on the `PATH`) or one of `idea`,
   `webstorm`, `pycharm`, `phpstorm`, `goland`, `clion`, `rubymine`, `rider`, `rustrover`, or any
@@ -136,7 +136,7 @@ browser, **Ctrl+Alt+P** (⌘⌥P) exports `build/index.html` next to the file. I
 bindings take precedence over VS Code's own use of ⌘⌥B / Ctrl+Alt+B (the secondary side bar).
 The build task is also the default build task, so Ctrl+Shift+B works as well, and every task is
 under Terminal ▸ Run Task, which is the way for a deck still kept as `.md`. Stop the preview by
-closing its terminal. The preview task passes `--editor code`, so E or Alt+click in the browser
+closing its terminal. The preview task passes `--editor code`, so E or ⇧⌘ + click in the browser
 opens the line in VS Code through its `code` command (Command Palette ▸ "Shell Command: Install
 'code' command in PATH" on macOS, if it is missing).
 
@@ -157,7 +157,7 @@ folder). It provides:
   On macOS use **⌘⌥B**, **⌘⌥J** and **⌘⌥P**: Sublime Text reads a Control+Option combination
   through the character that Option types on your layout, which is the letter itself only on a US
   keyboard.
-- **Ctrl+Alt+J** (⌘⌥J) shows the stop of the cursor line in the browser; E or Alt+click in the
+- **Ctrl+Alt+J** (⌘⌥J) shows the stop of the cursor line in the browser; E or ⇧⌘ + click in the
   browser brings Sublime Text to the line (the preview is started with `--editor` pointing at the
   `subl` launcher of the running Sublime Text, wherever it is installed).
 - Command Palette entries: "ZoomDown: Preview deck", "Stop the preview" (which also ends an export
@@ -190,7 +190,7 @@ compilation buffer, **C-c C-j** shows the stop of the current line in the browse
 exports one HTML file (the same three also on **C-M-b**, **C-M-j** and **C-M-p**, that is
 Ctrl+Alt+B, J and P as in the other editors, in deck buffers only; `zoomdown-ctrl-alt-keys` set
 to nil keeps those keys for `backward-sexp` and friends), **C-c C-k** stops the server. E or
-Alt+click in the browser brings Emacs to the line: the preview is started with an `emacsclient`
+⇧⌘ + click in the browser brings Emacs to the line: the preview is started with an `emacsclient`
 command for this Emacs session (`zoomdown-inverse-search`, on by default, starts the Emacs server
 when it is not running). None of the keys saves the buffer, and the mode does not save it either;
 Emacs's own `auto-save-mode` writes to a `#file#` beside the deck, which the preview does not
@@ -211,7 +211,7 @@ styles block get the mappings **\<leader\>zb** (`:ZoomDownPreview`, in a termina
 **\<leader\>zp** (`:ZoomDownBuild`), plus Ctrl+Alt+B, J and P where the terminal or GUI
 delivers them (Neovim in a modern terminal, gvim, MacVim), and highlight the dialect through
 `after/syntax/markdown.vim`. The plugin never writes the buffer: `:w` is what the browser follows.
-E or Alt+click in the browser brings Vim to the line through its server: Neovim always has one,
+E or ⇧⌘ + click in the browser brings Vim to the line through its server: Neovim always has one,
 Vim needs `+clientserver` and a name (`vim --servername DECK`; gvim and MacVim name themselves),
 and without one the preview starts without inverse search. The plugin finds the command on Vim's
 path, else runs the checkout's own `bin/zoomdown.mjs` with `node`, else asks your login shell;

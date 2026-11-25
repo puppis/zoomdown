@@ -3,7 +3,7 @@
   // or write the static folder export. The `zoomdown_exec` target (zoomdown.py in this package)
   // runs the command with the PATH of your login shell, so it is found even when Sublime Text
   // was started from the Dock or a launcher, and adds `--editor` to the preview so that E or
-  // Alt+click in the browser opens the source line here. The command name lives in
+  // Shift+Cmd+click in the browser opens the source line here. The command name lives in
   // ZoomDown.sublime-settings. A build saves first when Tools > Save All on Build is on; the
   // package's own keys and commands (`zoomdown_run`) never save.
   "target": "zoomdown_exec",

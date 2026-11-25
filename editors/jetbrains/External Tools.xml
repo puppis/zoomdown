@@ -3,7 +3,7 @@
      (Help ▸ Show Log in Finder/Explorer opens the directory one level below it), restart the IDE,
      then assign shortcuts under Settings ▸ Keymap ▸ External Tools ▸ ZoomDown. -->
 <toolSet name="ZoomDown">
-  <tool name="Preview" description="Serve the deck of the current file; the browser reloads on save, and E or Alt+click there opens the source line here" showInMainMenu="true" showInEditor="true" showInProject="true" showInSearchPopup="true" disabled="false" useConsole="true" showConsoleOnStdOut="true" showConsoleOnStdErr="true" synchronizeAfterRun="true">
+  <tool name="Preview" description="Serve the deck of the current file; the browser reloads on save, and E or Shift+Cmd+click there opens the source line here" showInMainMenu="true" showInEditor="true" showInProject="true" showInSearchPopup="true" disabled="false" useConsole="true" showConsoleOnStdOut="true" showConsoleOnStdErr="true" synchronizeAfterRun="true">
     <exec>
       <option name="COMMAND" value="zoomdown" />
       <!-- `jetbrains` picks the first IDE launcher on the PATH (idea, webstorm, pycharm, …); name yours to be sure. -->

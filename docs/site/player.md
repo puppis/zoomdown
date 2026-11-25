@@ -47,7 +47,7 @@ The gear button (or the `,` key) opens the settings dialog: six categories liste
 
 - **Pointer**: the tool shown by the pointer gesture (spotlight or laser) and the five gestures: the
   pen, the spotlight/highlighter, click-to-advance, the click that opens an element's source in the
-  editor (Alt + click by default) and [measuring](#measuring) (Control held). "Set gesture" records
+  editor (⇧⌘ + click by default, Shift + Ctrl + click on Windows and Linux) and [measuring](#measuring) (Control held). "Set gesture" records
   one: hold the keys you want, any of Shift, Control, Alt and ⌘/Win together, and click. The button
   you click with counts for the two click gestures, so they can be a middle or a right click, with
   or without keys (a right click set here opens no menu on the slides); the pen, the spotlight and
@@ -116,7 +116,8 @@ With the default gestures:
 - Hold **Control** to [measure](#measuring): the pointer is a crosshair and its coordinates in
   the slide show beside it; **Control + drag** measures a length.
 
-- **Alt + click** an element to open its source line in your editor, when the deck is served by
+- **⇧⌘ + click** (Shift + Ctrl + click on Windows and Linux) an element to open its source line in
+  your editor, when the deck is served by
   `zoomdown serve --editor …` (the element nearest to the pointer counts, a text inside a tile
   before the tile); the `E` key opens the line of the current stop. See
   [Editors](editors.html#forward-and-inverse-search).
@@ -575,7 +576,7 @@ Looping stops (`play=loop`, `stop({ loop: true })`) repeat until the next click.
 saved, and return to the slide and step you were on, using a bookmark saved just before the
 reload; [what reloads](configuration.html#command-line) is under the command line. Parse and reference
 errors are shown with the offending line. The editor and the player also follow each other:
-`zoomdown jump <file> <line>` shows the stop of a source line, and `E` or Alt + click opens the
+`zoomdown jump <file> <line>` shows the stop of a source line, and `E` or ⇧⌘ + click opens the
 source of a stop or of an element in the editor named by `--editor`; [Editors](editors.html#forward-and-inverse-search)
 explains both and the ready-made setups. [Exporting a deck](exporting.html) makes the same
 player a static folder or one self-contained HTML file, settings and deep links included.

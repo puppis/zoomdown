@@ -3,7 +3,7 @@
   "tasks": [
     {
       "label": "ZoomDown: preview",
-      "detail": "Serve the deck of the current file; the browser reloads on every save and keeps its position. E or Alt+click in the browser opens the source line here.",
+      "detail": "Serve the deck of the current file; the browser reloads on every save and keeps its position. E or Shift+Cmd+click in the browser opens the source line here.",
       "type": "shell",
       "command": "zoomdown serve \"${file}\" --editor code",
       "options": { "cwd": "${fileDirname}" },

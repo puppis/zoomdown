@@ -249,6 +249,9 @@ export function renderPixelRatio(rendering: RenderingSettings): number {
   return typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
 }
 
+/** Whether the player runs on a Mac (or an iPad), where keys are named by their symbols. */
+export const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+
 /**
  * The gesture of each pointer action: the keys held, in the order of `modifierCombo`, then the
  * mouse button unless it is the main one (`Shift+Meta`, `Alt+Right`, `Middle`); `''` is the mouse
@@ -257,7 +260,16 @@ export function renderPixelRatio(rendering: RenderingSettings): number {
 export type PointerBindings = Record<PointerAction, string | null>;
 
 /** Click-to-advance has no gesture by default: a click on a slide draws, and only the keys move between stops. */
-export const DEFAULT_POINTER_BINDINGS: PointerBindings = { pen: '', pointer: 'Shift', advance: null, edit: 'Alt', measure: 'Control' };
+export const DEFAULT_POINTER_BINDINGS: PointerBindings = { pen: '', pointer: 'Shift', advance: null, edit: IS_MAC ? 'Shift+Meta' : 'Shift+Control', measure: 'Control' };
+
+/**
+ * Gestures of earlier versions' defaults: settings saved with exactly these were never customized,
+ * so they follow the new defaults (the source was opened with Alt + click until 0.8.18).
+ */
+const FORMER_POINTER_BINDINGS: Array<Partial<PointerBindings>> = [
+  { pen: '', pointer: 'Shift', advance: null, edit: 'Alt' },
+  { pen: '', pointer: 'Shift', advance: null, edit: 'Alt', measure: 'Control' },
+];
 
 export type PointerMode = 'spotlight' | 'laser';
 
@@ -330,8 +342,6 @@ export function keyCombo(event: KeyboardEvent): string | null {
   return parts.join('+');
 }
 
-/** Whether the player runs on a Mac (or an iPad), where keys are named by their symbols. */
-export const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
 const PRETTY: Record<string, string> = {
   Control: IS_MAC ? '⌃' : 'Ctrl', Alt: IS_MAC ? '⌥' : 'Alt', Meta: IS_MAC ? '⌘' : 'Win', Shift: IS_MAC ? '⇧' : 'Shift',
@@ -425,7 +435,8 @@ export function loadSettings(): PlayerSettings {
         if (untouched) for (const name of Object.keys(former) as ActionName[]) settings.bindings[name] = [...DEFAULT_BINDINGS[name]];
       }
     }
-    if (saved?.pointer) {
+    const untouched = saved?.pointer && FORMER_POINTER_BINDINGS.some((former) => JSON.stringify(Object.entries(former).sort()) === JSON.stringify(Object.entries(saved.pointer as object).sort()));
+    if (saved?.pointer && !untouched) {
       for (const action of POINTER_ACTIONS) {
         const combo = saved.pointer[action.name];
         if (combo === null || (typeof combo === 'string' && validGesture(action.name, combo))) settings.pointer[action.name] = combo;
