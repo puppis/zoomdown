@@ -19,13 +19,13 @@ import { markEarly, setSourceRank } from '../display';
 import { BRIDGE_PATHS, findBridges, withBridges, type BridgePath } from '../bridges';
 import {
   ATTACHMENTS, CONNECTIONS, EFFECT_NAMES, ENTER_STYLES, EXIT_STYLES, NEIGHBORS, POSITION_REFERENCES, TEXT_LIKE, VERTICAL_POSITION,
-  ActionSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, MarkupDocument, MarkupError, NextSpec,
+  ActionSpec, type AlignSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, MarkupDocument, MarkupError, NextSpec,
   SkipNextSpec, SlideItem, SlideSpec, StepChange, childKey, connectionEnd, numberValue, parseAt, parseColor, parseTremble, positionTargets,
   elementStep, roleStyledKeys,
   stepValue,
 } from './ast';
 import { LatexError, type MacroDefinition } from './latex';
-import { StyledLine, textLines, type TextLines } from './text';
+import { StyledLine, textLines, type SharedColumns, type TextLines } from './text';
 import { ASTTransformer } from './parser';
 import {
   LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, atAnchor, elementAnchor, looseOutlines, placeRelative, referenced, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject,
@@ -49,6 +49,8 @@ interface FlowNode {
   textLike: boolean;
   anchor: string;
   tight: boolean;
+  /** What it has in common with the texts written right before and after it, without a blank line; null for none. */
+  run: object | null;
   /** Whether the flow sets its horizontal and its vertical position: no option of its own does. */
   flowX: boolean;
   flowY: boolean;
@@ -62,7 +64,7 @@ interface FlowNode {
   /** Whether it stands beside the block before, as `besideOf` allowed once both were placed. */
   beside: boolean;
   /** What the flow knows of it once it is placed: its column's left edge and width, its bottom and its lines. */
-  next: { left: number; width: number; bottom: number; lines: TextLines | null; tight: boolean } | null;
+  next: { left: number; width: number; bottom: number; lines: TextLines | null; tight: boolean; run: object | null } | null;
 }
 
 /** The blocks the flow goes on after wherever they are placed; pictures and drawings it passes over. */
@@ -279,6 +281,20 @@ export class MarkupSlide extends Slide {
     // Where an element with outlines it does not draw stood when it was made, so that they follow it.
     const madeAt = new Map<Mobject, [number, number, number]>();
     const nodes: FlowNode[] = [];
+    // The width a text wraps at, less its indent, and the columns its `::: align` block shares.
+    const indentOf = (item: ElementSpec) => (item.list ? item.list.depth * layout.listIndent + (item.list.marker ? 0 : textColumns[item.list.depth] ?? layout.listIndent) : 0);
+    const shared = new Map<AlignSpec, SharedColumns>();
+    const columnsOf = async (item: ElementSpec): Promise<{ columns?: SharedColumns }> => {
+      const align = item.align;
+      if (!align) return {};
+      let columns = shared.get(align);
+      if (!columns) {
+        const rows = items.filter((other): other is ElementSpec => other instanceof ElementSpec && other.align === align);
+        columns = await located(align.line, () => this.renderer.columns(rows.map((row) => ({ element: row, maxWidth: Math.max(scope.width - indentOf(row), 0.5), fontSize: this._captionSize(row) })), align.gap));
+        shared.set(align, columns);
+      }
+      return { columns };
+    };
     // The node of the item written just before (directives aside), or null when that item makes none.
     let written: FlowNode | null = null;
     for (const [index, item] of items.entries()) {
@@ -293,7 +309,7 @@ export class MarkupSlide extends Slide {
       // Nested list items flow indented by their depth and wrap within the remaining width; the
       // blocks that continue an item start where its text does, past its bullet or number.
       const list = item instanceof ElementSpec ? item.list : null;
-      const indent = list ? list.depth * layout.listIndent + (list.marker ? 0 : textColumns[list.depth] ?? layout.listIndent) : 0;
+      const indent = item instanceof ElementSpec ? indentOf(item) : 0;
       if (item instanceof IncludeSpec || item instanceof CodeSlideSpec) {
         if (!viewportOf) throw new MarkupError('Groups cannot contain includes or subslides', item.line);
         obj = viewportOf(index, item);
@@ -303,7 +319,8 @@ export class MarkupSlide extends Slide {
         // A verdict wraps at its tile's width, unless it has a width of its own.
         const tile = item.verdictOf !== null && viewportOf ? this._tile(items, item.verdictOf, viewportOf) : null;
         const wrap = tile ? tile.getWidth() : Math.max(scope.width - indent, 0.5);
-        obj = item instanceof GroupSpec ? await this._buildGroup(item, scope.width) : await located(item.line, () => this.renderer.make(item, wrap, { fontSize: this._captionSize(item) }));
+        const columns = await columnsOf(item);
+        obj = item instanceof GroupSpec ? await this._buildGroup(item, scope.width) : await located(item.line, () => this.renderer.make(item, wrap, { fontSize: this._captionSize(item), ...columns }));
         if (list?.marker) textColumns[list.depth] = (obj as ListItemMobject).markupTextColumn ?? layout.listIndent;
         this._register(item, obj, scope.local);
         elements.set(item.id, item);
@@ -333,7 +350,7 @@ export class MarkupSlide extends Slide {
       const fixed = item instanceof ElementSpec && pointShapes.includes(item.kind) && item.position === null && explicit;
       const flowing = !fixed && (!explicit || (textLike && anchor !== 'center'));
       nodes.push({
-        index, item, obj, indent, explicit, position, fixed, textLike, anchor, tight: Boolean(list?.tight),
+        index, item, obj, indent, explicit, position, fixed, textLike, anchor, tight: Boolean(list?.tight), run: item instanceof ElementSpec ? item.run : null,
         flowX: flowing && !('x' in attrs) && !('at' in attrs) && !keys.some(SETS_X),
         flowY: flowing && !('y' in attrs) && !('at' in attrs) && !keys.some(SETS_Y),
         after: null, next: null, besideOf: null, beside: false,
@@ -429,7 +446,8 @@ export class MarkupSlide extends Slide {
       // wraps at that width, less its indent, or at the flow's.
       const columnWidth = previous ? previous.width : scope.width;
       if (node.flowX && item instanceof ElementSpec && item.kind === 'text' && !('width' in attrs) && Math.abs(columnWidth - scope.width) > 1e-9) {
-        const made = await located(item.line, () => this.renderer.make(item, Math.max(columnWidth - indent, 0.5), { fontSize: this._captionSize(item) }));
+        const columns = await columnsOf(item);
+        const made = await located(item.line, () => this.renderer.make(item, Math.max(columnWidth - indent, 0.5), { fontSize: this._captionSize(item), ...columns }));
         for (const member of node.obj.getFamily()) if (member instanceof StyledLine) member.dispose();
         node.obj = made;
         this._register(item, made, scope.local);
@@ -454,7 +472,7 @@ export class MarkupSlide extends Slide {
           // `paragraphSpacing` interlines apart; a heading keeps its descent clear without spreading
           // the paragraph after it. The items of a tight list, with no blank line between them,
           // follow one another as lines.
-          const spacing = previous.tight && node.tight ? 1 : layout.paragraphSpacing;
+          const spacing = (previous.tight && node.tight) || (previous.run !== null && previous.run === node.run) ? 1 : layout.paragraphSpacing;
           const lead = Math.max(0, previous.lines.interline - previous.lines.ascent - previous.lines.descent, lines.interline - lines.ascent - lines.descent);
           const gap = (spacing - 1) * Math.max(previous.lines.interline, lines.interline) + lead;
           shift = previous.lines.last - previous.lines.descent - gap - lines.ascent - lines.first;
@@ -510,7 +528,7 @@ export class MarkupSlide extends Slide {
         // A block placed out of the flow starts a column as wide as it says; one in the flow passes on
         // the width of the column it is in, though it has a width of its own.
         width: flowsDown ? columnWidth : 'width' in attrs ? Number(attrs.width) + indent : scope.width,
-        bottom: obj.getBottom()[1], lines: textLines(obj), tight: node.tight,
+        bottom: obj.getBottom()[1], lines: textLines(obj), tight: node.tight, run: node.run,
       };
       if (item instanceof ElementSpec) turn(item, obj);
     }

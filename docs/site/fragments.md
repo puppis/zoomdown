@@ -133,6 +133,9 @@ it is (a node, an edge, a message, an event, an include or a plain element):
 - the block's `hide` goes to every line without one (the verdict of a tile included: an include
   itself is never hidden).
 
+A [`::: align`](text.html#rows-of-their-own-align) block is no such whole: its `step` and `hide` are
+those of each of its rows that writes none, so `::: align {step=+}` reveals them one by one.
+
 ```markdown
 ::: graph {step=1 hide=2}
 A (0,0)

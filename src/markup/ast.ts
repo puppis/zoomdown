@@ -53,6 +53,11 @@ export function span(
   return href ? { content, kind, bold, italic, color, href } : { content, kind, bold, italic, color };
 }
 
+/** Whether a text has the column separator `&&` in its prose; an escaped one (`\&&`) is none. */
+export function hasSeparator(spans: readonly InlineSpan[]): boolean {
+  return spans.some((s) => s.kind === 'text' && s.content.includes('&&'));
+}
+
 /** An attribute map, every value a string as written. */
 export type Attributes = Record<string, string>;
 
@@ -65,6 +70,12 @@ export interface ListItem {
   marker: string;
   /** Whether the list is tight, its items written without blank lines between them: they then follow one another as lines, not paragraphs. */
   tight?: boolean;
+}
+
+/** A `::: align` block: the texts with `&&` columns in it, its rows, share them. */
+export class AlignSpec {
+  /** `gap`: the space between two columns, an em of the largest row's text when null. */
+  constructor(readonly gap: number | null, readonly line = 1) {}
 }
 
 /** One element of a slide as parsed: its kind, inline spans, attributes, source text, line, heading level and list position. */
@@ -94,6 +105,12 @@ export class ElementSpec {
 
   /** The part of a block the element is (`node`, `edge`, `message`, …), whether or not the block names its class; null for any other. */
   part: string | null = null;
+
+  /** The `::: align` block whose columns this text shares, as one of its rows, or null. */
+  align: AlignSpec | null = null;
+
+  /** What texts written without a blank line between them have in common: they follow one another as lines. */
+  run: object | null = null;
 
   /** The name a line of a timeline or a graph gave the element, local to its block (its id is `<block>.<name>`), or null. */
   localName: string | null = null;

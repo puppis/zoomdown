@@ -35,7 +35,7 @@ import {
   polylinePoints, span,
 } from './ast';
 import { MarkupParser } from './parser';
-import { MONOSPACE, PX_PER_WORLD_BASE, StyledLine, baselineY, layoutParagraph, markLines, measureRun, textLines, textResolutionScale, type MathPiece } from './text';
+import { MONOSPACE, PX_PER_WORLD_BASE, StyledLine, baselineY, layoutParagraph, markLines, measureRun, shareColumns, textLines, textResolutionScale, type ColumnMeasure, type MathPiece, type SharedColumns } from './text';
 import { UnclosedFormula, codeFormulas, layoutCode } from './code';
 import { DEFAULT_TEXT_FONT } from '../fonts';
 import {
@@ -1116,11 +1116,9 @@ export class MarkupRenderer {
   }
 
   /** Create one local mobject; connections follow anchor layout. `fontSize` wins over the element's own size (a caption's, from its tile). */
-  async make(element: ElementSpec, maxWidth: number, options: { fontSize?: number } = {}): Promise<Mobject> {
+  async make(element: ElementSpec, maxWidth: number, options: { fontSize?: number; columns?: SharedColumns } = {}): Promise<Mobject> {
     const attrs = element.attributes;
-    const defaultSize = element.kind === 'code' ? this.layout.codeSize
-      : element.level ? this.layout.headingSize / (1 + 0.12 * Math.max(0, element.level - 1)) : this.layout.fontSize;
-    const size = options.fontSize ?? numberValue(attrs, 'font_size', element.line, defaultSize) as number;
+    const size = options.fontSize ?? this._size(element);
     const width = numberValue(attrs, 'width', element.line, maxWidth) as number;
     const color = attrs.color ? parseColor(attrs.color) : this.layout.color;
     let obj: Mobject;
@@ -1337,8 +1335,8 @@ export class MarkupRenderer {
     } else if (element.kind === 'text') {
       const lineHeight = numberValue(attrs, 'line_height', element.line);
       obj = element.list?.marker
-        ? await this.listItem(element.spans, element.list.marker, size, width, color, attrs.font, lineHeight)
-        : await this.text(element.spans, size, width, color, attrs.font, lineHeight);
+        ? await this.listItem(element.spans, element.list.marker, size, width, color, attrs.font, lineHeight, options.columns)
+        : await this.text(element.spans, size, width, color, attrs.font, lineHeight, options.columns);
     } else if (element.kind === 'code') {
       const lang = attrs.lang ?? '';
       const theme = await this.prepareCode(lang);
@@ -1454,8 +1452,40 @@ export class MarkupRenderer {
     return obj;
   }
 
-  /** Lay out styled prose with inline math within `maxWidth` logical units. */
-  async text(spans: InlineSpan[], fontSize: number, maxWidth: number, defaultColor: string, font?: string, lineHeight?: number | null): Promise<Mobject> {
+  /** The font size of a text, a formula or a listing: its own, or the layout's for its kind. */
+  private _size(element: ElementSpec): number {
+    const defaultSize = element.kind === 'code' ? this.layout.codeSize
+      : element.level ? this.layout.headingSize / (1 + 0.12 * Math.max(0, element.level - 1)) : this.layout.fontSize;
+    return numberValue(element.attributes, 'font_size', element.line, defaultSize) as number;
+  }
+
+  /**
+   * The columns the rows of a `::: align` block share: each as wide as its widest cell in any of
+   * them, and the rows shrunk alike when the widest does not fit. `rows` are given with the width
+   * each may take and its size when the layout decides it.
+   */
+  async columns(rows: ReadonlyArray<{ element: ElementSpec; maxWidth: number; fontSize?: number }>, gap: number | null): Promise<SharedColumns> {
+    const measured: Array<{ measure: ColumnMeasure; room: number }> = [];
+    for (const { element, maxWidth, fontSize } of rows) {
+      const attrs = element.attributes;
+      const size = fontSize ?? this._size(element);
+      const color = attrs.color ? parseColor(attrs.color) : this.layout.color;
+      let room = numberValue(attrs, 'width', element.line, maxWidth) as number;
+      if (element.list?.marker) {
+        const label = await this.text([span(element.list.marker)], size, room, color, attrs.font);
+        room = Math.max(room - Math.max(this.layout.listIndent, label.getWidth() + 0.15), 0.5);
+        for (const member of label.getFamily()) if (member instanceof StyledLine) member.dispose();
+      }
+      await this.text(element.spans, size, room, color, attrs.font, undefined, (measure) => measured.push({ measure, room }));
+    }
+    return shareColumns(measured, gap);
+  }
+
+  /**
+   * Lay out styled prose with inline math within `maxWidth` logical units; `columns` are those a row
+   * of a `::: align` block shares, or what takes its measures, which lays nothing out.
+   */
+  async text(spans: InlineSpan[], fontSize: number, maxWidth: number, defaultColor: string, font?: string, lineHeight?: number | null, columns?: SharedColumns | ((measure: ColumnMeasure) => void)): Promise<Mobject> {
     if (!spans.some((s) => s.content.trim())) return new Group();
     await this.layoutFonts();
     if (font) await this.ensureFont(font);
@@ -1463,7 +1493,7 @@ export class MarkupRenderer {
     const resolved = spans.map((s) => (s.color ? { ...s, color: parseColor(s.color) } : s));
     return layoutParagraph(
       resolved,
-      { fontSize, maxWidth, defaultColor, fontFamily: this.layout.fontFamilyFor(font), lineGap: this.layout.lineGap, lineHeight: lineHeight ?? this.layout.lineHeight },
+      { fontSize, maxWidth, defaultColor, fontFamily: this.layout.fontFamilyFor(font), lineGap: this.layout.lineGap, lineHeight: lineHeight ?? this.layout.lineHeight, ...(typeof columns === 'function' ? { measureColumns: columns } : columns ? { columns } : {}) },
       (latex, color) => this.mathPiece(latex, color, fontSize, this.layout.fontFamilyFor(font)),
     );
   }
@@ -1472,14 +1502,14 @@ export class MarkupRenderer {
    * A list item: the marker in a hanging-indent column of at least `layout.listIndent`, the prose
    * wrapped to the rest of `maxWidth` next to it, first baselines aligned.
    */
-  async listItem(spans: InlineSpan[], marker: string, fontSize: number, maxWidth: number, defaultColor: string, font?: string, lineHeight?: number | null): Promise<Mobject> {
+  async listItem(spans: InlineSpan[], marker: string, fontSize: number, maxWidth: number, defaultColor: string, font?: string, lineHeight?: number | null, columns?: SharedColumns): Promise<Mobject> {
     const label = await this.text([span(marker)], fontSize, maxWidth, defaultColor, font, lineHeight);
     const column = Math.max(this.layout.listIndent, label.getWidth() + 0.15);
     if (!spans.some((s) => s.content.trim())) {
       (label as ListItemMobject).markupTextColumn = column;
       return label;
     }
-    const body = await this.text(spans, fontSize, Math.max(maxWidth - column, 0.5), defaultColor, font, lineHeight);
+    const body = await this.text(spans, fontSize, Math.max(maxWidth - column, 0.5), defaultColor, font, lineHeight, columns);
     body.shift([label.getLeft()[0] + column - body.getLeft()[0], baselineY(label) - baselineY(body), 0]);
     const item = new Group(label, body) as Group & { markupBaselineFraction: number; markupTextColumn: number; markupListText: Mobject };
     item.markupTextColumn = column;

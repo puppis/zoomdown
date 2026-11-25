@@ -152,7 +152,10 @@ The spaces that start the source line after a `\\` indent the line it begins: ea
 space of the font, and a tab to the next multiple of four. The lines an indented
 line wraps to keep its indent, within the rest of the width (an indent leaves a quarter of it at
 least). Spaces after any other line end collapse (`&&` makes columns, a row per source line, in a block
-of two lines or more; in a single line it is two ampersands), those in a block with `&&` columns align only
+of two lines or more; in a single line it is two ampersands; in a `::: align` block the texts with
+`&&`, of one line too, share their columns, each an element with its own `step` and attributes, a
+line that ends with `{…}` ending its row; the block's `gap` is the space between columns and its
+other attributes are its rows' defaults), those in a block with `&&` columns align only
 the source, and in a list item they count from the column of the item's text, so a continuation
 aligned under the text is not indented.
 

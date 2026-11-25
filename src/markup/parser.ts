@@ -15,12 +15,12 @@ import {
   LABEL_SIDES, LAYOUT, SHAPE_LABEL_ATTRS, NEIGHBORS, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, STROKE_ATTRS, TEXT_LIKE, TIMING_ATTRS, TREMBLE_ATTRS,
   VECTOR_KINDS, VERTICAL_POSITION, VIDEO_EXTENSIONS, FILL_STYLE_NAMES, CHART_ATTRS, CHART_TYPE_NAMES, TABLE_ATTRS, TABLE_RULE_NAMES,
   INHERITED_ATTRS, gradientColor,
-  ActionSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
+  ActionSpec, AlignSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
   type CellAlignment,
   type ListItem,
   NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, roleStyledKeys, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
   RELATIVE_STEP, type StepMode,
-  elementStep, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, span, stepValue, textReference,
+  elementStep, hasSeparator, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, span, stepValue, textReference,
 } from './ast';
 
 type Env = { line?: number };
@@ -587,6 +587,105 @@ export class MarkupParser {
   }
 
   /**
+   * A `::: align` block: what it holds are elements of the slide like any others, and its rows, the
+   * texts with `&&` columns, share their columns. The block's attributes are its rows' own unless they
+   * write them: those of text (and `step`, `hide`) for each, `buff` for each after the first, and a
+   * position for the first, under which the others flow (an `x` alone is every row's).
+   */
+  private _align(lines: string[], attrs: Attributes, line: number, prefix: string): SlideItem[] {
+    const POSITION = [...LAYOUT].filter((key) => !['width', 'height', 'angle', 'class', 'buff'].includes(key));
+    const TEXT = ['color', 'font_size', 'font', 'opacity', 'line_height', 'width', 'run_time', 'lag', 'enter', 'exit', 'href'];
+    // Classes fill in what the rows take, under what the block writes.
+    for (const token of (attrs.class ?? '').split(/\s+/).filter(Boolean)) {
+      const style = this._styles[token];
+      if (!style) throw new MarkupError(`Unknown style class .${token}`, line);
+      for (const [key, value] of Object.entries(style)) {
+        if (!(key in attrs) && (key === 'gap' || key === 'buff' || key === 'step' || key === 'hide' || TEXT.includes(key) || POSITION.includes(key))) attrs[key] = value;
+      }
+    }
+    delete attrs.class;
+    for (const key of Object.keys(attrs)) {
+      if (!['gap', 'buff', 'step', 'hide'].includes(key) && !TEXT.includes(key) && !POSITION.includes(key)) {
+        throw new MarkupError(`An align block takes gap, buff, step, hide, a position and the attributes of its rows' text, not ${key}=`, line);
+      }
+    }
+    const gap = numberValue(attrs, 'gap', line);
+    if (gap !== null && gap < 0) throw new MarkupError('gap must be nonnegative', line);
+    const align = new AlignSpec(gap, line);
+    const items: SlideItem[] = [];
+    let last: SlideItem | undefined;
+    for (const [number, piece] of MarkupParser._alignPieces(lines).entries()) {
+      const made = this._body(piece.lines, line + 1 + piece.start, `${prefix}align-${line}-${number + 1}.`);
+      // Rows with no blank line between them follow one another as lines.
+      const first = made[0];
+      if (number > 0 && last instanceof ElementSpec && last.kind === 'text' && first instanceof ElementSpec && first.kind === 'text') {
+        last.run ??= {};
+        first.run = last.run;
+      }
+      last = made[made.length - 1];
+      items.push(...made);
+    }
+    const rows = items.filter((item): item is ElementSpec => item instanceof ElementSpec && item.kind === 'text' && hasSeparator(item.spans));
+    if (!rows.length) throw new MarkupError('An align block holds at least one text with && between its columns', line);
+    const text = Object.fromEntries(TEXT.filter((key) => key in attrs).map((key) => [key, attrs[key]]));
+    const placed = POSITION.some((key) => key in attrs && !['x', 'dx', 'dy', 'anchor'].includes(key));
+    rows.forEach((row, index) => {
+      row.align = align;
+      const own = row.attributes;
+      for (const key of ['step', 'hide']) if (key in attrs && !(key in own)) own[key] = attrs[key];
+      for (const key of POSITION) if (key in attrs && !(key in own) && (index === 0 || (key === 'x' && !placed))) own[key] = attrs[key];
+      const passed: Attributes = { ...text, ...('buff' in attrs && index > 0 ? { buff: attrs.buff } : {}) };
+      if (!Object.keys(passed).length) return;
+      // An anonymous class, which so fills in only what fits the row.
+      const name = `@align-${line}/${index > 0 ? 'row' : 'first'}`;
+      this._passed[name] = passed;
+      own.class = [name, own.class].filter(Boolean).join(' ');
+    });
+    return items;
+  }
+
+  /**
+   * The lines of an align block in pieces, cut where a line that ends with `{attributes}` ends its
+   * row and the next line starts another, with no blank line between them. The items of a list are
+   * rows of their own already, and stay one list.
+   */
+  private static _alignPieces(lines: string[]): Array<{ lines: string[]; start: number }> {
+    const pieces: Array<{ lines: string[]; start: number }> = [];
+    let start = 0;
+    let list = false;
+    const cut = (end: number) => {
+      if (end > start) pieces.push({ lines: lines.slice(start, end), start });
+      start = end;
+      list = false;
+    };
+    for (let index = 0; index < lines.length; index += 1) {
+      const text = lines[index].trim();
+      const fence = /^(`{3,}|~{3,})/.exec(text);
+      if (fence) {
+        // A listing is its own.
+        index += 1;
+        while (index < lines.length && !(lines[index].trim().startsWith(fence[1]) && /^[`~]+$/.test(lines[index].trim()))) index += 1;
+        continue;
+      }
+      if (CONTAINER.test(lines[index]) && text.replace(/^:::/, '').trim()) {
+        index = MarkupParser._containerEnd(lines, index);
+        continue;
+      }
+      if (!text) continue;
+      // A list goes on over blank lines, as long as what follows is an item or is indented under one.
+      const fresh = index === start || !lines[index - 1].trim();
+      if (LIST_START.test(lines[index])) list = true;
+      else if (fresh && !/^\s/.test(lines[index])) list = false;
+      if (list || text.startsWith('[[') || text.startsWith('$$')) continue;
+      const next = lines[index + 1]?.trim() ?? '';
+      if (!next || /^\{[^{}]*\}$/.test(next) || next.startsWith(':::')) continue;
+      if (Object.keys(MarkupParser._blockAttributes(text, 1)[1]).length) cut(index + 1);
+    }
+    cut(lines.length);
+    return pieces;
+  }
+
+  /**
    * The end of a line of a timeline or a graph: an optional `"label"`, bare words (style names, or
    * a node's shape first), and `{attributes}` last.
    */
@@ -1091,8 +1190,15 @@ export class MarkupParser {
           index = end + 1;
           continue;
         }
+        const align = /^align(?:\s+(\{.*\}))?\s*$/.exec(container[1]);
+        if (align) {
+          const end = MarkupParser._containerEnd(lines, index);
+          items.push(...this._align(lines.slice(index + 1, end), align[1] ? parseAttributes(align[1], line) : {}, line, prefix));
+          index = end + 1;
+          continue;
+        }
         const kind = /^\{\s*\.(element|group)(?:\s|\})/.exec(container[1])?.[1];
-        if (!kind) throw new MarkupError('Only ::: {.element ...}, ::: {.group ...}, ::: tiles, ::: timeline and ::: graph containers are supported inside slides', line);
+        if (!kind) throw new MarkupError('Only ::: {.element ...}, ::: {.group ...}, ::: align, ::: tiles, ::: timeline and ::: graph containers are supported inside slides', line);
         const attrs = parseAttributes(container[1], line);
         const end = MarkupParser._containerEnd(lines, index);
         if (kind === 'group') {

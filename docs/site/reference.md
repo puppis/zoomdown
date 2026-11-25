@@ -25,6 +25,7 @@ This page is the short reference, one line per construct. [The markup language, 
 | `::: notes {step=N} … :::` | the presenter's notes of a slide, or of one step, shown on the companion tablet only ([Presenter notes](slides.html#presenter-notes)) |
 | `::: {.element attrs} … :::` | attributes for one paragraph, heading, image, formula, table or listing |
 | `::: {.group #id attrs} … :::` | a group of elements in local coordinates |
+| `::: align {gap, buff, step, hide, placement, text attributes} … :::` | texts with `&&` that share their columns, each an element with attributes of its own ([Rows of their own](text.html#rows-of-their-own-align)) |
 | `::: tiles {cols, buff, width, height, placement} … :::` | includes laid out as a grid of tiles ([Rows and grids of tiles](slides.html#rows-and-grids-of-tiles)) |
 | `::: timeline {processes, length, width, spacing, x, y} … :::` | a space-time diagram: `p@1 -> q@3 "m"`, `q@2 "e"`, `p: name`, and elements naming points `p@t` ([Space-time diagrams](shapes.html#space-time-diagrams)) |
 | `::: graph {x, y, scale, labels} … :::` | nodes `A (x,y) [shape] ["label"]` and edges `A -> B "3"` ([Graphs](shapes.html#graphs)) |

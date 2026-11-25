@@ -580,7 +580,7 @@ longer && *italic*  && `&&` aligns columns
 
 Blank lines separate elements, and the attributes in braces at the end of a block apply to it: `{#id x= y= width= font_size= color= step=}`. {#prose-key x=-9.35 y=-4.2 width=18.7 font_size=20}
 
-Headings `#` to `######` set the size only; `\\` breaks a line; HTML comments are discarded; `&&` between pieces of text aligns them in columns across the lines, see Columns. A `::: styles` block or the front matter can restyle every role at once. {#prose-more x=-9.35 y=-5.05 width=18.7 font_size=16 color=GRAY}
+Headings `#` to `######` set the size only; `\\` breaks a line; HTML comments are discarded; `&&` between pieces of text aligns them in columns across the lines, and across the rows of a `::: align` block, see Columns. A `::: styles` block or the front matter can restyle every role at once. {#prose-more x=-9.35 y=-5.05 width=18.7 font_size=16 color=GRAY}
 :::
 
 ::: slide {#math width=20}

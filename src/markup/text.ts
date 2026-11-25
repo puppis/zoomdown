@@ -536,7 +536,56 @@ export interface ParagraphOptions {
    * from it as CSS splits a line box.
    */
   lineHeight?: number | null;
+  /**
+   * The columns of a row of a `::: align` block, which it shares with the other rows: `&&` then
+   * separates cells in a text of one line too.
+   */
+  columns?: SharedColumns;
+  /** Measure the text as such a row, and lay nothing out. */
+  measureColumns?: (measure: ColumnMeasure) => void;
 }
+
+/** The columns the rows of a `::: align` block share. */
+export interface SharedColumns {
+  /** Where each column starts. */
+  starts: number[];
+  /** The left edge of a row's box, from the pen of its first column. */
+  left: number;
+  /** How much the rows shrink, all alike, so that the widest fits. */
+  scale: number;
+}
+
+/** What a row of a `::: align` block asks of the columns: their widths, its em, where its ink starts, and the widths of its lines' cells. */
+export interface ColumnMeasure {
+  widths: number[];
+  em: number;
+  left: number;
+  lines: number[][];
+}
+
+/** The columns that rows with these measures share, `gap` apart, each row within its width (`room`). */
+export function shareColumns(rows: ReadonlyArray<{ measure: ColumnMeasure; room: number }>, gap: number | null): SharedColumns {
+  const space = gap ?? Math.max(0, ...rows.map(({ measure }) => measure.em));
+  const widths: number[] = [];
+  for (const { measure } of rows) measure.widths.forEach((width, index) => { widths[index] = Math.max(widths[index] ?? 0, width ?? 0); });
+  const starts: number[] = [];
+  let x = 0;
+  for (const [index, width] of widths.entries()) {
+    starts[index] = x;
+    x += (width ?? 0) + space;
+  }
+  let scale = 1;
+  for (const { measure, room } of rows) {
+    for (const line of measure.lines) {
+      const right = line.length ? starts[line.length - 1] + line[line.length - 1] : 0;
+      if (right > room + 1e-6) scale = Math.min(scale, room / right);
+    }
+  }
+  return { starts, left: Math.min(...rows.map(({ measure }) => measure.left)), scale };
+}
+
+/** Whether a text has the column separator in its prose, as the parser sees it. */
+const hasSeparator = (spans: InlineSpan[]): boolean => spans.some((s) => s.kind === 'text' && s.content.includes('&&'));
 
 /** Whitespace that separates words: only ASCII's, so that a no-break or em space written as `&nbsp;` or `&emsp;` keeps its width. */
 const BLANK = /^[ \t\n\r\f\v]*$/;
@@ -561,7 +610,7 @@ export interface Row {
  * line has nothing to align: there `&&` is two ampersands, as in `while (a && b)`.
  */
 export function hasColumns(spans: InlineSpan[]): boolean {
-  if (!spans.some((s) => s.kind === 'text' && s.content.includes('&&'))) return false;
+  if (!hasSeparator(spans)) return false;
   return spans.some((s) => s.kind === 'text' && (s.soft || s.content.includes('\n')));
 }
 
@@ -570,8 +619,7 @@ export function hasColumns(spans: InlineSpan[]): boolean {
  * `&&` columns a line end of the source ends a row too, and `&&` ends a cell. Without columns
  * every row has one cell.
  */
-export function inlineRows(spans: InlineSpan[]): Row[] {
-  const columns = hasColumns(spans);
+export function inlineRows(spans: InlineSpan[], columns = hasColumns(spans)): Row[] {
   const rows: Row[] = [];
   let cells: Word[][] = [];
   let words: Word[] = [];
@@ -751,11 +799,13 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
     const first = words[0]?.[0];
     return { parts, advance, keepIndent: Boolean(first && first.kind === 'code' && !first.content.trim()), lead: await leadOf(words) };
   };
-  const rows = inlineRows(spans);
+  const shared = (options.columns || options.measureColumns) && hasSeparator(spans);
+  const rows = inlineRows(spans, shared || hasColumns(spans));
   // Columns: each row's cells are shaped unwrapped, every column is as wide as its widest cell,
   // and a cell starts where the columns before it end, plus a gap of an em; a row with fewer
   // cells leaves the rest empty, a row with one cell spans from the first column.
   if (rows.some((row) => row.cells.length > 1)) {
+    const columns = options.columns;
     const em = ((fontSize * 4) / 3) / PX_PER_WORLD_BASE;
     const shaped: Array<ShapedLine[] | null> = [];
     const widths: number[] = [];
@@ -772,12 +822,29 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       }
       shaped.push(cells);
     }
-    const starts: number[] = [];
+    if (options.measureColumns) {
+      // Where the ink of the first column starts, from the pen: the rows of a block start alike.
+      let left = Infinity;
+      for (const cells of shaped) {
+        const first = cells?.[0].parts[0];
+        if (!first) continue;
+        if (first.kind === 'text') first.line.placeOrigin(0, 0);
+        left = Math.min(left, (first.kind === 'text' ? first.line : first.piece.mobject).getLeft()[0]);
+      }
+      options.measureColumns({
+        widths, em, left: Number.isFinite(left) ? left : 0,
+        lines: shaped.filter((cells): cells is ShapedLine[] => cells !== null).map((cells) => cells.map((cell) => cell.advance)),
+      });
+      for (const cells of shaped) for (const cell of cells ?? []) for (const part of cell.parts) if (part.kind === 'text') part.line.dispose();
+      return new Group();
+    }
+    let starts: number[] = [];
     let x = 0;
     widths.forEach((width, index) => {
       starts[index] = x;
       x += width + em;
     });
+    if (columns) starts = columns.starts;
     const groups: Group[] = [];
     let ascent = 0;
     let descent = 0;
@@ -806,8 +873,17 @@ export async function layoutParagraph(spans: InlineSpan[], options: ParagraphOpt
       }
       if (cells && members.length) {
         const group = new Group(...members);
-        // A block wider than its width shrinks as a whole row, as an overlong word does.
-        if (right > maxWidth + 1e-6) group.scale(maxWidth / right, { aboutPoint: [0, 0, 0] });
+        if (columns && group.getLeft()[0] > columns.left + 1e-9) {
+          // The rows of an align block have their boxes start alike, wherever their ink does: a blank
+          // line of text, a box of transparent pixels, marks it.
+          const mark = new StyledLine({ runs: [{ text: '\u00a0', bold: false, italic: false, color: defaultColor, mono: false, href: null }], fontSize, fontFamily, baseColor: defaultColor });
+          mark.placeOrigin(columns.left + mark.originInset, 0);
+          group.add(mark);
+        }
+        // A block wider than its width shrinks as a whole row, as an overlong word does; the rows of
+        // an align block shrink together.
+        const factor = columns ? columns.scale : right > maxWidth + 1e-6 ? maxWidth / right : 1;
+        if (factor !== 1) group.scale(factor, { aboutPoint: [0, 0, 0] });
         (group as Group & { rowNumber?: number }).rowNumber = rowNumber;
         groups.push(group);
       }

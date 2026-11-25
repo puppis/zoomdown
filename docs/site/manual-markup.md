@@ -334,7 +334,7 @@ or icon:
 | `H~2~O`, `x^2^` | a subscript and a superscript of text, as in Pandoc: 0.7 as large, lowered 0.15 em or raised 0.363 em, as LaTeX's `\textsubscript` and `\textsuperscript`; it holds no space but an escaped one (`T~max\ load~`, a no-break space) and no formula, code or bracket, takes emphasis inside (`y~*i*~`) and the style around it (`**x^2^**`); `\~` and `\^` are literal |
 | `&nbsp;`, `&ensp;`, `&emsp;`, `&thinsp;` | a space that keeps its width: no-break, half an em, an em, thin; Markdown collapses runs of plain spaces, and a no-break space never breaks a line; at the start of a line, a paragraph or a list item, such spaces (as entities or characters) and a formula of space alone indent it: `$\phantom{X}$` as wide as `$X$`, `$\quad$` and `$\hspace{…}$` as wide as they are typeset |
 | `\\` | a hard line break; the spaces that start the next source line indent it, each a plain space of the font and a tab to the next multiple of four (not in a block with `&&` columns; in a list item, counted from the item's text), and the lines it wraps to keep the indent; a lone newline inside a paragraph is a space |
-| `&&` | a column separator: in a block of two lines or more that contains one (in a single line it is two ampersands), every source line is a row and the cells align in columns across the rows, each as wide as its widest cell, an em apart ([Columns](text.html#columns)); `\&&` is a literal |
+| `&&` | a column separator: in a block of two lines or more that contains one (in a single line it is two ampersands), every source line is a row and the cells align in columns across the rows, each as wide as its widest cell, an em apart ([Columns](text.html#columns)); the texts of a [`::: align`](#align) block share their columns, those of one line too; `\&&` is a literal |
 
 A `[text]{…}` at the end of a block with any attribute other than `color` and `underline` is the
 block's attribute list, not a span. A strike or an underline covers the spaces between its words,
@@ -367,6 +367,37 @@ Each level indents by `layout.listIndent` (0.6) and wraps within what remains of
 blank line between items keeps the list together. A block indented under an item after a blank
 line continues it: a paragraph, display math (`$$…$$`), a listing, an image or a table starts
 where the item's text starts, past the bullet or number, as an element of its own.
+
+### ::: align
+
+```markdown
+::: align {gap=0.4 step=+}
+**selected** && = && an edge of the spanning tree
+{color=GREEN}
+**rejected** && = && an edge that would close a cycle {color=RED}
+
+Anything may stand between two rows.
+
+**undecided** && = && any other edge
+:::
+```
+
+The texts with `&&` in the block, its **rows**, share their columns: a column is as wide as its
+widest cell in any row. Each is an element of the slide of its own, as anything else in the block
+is, and a text of one line has columns too. A line that ends with `{…}` ends its row: the next line
+starts another, one line below; rows separated by a blank line are paragraphs. At least one row is
+required. A list item's columns count from its text, and a group's content is not the block's.
+
+| Attribute | Values | Default | Meaning |
+| --- | --- | --- | --- |
+| `gap` | units, nonnegative | an em of the largest row | the space between two columns |
+| `step`, `hide` | as for elements | | for each row that writes none (`+` counts for each) |
+| `buff` | units | the flow's | the space before each row after the first, unless it writes its own |
+| `color`, `font_size`, `font`, `line_height`, `opacity`, `width`, `href`, `enter`, `exit`, `run_time`, `lag` | as for text | | for each row that writes none |
+| `x`, `y`, `at`, `dx`, `dy`, `anchor`, the relative references | as for elements | | the first row's, under which the others flow; an `x` alone is every row's |
+| `class` | names | | fills in what the block does not write, of the above |
+
+Rows too wide for their width (`width`, or the flow's) shrink all alike, so that they stay aligned.
 
 ### ::: {.element}
 

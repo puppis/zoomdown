@@ -151,6 +151,43 @@ wide one a `width`. Styles, formulas, code and links work inside cells. A litera
 ampersand is written `\&&`; a single `&` is ordinary text everywhere. `\\` still breaks a row,
 which lets two rows share a source line.
 
+### Rows of their own: `::: align`
+
+The columns above are those of one block, which is one element: it has one `step`, one color, one
+place. A `::: align` block lines up the columns of several: all the texts with `&&` in it, its
+**rows**, share their columns, and each remains an element of the slide like any other, with
+attributes of its own.
+
+```zoomdown {height=5}
+::: slide {#aligned-rows width=16 height=5 flow_top=0.6}
+
+::: align
+**message complexity** && = && number of messages {step=1}
+**time complexity**    && = && length of a maximal chain of events \\
+                       &&   && (local events may not count) {step=2}
+**space complexity**   && = && memory used *per node* {step=3 color=TEAL}
+:::
+
+The flow goes on below. {step=4}
+
+:::
+```
+
+- In it a text of one line has columns too. A line that ends with `{attributes}` ends its row, so
+  the next line is the next row, one line below; a blank line between two rows separates them as
+  paragraphs, or a `buff` of their own. Lines without attributes after them, up to a blank line,
+  make one row of several lines, as in any block.
+- A column is as wide as its widest cell in any row, whatever their sizes; `gap=` sets the space
+  between the columns (an em by default), and rows shrink together when the widest does not fit. A
+  text without `&&`, a formula, a picture, a list between two rows is laid out as anywhere, and does
+  not change the columns.
+- What the block writes is its rows' unless they write it: `::: align {step=+}` reveals them one by
+  one (with [sequential steps](fragments.html#sequential-steps)), `color`, `font_size`, `font`,
+  `width`, `opacity`, `enter` and the other attributes of text go to each, `buff` to each after the
+  first, and a position (`x`, `y`, `at`, `below:#id`, …) to the first, under which the others flow;
+  an `x` alone is every row's. Classes fill in the same attributes.
+- A slide may hold several, each with columns of its own, and so may a [group](groups.html).
+
 ## Inline styling
 
 Bold, italic, nested emphasis, code spans and inline math (`$…$`) can be combined freely. A
