@@ -27,7 +27,6 @@ import {
   type SourceLocation,
   type TransitionMode,
   Visit,
-  buildPlaceholder,
   startingSlide,
   viewportCorners,
   walk,
@@ -716,9 +715,7 @@ export class SlideContext extends LocalScene {
     this.transform = transform;
     const config = presenter.config;
     this.debug = slide.debug ?? (slide.parent ? presenter.contexts.get(slide.parent)?.debug ?? false : false);
-    const guides = this.debug && !slide.hidden
-      ? new SlideGuides(slide.width, slide.height, { color: presenter.foreground, frameColor: config.slideBorderColor, frameWidth: config.slideBorderWidth })
-      : null;
+    const guides = this.debug && !slide.hidden ? this._guides(true) : null;
     if (config.showSlideBorders && !guides && !slide.hidden) {
       this._canvasBorder = new Rectangle({
         width: slide.width,
@@ -739,6 +736,28 @@ export class SlideContext extends LocalScene {
       guides,
     });
     this.display.group.userData[DISPLAY_SLIDE_KEY] = slide;
+  }
+
+  /** The slide's frame in the presenter's border style, with the dots of its grid or alone. */
+  private _guides(dots: boolean): SlideGuides {
+    const { slideBorderColor, slideBorderWidth } = this.presenter.config;
+    return new SlideGuides(this.slide.width, this.slide.height, { color: this.presenter.foreground, frameColor: slideBorderColor, frameWidth: slideBorderWidth, dots });
+  }
+
+  /**
+   * @internal Leave the slide out of a partial rendering: nothing of it is drawn, but for its frame
+   * when `framed`, as a child of a slide that is drawn. The frame is a guide: no export shows it.
+   */
+  leaveOut(framed: boolean): void {
+    const display = this.display;
+    display.backgrounds = [];
+    display.gridOpacity = 0;
+    display.contentOpacity = 1;
+    display.earlyOpacity = 1;
+    display.setGuides(null);
+    display.overlays = [];
+    if (framed && !this.slide.hidden) display.setGuides(this._guides(false));
+    display.sync(this.transform);
   }
 
   /** Width of the slide's logical canvas. */
@@ -1037,11 +1056,7 @@ export class Presenter {
         placeholder: slide instanceof PlaceholderSlide || (skipBuilds && !slide.onlyThis),
       });
       const before = slide.children.length;
-      if (skipBuilds && !slide.onlyThis) {
-        buildPlaceholder(ctx, slide instanceof PlaceholderSlide ? slide.label : `${slide.name}\nNot selected`);
-      } else {
-        await slide.build(ctx);
-      }
+      if (!skipBuilds || this._drawn(slide)) await slide.build(ctx);
       total += countSubtrees(slide.children.slice(before));
       // Viewports belong to the parent canvas; they are ordinary animatable local objects.
       ctx.add(...slide._children.map((child) => child.viewport as Rectangle));
@@ -1055,16 +1070,12 @@ export class Presenter {
     this.selectedRender = this._renderSlides.size > 0;
     if (this.selectedRender) {
       for (const [slide, ctx] of this.contexts) {
-        if (this._renderSlides.has(slide)) continue;
+        if (this._drawn(slide)) continue;
         if (!skipBuilds) {
           ctx.clear();
-          buildPlaceholder(ctx, slide instanceof PlaceholderSlide ? slide.label : `${slide.name}\nNot selected`);
           ctx.add(...slide._children.map((child) => child.viewport as Rectangle));
         }
-        ctx.display.contentOpacity = 1;
-        ctx.display.earlyOpacity = 1;
-        ctx.display.gridOpacity = 0;
-        ctx.display.sync(ctx.transform);
+        ctx.leaveOut(slide.parent?.onlyThis ?? false);
       }
     }
     this.startSlide = startingSlide(root);
@@ -1072,6 +1083,11 @@ export class Presenter {
     this._keys = slideKeys(root);
     this._report('prepared', undefined, { total: this.contexts.size });
     return this;
+  }
+
+  /** Whether a partial rendering draws a slide: when it is selected, or stands for an undefined one in a selected slide. */
+  private _drawn(slide: Slide): boolean {
+    return slide.onlyThis || (slide instanceof PlaceholderSlide && (slide.parent?.onlyThis ?? false));
   }
 
   enabled(slide: Slide): boolean {

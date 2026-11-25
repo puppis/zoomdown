@@ -134,7 +134,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | `tremble`, `tremble_amplitude`, `tremble_rate` | shapes, icons, connections, attachments, math, groups, tables, charts | `true`, `N` or `N-M`: vibration over a range of steps, its size and frequency |
 | `focus-only` | static elements | visible only while the slide is focused |
 | `debug` | slides, includes, subslides; `slide: debug` in the styles for all | a frame around the slide and faint dots at its coordinates, while it is being designed; never in an export |
-| `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview` | slides, includes, subslides | opening stop, partial preparation, zooming back to the parent after this child or leaving it straight for the next stop (by default only the last child returns), `zoom`, `cut` or a camera transition of the deck's own, content shown before the first visit; written bare, a flag means `=true` ([Slides and the forest](slides.html#flags)) |
+| `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview` | slides, includes, subslides | opening stop, partial rendering, zooming back to the parent after this child or leaving it straight for the next stop (by default only the last child returns), `zoom`, `cut` or a camera transition of the deck's own, content shown before the first visit; written bare, a flag means `=true` ([Slides and the forest](slides.html#flags)) |
 
 ## Names
 

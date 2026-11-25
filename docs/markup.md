@@ -53,8 +53,8 @@ every construct of this page live, each next to the listing that produced it; op
 - An include referring to an undefined slide draws a red placeholder rather than failing; the
   placeholder is never a stop, so the deck keeps running while the slide is still unwritten.
 - `start-here=true` on a slide, include or subslide opens playback at that slide (at most one).
-  `only-this=true` draws and plays only the slides that say so while editing; every other, their
-  own children included, becomes a placeholder.
+  `only-this=true` draws and plays only the slides that say so while editing; nothing of any other is
+  drawn, but for a frame around each child of a slide that is.
 - When a child ends, the camera goes straight to the next sibling when nothing happens in between,
   and zooms back to the parent when the parent has a step of its own before the next child, and
   after the last one. `return-to-parent` on a slide, include or subslide zooms back after that child

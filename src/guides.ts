@@ -38,11 +38,16 @@ export function designPoints(width: number, height: number): Array<{ x: number; 
  */
 export class SlideGuides {
   readonly frame: Rectangle;
-  readonly dots: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+  /** The dots; null for a frame alone, as around a child left out of a partial rendering. */
+  readonly dots: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> | null;
 
-  constructor(width: number, height: number, style: { color: string; frameColor: string; frameWidth: number }) {
+  constructor(width: number, height: number, style: { color: string; frameColor: string; frameWidth: number; dots?: boolean }) {
     // As thick on the screen on a slide of any size, when the camera is on it.
     this.frame = new Rectangle({ width, height, fillOpacity: 0, color: style.frameColor, strokeWidth: (style.frameWidth * width) / 16 });
+    this.dots = style.dots === false ? null : SlideGuides._dots(width, height, style.color);
+  }
+
+  private static _dots(width: number, height: number, color: string): THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> {
     const radius = width / 900;
     const sides = 8;
     const points = designPoints(width, height);
@@ -61,20 +66,22 @@ export class SlideGuides {
     }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    this.dots = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: style.color, transparent: true, opacity: DOT_OPACITY, depthTest: false, depthWrite: false }));
-    this.dots.frustumCulled = false;
+    const dots = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: DOT_OPACITY, depthTest: false, depthWrite: false }));
+    dots.frustumCulled = false;
+    return dots;
   }
 
   /** Show the guides, or none; `near` is how much the camera is on the slide, from 0 to 1. */
   show(shown: boolean, near: number): void {
     this.frame.getThreeObject().visible = shown;
+    if (!this.dots) return;
     this.dots.visible = shown && near > 0;
     this.dots.material.opacity = DOT_OPACITY * near;
   }
 
   dispose(): void {
-    this.dots.geometry.dispose();
-    this.dots.material.dispose();
+    this.dots?.geometry.dispose();
+    this.dots?.material.dispose();
   }
 }
 

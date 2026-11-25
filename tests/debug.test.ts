@@ -58,7 +58,7 @@ describe('a slide drawn for its design (debug)', () => {
     const display = (contexts.get('A') as SlideContext).display;
     expect(display.overlays).toEqual([display.guides?.frame]);
     expect(display.guides?.frame.color.toString().toLowerCase()).toBe('#00ff00');
-    expect(display.guides?.dots.material.color.getHexString()).toBe('123456');
+    expect(display.guides?.dots?.material.color.getHexString()).toBe('123456');
     expect((contexts.get('B') as SlideContext).display.overlays.length).toBe(1);
   });
 
@@ -71,7 +71,7 @@ describe('a slide drawn for its design (debug)', () => {
       presenter.prepareRender(800, 450, { min: [-100, -100, 0], max: [100, 100, 0] }, width);
       return ['A', 'B'].map((other) => {
         const guides = (contexts.get(other) as SlideContext).display.guides;
-        return [guides?.dots.visible, guides?.frame.getThreeObject().visible];
+        return [guides?.dots?.visible, guides?.frame.getThreeObject().visible];
       });
     };
     expect(look('A')).toEqual([[true, true], [false, true]]);

@@ -180,7 +180,8 @@ export class Display {
   gridOpacity: number;
   backgrounds: Mobject[];
   overlays: Mobject[];
-  readonly guides: SlideGuides | null;
+  /** The frame and dots of a slide drawn for its design, if any. */
+  guides: SlideGuides | null = null;
   transform = new Transform();
   /** True until the next render assigns draw order to new Three.js objects. */
   orderDirty = true;
@@ -201,12 +202,26 @@ export class Display {
     this.earlyOpacity = options.earlyOpacity ?? 1;
     this.gridOpacity = options.gridOpacity;
     this.backgrounds = [...(options.backgrounds ?? [])];
-    this.guides = options.guides ?? null;
-    this.overlays = [...(options.overlays ?? []), ...(this.guides ? [this.guides.frame] : [])];
+    this.overlays = [...(options.overlays ?? [])];
     this.group.userData[DISPLAY_GROUP_FLAG] = true;
     this.group.matrixAutoUpdate = false;
     this.group.add(this.gridGroup, this.contentGroup, this.earlyGroup, this.overlayGroup);
-    if (this.guides) this.group.add(this.guides.dots);
+    this.setGuides(options.guides ?? null);
+  }
+
+  /** Draw these guides instead of those the slide has, or none. */
+  setGuides(guides: SlideGuides | null): void {
+    const old = this.guides;
+    if (old) {
+      this.overlays = this.overlays.filter((mob) => mob !== old.frame);
+      if (old.dots) this.group.remove(old.dots);
+      old.dispose();
+    }
+    this.guides = guides;
+    if (!guides) return;
+    this.overlays.push(guides.frame);
+    if (guides.dots) this.group.add(guides.dots);
+    this.orderDirty = true;
   }
 
   /** The members that fade in with the slide, and those shown before its first visit. */
@@ -315,7 +330,7 @@ export class Display {
       // that follows it. The family is listed parents first, so each Three.js node ends with the
       // order of the innermost mobject it belongs to.
       const attached = this._attached;
-      if (this.guides) this.guides.dots.renderOrder = nextOrder();
+      if (this.guides?.dots) this.guides.dots.renderOrder = nextOrder();
       for (const members of [attached.grid, attached.content, attached.early, attached.overlay]) {
         for (const mob of members) {
           const order = nextOrder();

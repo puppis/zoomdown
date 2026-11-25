@@ -107,7 +107,7 @@ may hold `::: {.group}`, `::: {.element}` and `::: notes` blocks.
 | `width`, `height` | units | `layout.defaultSlideSize`, 16 × 9 | the canvas; one of them keeps the default proportions |
 | `flow_top`, `flow_left` | units | `layout.margin`, 0.65 | where the flow starts: the distance from the top edge to the top of the first flowing block, and from the left edge to the flow's left edge; nonnegative and less than the height and width |
 | `start-here` | flag | false | playback opens at this slide's entry; at most one slide (or include) may say so |
-| `only-this` | flag | false | render only the slides that say so (a partial render while editing); every other, their own children included, becomes a placeholder, and the starting slide must be among them |
+| `only-this` | flag | false | render only the slides that say so (a partial render while editing); nothing of any other is drawn, but for a frame around each child of a slide that is, in the style of [debug](#debug) and like it never in an export; the starting slide must be among them |
 | `return-to-parent` | `true`, `false` | unset | after this slide's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset) |
 | `skip-return` | flag | unset | `return-to-parent=false`, from the other side; not together with it |
 | `transition` | `zoom`, `cut`, a name | unset | how the camera arrives at this slide; a name is a module of the deck's `transitions/` folder |

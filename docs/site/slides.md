@@ -155,7 +155,7 @@ at once ([Flags](#flags)).
 | Attribute | On | Effect |
 | --- | --- | --- |
 | `start-here=true` | slide, include, subslide | open playback at this slide (at most one in a deck) |
-| `only-this=true` | slide, include, subslide | draw and play only the slides that say so, while editing; every other slide, a child of one that does included, becomes a placeholder. A slide with `start-here` must be among them, and an export is as partial as the preview |
+| `only-this=true` | slide, include, subslide | draw and play only the slides that say so, while editing; nothing of any other is drawn, but for a frame around each child of a slide that is. A slide with `start-here` must be among them, and an export is as partial as the preview, without the frames |
 | `return-to-parent` | slide, include, subslide | zoom back to the parent after this child even when a sibling follows at once; `return-to-parent=false` is `skip-return` |
 | `skip-return` | slide, include, subslide | leave this child straight for the next stop even when it is the last one, without zooming back to the parent; `skip-return=false` is `return-to-parent` |
 | `transition=cut` | slide, include, subslide | arrive at this slide without a camera animation; `transition=zoom` restores the zoom under a `cut` deck; any other name is a camera transition of the deck's own ([Extending a deck](extending.html#camera-transitions)) |
@@ -182,9 +182,10 @@ that `x=`, `y=` and the edges of the slide can be read off the screen while it i
 ```
 
 The dots stand at whole coordinates around the origin in the middle of the slide, larger along the
-two axes and largest every five units, and show while the camera is on the slide; the frame shows
-in the parent's view as well, where it marks the tile. To have them on every slide, say so once, in
-the `slide` style, whose attributes every slide takes unless it writes its own (`debug=false`
+two axes and largest every five units, and show while the camera is on the slide; the frame shows in
+the parent's view as well, where it marks the tile. With `only-this` on some slides, those alone
+have dots, and the frames are theirs and their children's. To have them on every slide, say so once,
+in the `slide` style, whose attributes every slide takes unless it writes its own (`debug=false`
 leaves one slide out):
 
 ```markdown
