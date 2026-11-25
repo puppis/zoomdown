@@ -48,9 +48,10 @@ Font sizes are in points, the engine's convention: text of `font_size=28` is abo
 tall. Angles are in radians. Times are in seconds. Opacities run from 0 to 1. Steps are
 nonnegative integers. Every numeric attribute must be a finite number; `width`, `height`,
 `font_size` and `size` must be positive; `radius`, `run_time`, `hachure_gap`, `tremble_rate`,
-`tip_length`, `tip_width`, `looseness` and `wavy` must be positive; `buff`, `corner_radius`,
+`tip_length`, `tip_width`, `looseness` and `wavy` must be positive; `corner_radius`,
 `stroke_width`, `lag`, `roughness`, `bowing`, `fill_weight`, `seed`, `tremble_amplitude`, a
-table's `padding`, `padding_x` and `padding_y` must not be negative; `seed` is an integer;
+table's `padding`, `padding_x` and `padding_y`, and the `buff` of an arrow, a line or an attachment
+must not be negative (a placement's `buff` may be, to overlap); `seed` is an integer;
 `fill_opacity`, `opacity`, `smoothness`, `header_opacity` and `stripe_opacity` lie between 0 and
 1. The angles of `bend` and `loop`, like `hachure_angle`, are in degrees.
 
@@ -639,7 +640,7 @@ labels, `label_pos`, `slanted`, dashes, hand-drawn strokes and `halo_bridge` fol
 | --- | --- | --- | --- |
 | `id` | identifier | `element-N` | |
 | `from`, `to` | `#id`, `#id.anchor`, `(x,y)` | required, written before the attributes | the endpoints |
-| `buff` | units | 0.08 on an arrow, 0 on a line | the space left at both ends, between the connection and what it joins (an element's border, an anchor or a point), measured along its path; on an arrow by default at most a third of its length |
+| `buff` | units, nonnegative | 0.08 on an arrow, 0 on a line | the space left at both ends, between the connection and what it joins (an element's border, an anchor or a point), measured along its path; on an arrow by default at most a third of its length |
 | `buff_start`, `buff_end` | units | `buff` | the space at one end only, as TikZ's `shorten <` and `shorten >` |
 | `offset` | units | 0 | shifts a straight arrow or line sideways, to the left of its way (negative: to the right), its ends still on the outlines it joins; not with `bend`, `loop` or `via` |
 | `label` | inline markup | | text at the middle of the connection |
@@ -679,7 +680,7 @@ box. The targets come first, then `#id` and the attributes.
 | Attribute | Values | Default | Meaning |
 | --- | --- | --- | --- |
 | `side` | `left`, `right`, `top`, `bottom` | `bottom` | |
-| `buff` | units | 0.15 | distance from the element |
+| `buff` | units, nonnegative | 0.15 | distance from the element |
 | `label`, `font`, `font_size` | | | text beyond the brace, in the brace's `color` |
 | `label_color` | color | `color` | the label in a color of its own |
 | `label_buff` | units | 0.1 | the distance between the brace and the label's lines |
@@ -699,7 +700,7 @@ and an icon's label count separately).
 
 | Attribute | Values | Default | Meaning |
 | --- | --- | --- | --- |
-| `buff` | units | 0.15 for a box, 0.3 for a blob | the margin around the elements |
+| `buff` | units, nonnegative | 0.15 for a box, 0.3 for a blob | the margin around the elements |
 | `corner_radius` | units | 0 | box only |
 | `smoothness` | 0 to 1 | 0.5 | blob only: the radius of the disc that rounds the outline's hollows, up to twice `buff` |
 | `fill_color`, `fill_opacity` | | the stroke color, 0 | |
@@ -891,7 +892,7 @@ omitted coordinate is the flow position, unless `anchor=center`; for any other e
 | `below:#id`, `above:#id`, `left-of:#id`, `right-of:#id` | put the element next to `#id` on that side, centered on it across the other axis, at distance `buff` (`layout.gap` by default); one direction at most. Between two texts, side by side they share the first baseline, and one below the other they are a line apart: the gap between their lines (font ascent and descent, not ink) is the line gap plus `buff` |
 | `left-aligned:#id`, `right-aligned:#id`, `top-aligned:#id`, `bottom-aligned:#id` | align that edge with the edge of `#id` |
 | `baseline-aligned:#id` | align the first baselines; both elements must be text, formulas or listings |
-| `buff` | the distance of a direction, or alone, the space after the block before of a block that flows down |
+| `buff` | the distance of a direction, or alone, the space after the block before of a block that flows down; negative, the element overlaps the other by that much (`above:#id buff=-0.5`) |
 | `x` or `y` with a reference | overrides the axis the reference leaves centered |
 
 A reference names an element of the same slide and scope that is not a connection or an

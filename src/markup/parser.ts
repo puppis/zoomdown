@@ -1831,6 +1831,10 @@ export class ASTTransformer {
     }
     const allowed = ASTTransformer.allowedAttributes(item);
     if (allowed) this._checkAttrs(item.attributes, allowed, item.line);
+    // The space an arrow or a line leaves at its ends, or an attachment around what it encloses, is no placement's.
+    if ((CONNECTIONS.has(item.kind) || ATTACHMENTS.has(item.kind)) && Number(item.attributes.buff ?? 0) < 0) {
+      throw new MarkupError(`buff must be nonnegative on ${CONNECTIONS.has(item.kind) ? 'an arrow or a line' : 'a brace, a box or a blob'}`, item.line);
+    }
     if (CONNECTIONS.has(item.kind)) {
       if ('dashed' in item.attributes && !['true', 'false'].includes(item.attributes.dashed)) throw new MarkupError('dashed must be true or false', item.line);
       if ('offset' in item.attributes) {
@@ -2273,7 +2277,8 @@ export class ASTTransformer {
       'tip_length', 'tip_width', 'sublabel_width', 'bend', 'looseness', 'wavy', 'amplitude', 'buff_start', 'buff_end', 'flow_top', 'flow_left', 'label_width', 'line_height', 'header_font_size']) {
       if (!(key in attrs)) continue;
       const number = numberValue(attrs, key, line) as number;
-      if (['buff', 'buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'sublabel_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
+      // A placement's buff may be negative: it then overlaps what it is placed against.
+      if (['buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'sublabel_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
         throw new MarkupError(`${key} must be nonnegative`, line);
       }
       if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size', 'sublabel_font_size', 'sublabel_width'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);

@@ -132,7 +132,8 @@ Round with pivot *r* … {step=1}
 ```
 
 - `below`, `above`, `left-of` and `right-of` place the element beyond the reference's bounding
-  edge, centered on the other axis, at distance `buff` (default `layout.gap`). Two texts line up
+  edge, centered on the other axis, at distance `buff` (default `layout.gap`); a negative `buff`
+  makes it overlap the reference by that much (`above:#box buff=-0.5`, over its top). Two texts line up
   as lines of type: side by side on one baseline, and one below the other a line apart, `buff`
   plus the line gap between the bottom of one's last line and the top of the other's first, as
   their font measures them.

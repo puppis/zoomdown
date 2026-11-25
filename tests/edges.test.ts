@@ -59,3 +59,20 @@ describe('the edges of the slide', () => {
     expect(parse('[x]{at=#TOP.left above=#BOTTOM}')).toThrow(/at= cannot be combined with above/);
   });
 });
+
+describe('a negative buff', () => {
+  it('overlaps what an element is placed against, by an edge or another element', async () => {
+    const s = await slide('width=16 height=9', '[[rectangle: #a x=0 y=0 width=4 height=2]]\n\n[[rectangle: #r width=2 height=1 above=#a buff=-0.5]]\n\n[[rectangle: #b width=1 height=1 right-of=#LEFTMOST buff=-0.25]]\n\nFirst {#t1 x=-7 y=-2}\n\nSecond {#t2 buff=-0.1}');
+    expect(element(s, 'r').getBottom()[1]).toBeCloseTo(1 - 0.5, 6);
+    expect(element(s, 'b').getLeft()[0]).toBeCloseTo(-8 - 0.25, 6);
+    const plain = await slide('width=16 height=9', 'First {#t1 x=-7 y=-2}\n\nSecond {#t2 buff=0}');
+    expect(element(s, 't2').getCenter()[1] - element(plain, 't2').getCenter()[1]).toBeCloseTo(0.1, 6);
+  });
+
+  it('is refused where it is no placement: the ends of an arrow, an attachment', () => {
+    const parse = (body: string) => () => new MarkupParser().parse(`::: slide {#s}\n[[circle: #a x=0 y=0 radius=1]]\n\n[[circle: #b x=4 y=0 radius=1]]\n\n${body}\n:::`);
+    expect(parse('[[arrow: #a -> #b, buff=-0.2]]')).toThrow(/buff must be nonnegative on an arrow or a line/);
+    expect(parse('[[box: #a, buff=-0.1]]')).toThrow(/buff must be nonnegative on a brace, a box or a blob/);
+    expect(parse('[[rectangle: #r width=1 height=1 below=#a buff=-2]]')).not.toThrow();
+  });
+});
