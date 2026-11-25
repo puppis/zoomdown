@@ -422,6 +422,22 @@ export function applyOpacity(obj: Mobject, opacity: number): void {
   }
 }
 
+/** A slide's edge or center as a reference of positions: a line along the side of its canvas, or a point. */
+type EdgeMobject = Mobject & { markupEdge?: string };
+
+/** The slide's edges and center, `#TOP`, `#BOTTOM`, `#LEFTMOST`, `#RIGHTMOST` and `#CENTER`, for a canvas of this size. */
+export function slideEdges(width: number, height: number): Map<string, Mobject> {
+  const [w, h] = [width / 2, height / 2];
+  const ends: Record<string, [[number, number], [number, number]]> = {
+    TOP: [[-w, h], [w, h]], BOTTOM: [[-w, -h], [w, -h]], LEFTMOST: [[-w, -h], [-w, h]], RIGHTMOST: [[w, -h], [w, h]], CENTER: [[0, 0], [0, 0]],
+  };
+  return new Map(Object.entries(ends).map(([name, [a, b]]) => {
+    const line = new Line({ start: [a[0], a[1], 0], end: [b[0], b[1], 0] }) as EdgeMobject;
+    line.markupEdge = name;
+    return [name, line];
+  }));
+}
+
 /** Apply nextTo/alignTo placement in the owning slide's logical coordinates. */
 export function placeRelative(
   item: ElementSpec | IncludeSpec | CodeSlideSpec,
@@ -429,6 +445,7 @@ export function placeRelative(
   objects: Map<string, Mobject>,
   gap: number,
   textAnchor = 'left-baseline',
+  edgeGap = gap,
 ): void {
   const attrs = item.attributes;
   if ('at' in attrs) {
@@ -447,7 +464,8 @@ export function placeRelative(
   for (const [key, direction] of Object.entries(NEIGHBORS)) {
     if (!(key in attrs)) continue;
     const reference = referenced(objects, textReference(attrs[key].slice(1)));
-    const buff = Number(attrs.buff ?? gap);
+    // Beside an edge of the slide, a margin from it, as the flow keeps.
+    const buff = Number(attrs.buff ?? ((reference as EdgeMobject).markupEdge ? edgeGap : gap));
     obj.nextTo(reference, direction, buff);
     // Two texts line up as lines of type: side by side on one baseline; one below the other a
     // line apart, its first line's top `buff` below the other's last line (both measured by

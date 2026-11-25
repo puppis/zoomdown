@@ -20,7 +20,7 @@ import {
   type ListItem,
   NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, roleStyledKeys, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
   RELATIVE_STEP, type StepMode,
-  elementStep, hasSeparator, numberValue, parseAt, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, shownName, span, stepValue, textReference,
+  elementStep, hasSeparator, numberValue, parseAt, SLIDE_EDGES, BOX_ANCHORS, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, shownName, span, stepValue, textReference,
 } from './ast';
 
 type Env = { line?: number };
@@ -1406,6 +1406,9 @@ export class MarkupParser {
 
 const RESERVED_LAST = 'LAST is reserved: #LAST names the element written just before';
 
+/** The error for an element or a slide named as one of the slide's edges. */
+const reservedEdge = (id: string) => `${id} is reserved: #${id} names the slide's ${id === 'CENTER' ? 'center' : `${id.toLowerCase().replace(/most$/, '')} edge`}`;
+
 /** The attributes whose values name elements as `#id`: relative constraints, `at=` and the ends of an arrow or a line. */
 const NAMING_KEYS = [...POSITION_REFERENCES, 'at', 'from', 'to'];
 
@@ -1474,6 +1477,7 @@ export class ASTTransformer {
     for (const slide of document.slides) {
       if (!IDENTIFIER.test(slide.id) || slides.has(slide.id)) throw new MarkupError(`Invalid or duplicate slide ID ${JSON.stringify(slide.id)}`, slide.line);
       if (slide.id === 'LAST') throw new MarkupError(RESERVED_LAST, slide.line);
+      if (SLIDE_EDGES.has(slide.id)) throw new MarkupError(reservedEdge(slide.id), slide.line);
       slides.set(slide.id, slide);
       if (!slide.placeholder) ASTTransformer._slideStyle(slide.attributes, document.styles);
       this._checkAttrs(slide.attributes, new Set(['id', 'title', 'width', 'height', 'flow_top', 'flow_left', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', 'debug', ...(slide.placeholder ? ['src'] : [])]), slide.line);
@@ -1500,6 +1504,7 @@ export class ASTTransformer {
           if (item instanceof ElementSpec) {
             applyStyles(item, styles);
             if (item.id === 'LAST') throw new MarkupError(RESERVED_LAST, item.line);
+            if (SLIDE_EDGES.has(item.id)) throw new MarkupError(reservedEdge(item.id), item.line);
             resolveLast(item, last, where);
             ASTTransformer._fit(item);
             // A node of a graph is as large as its style says, or of a default size.
@@ -2297,6 +2302,10 @@ export class ASTTransformer {
     const scopeOfTarget = (target: ElementSpec | IncludeSpec) => (target instanceof IncludeSpec ? '' : scopeOf.get(target.id));
     const decoration = (target: ElementSpec | IncludeSpec) => target instanceof ElementSpec && (CONNECTIONS.has(target.kind) || ATTACHMENTS.has(target.kind));
     const keys = Object.keys(attrs);
+    // The slide's edges and center stand for the canvas of the slide, whose coordinates a group does not share.
+    const edge = (reference: string) => {
+      if (scope !== '') throw new MarkupError(`${reference} names an edge of the slide, which an element inside a group cannot reference: place the group instead`, item.line);
+    };
     if (('dx' in attrs || 'dy' in attrs) && !keys.some((key) => POSITION_REFERENCES.has(key) || ['x', 'y', 'at'].includes(key))) {
       throw new MarkupError('dx and dy require coordinates, at= or a relative constraint', item.line);
     }
@@ -2310,7 +2319,10 @@ export class ASTTransformer {
       }
       const at = parseAt(attrs.at, item.line);
       if (at.anchor) ASTTransformer._checkAnchorFor(item, at.anchor, item.line);
-      if ('id' in at.target) {
+      if ('id' in at.target && SLIDE_EDGES.has(at.target.id)) {
+        edge(`#${at.target.id}`);
+        if (at.target.anchor && !BOX_ANCHORS.has(at.target.anchor)) throw new MarkupError(`#${at.target.id} takes a box anchor, such as center, left or top-right, not ${at.target.anchor}`, item.line);
+      } else if ('id' in at.target) {
         const target = lookup(at.target.id);
         if (!target) throw new MarkupError(`Unknown at= reference #${at.target.id}`, item.line);
         if (decoration(target)) throw new MarkupError('at= cannot reference an arrow, line, brace, box or blob', item.line);
@@ -2338,6 +2350,11 @@ export class ASTTransformer {
       const reference = attrs[key];
       if (!reference.startsWith('#') || !IDENTIFIER.test(reference.slice(1))) {
         throw new MarkupError(`${key} requires a slide-local #element ID`, item.line);
+      }
+      if (SLIDE_EDGES.has(reference.slice(1))) {
+        edge(reference);
+        if (key === 'baseline-aligned') throw new MarkupError('baseline-aligned must reference text, math or code, not an edge of the slide', item.line);
+        continue;
       }
       const target = lookup(textReference(reference.slice(1)).id);
       if (!target) throw new MarkupError(`Unknown positioning reference ${reference}`, item.line);

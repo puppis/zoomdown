@@ -28,7 +28,7 @@ import { LatexError, type MacroDefinition } from './latex';
 import { StyledLine, textLines, type SharedColumns, type TextLines } from './text';
 import { ASTTransformer } from './parser';
 import {
-  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, atAnchor, elementAnchor, looseOutlines, placeRelative, referenced, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject,
+  LayoutConfig, MarkupRenderer, anchorPoint, applyOpacity, atAnchor, elementAnchor, looseOutlines, placeRelative, referenced, turnElement, type ListItemMobject, type OriginMobject, type PartsMobject, slideEdges,
 } from './renderer';
 
 /** Slide classes by name, as `[[subslide: Name]]` finds them. */
@@ -281,6 +281,9 @@ export class MarkupSlide extends Slide {
     // Where an element with outlines it does not draw stood when it was made, so that they follow it.
     const madeAt = new Map<Mobject, [number, number, number]>();
     const nodes: FlowNode[] = [];
+    // The slide's edges and center, which the elements of its canvas may be placed against; a group's
+    // elements may not, its coordinates being its own.
+    if (viewportOf) for (const [name, line] of slideEdges(this.width, this.height)) scope.local.set(name, line);
     // The width a text wraps at, less its indent, and the columns its `::: align` block shares.
     const indentOf = (item: ElementSpec) => (item.list ? item.list.depth * layout.listIndent + (item.list.marker ? 0 : textColumns[item.list.depth] ?? layout.listIndent) : 0);
     const shared = new Map<AlignSpec, SharedColumns>();
@@ -508,8 +511,8 @@ export class MarkupSlide extends Slide {
         node.beside = true;
         obj.shift([0, head.obj.getTop()[1] - obj.getTop()[1], 0]);
       }
-      if (item instanceof ElementSpec) placeRelative(item, obj, scope.local, layout.gap, layout.textAnchor);
-      else placeRelative(item, obj, scope.local, layout.gap);
+      if (item instanceof ElementSpec) placeRelative(item, obj, scope.local, layout.gap, layout.textAnchor, layout.margin);
+      else placeRelative(item, obj, scope.local, layout.gap, 'left-baseline', layout.margin);
       offset(item, obj);
       const made = madeAt.get(obj);
       if (made) {

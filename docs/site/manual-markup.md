@@ -901,6 +901,12 @@ the same id comes first):
 under one. One horizontal and one vertical constraint at most, and not together with the
 coordinate of the same axis. References may chain; a cycle is an error.
 
+`#TOP`, `#BOTTOM`, `#LEFTMOST` and `#RIGHTMOST` name the edges of the slide, lines along the sides
+of its canvas, and `#CENTER` its center, in any reference and in `at=` (with a box anchor:
+`at=top-right:#RIGHTMOST.top`). Beside an edge an element stands `layout.margin` from it unless
+`buff` says otherwise; aligned with one, it is against it. The names are reserved, and an element
+inside a group cannot reference them. See [The edges of the slide](positioning.html#the-edges-of-the-slide).
+
 `#LAST`, in any reference, names the element written just before in the same slide or group
 (arrows, lines, attachments and subslides passed over; at the top level an include counts, as the
 slide it shows), resolved for each element, so in a list or a style it names the element before

@@ -156,6 +156,31 @@ includes stack without coordinates of their own and captions follow them:
  Sizes are measured once
 during preparation; dependency cycles are reported with their line.
 
+## The edges of the slide
+
+`#TOP`, `#BOTTOM`, `#LEFTMOST` and `#RIGHTMOST` name the four edges of the slide, each a line along
+its side of the canvas, and `#CENTER` its center, the origin. Every reference takes them, as it
+takes an element:
+
+```markdown
+[A footer, centered at the bottom]{above=#BOTTOM}
+[[rectangle: #box width=3 height=1 right-of=#LEFTMOST top-aligned=#TOP]]
+[[icon: server at=top-right:#RIGHTMOST.top dx=-0.5 dy=-0.5]]
+[Right in the middle]{at=center:#CENTER}
+```
+
+- Beside an edge (`above=#BOTTOM`, `below=#TOP`, `right-of=#LEFTMOST`, `left-of=#RIGHTMOST`), an
+  element stands `layout.margin` (0.65) from it, the distance the flow keeps, unless `buff` says
+  otherwise, and it is centered along the edge unless an alignment or a coordinate sets that axis.
+- An alignment with an edge puts the element against it: `left-aligned=#LEFTMOST top-aligned=#TOP`
+  is the top-left corner of the canvas, with no margin.
+- With `at=`, an edge's anchors are its middle (`#TOP`, `#TOP.center`) and its ends (`#TOP.left`,
+  `#BOTTOM.right`, …, the corners of the canvas); `#CENTER` is the center.
+
+They follow the slide's `width` and `height`. The names are reserved: no element or slide may take
+one. A group has coordinates of its own, so the elements inside it cannot reference the slide's
+edges; place the group itself against them.
+
 ## The element before, and an item's text
 
 `#LAST` names the element written just before, so an element placed against the one above it

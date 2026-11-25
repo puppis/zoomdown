@@ -333,6 +333,8 @@ export const INHERITED_ATTRS = ['font_size', 'font', 'color', 'line_height'] as 
 export const ANCHORS = new Set([
   'center', 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'left-baseline', 'baseline', 'right-baseline',
 ]);
+/** The anchors of a box: its center, the middles of its sides and its corners. */
+export const BOX_ANCHORS = new Set(['center', 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right']);
 /** The anchors on a text's first baseline: at its left end, its middle or its right end. */
 export const BASELINE_ANCHORS = new Set(['left-baseline', 'baseline', 'right-baseline']);
 /** Anchors including `origin`, the local coordinate origin of a group. */
@@ -429,8 +431,17 @@ export function positionTargets(item: ElementSpec | IncludeSpec | CodeSlideSpec)
     const at = parseAt(item.attributes.at, item.line);
     if ('id' in at.target) result.add(at.target.id);
   }
+  // The slide's edges are there from the start: nothing waits for them.
+  for (const edge of SLIDE_EDGES) result.delete(edge);
   return result;
 }
+
+/**
+ * The names of the slide's own edges and center, which positions may reference as they reference
+ * elements (`above=#BOTTOM`, `right-of=#LEFTMOST`, `at=#CENTER`, `at=top-left:#TOP.left`): each
+ * edge a line along the side of the canvas, the center a point at its origin.
+ */
+export const SLIDE_EDGES = new Set(['TOP', 'BOTTOM', 'LEFTMOST', 'RIGHTMOST', 'CENTER']);
 
 /** A parsed `at=` placement: `[anchor:]#id[.anchor]` or `[anchor:](x,y)`. */
 export interface AtExpression {
