@@ -45,15 +45,15 @@ screen is filmed.
 
 The gear button (or the `,` key) opens the settings dialog: six categories listed on the left, one shown at a time (the arrow keys move along the list, and the dialog reopens on the category last looked at):
 
-- **Pointer**: the tool shown by the pointer gesture (spotlight or laser) and the four gestures: the
-  pen, the spotlight/highlighter, click-to-advance and the click that opens an element's source in
-  the editor (Alt + click by default). "Set gesture" records one: hold the keys you want, any of
-  Shift, Control, Alt and ⌘/Win together, and click. The button you click with counts for the two
-  click gestures, so they can be a middle or a right click, with or without keys (a right click set
-  here opens no menu on the slides); the pen and the spotlight take the main button only. For a
-  gesture without keys, click "Set gesture" itself once more; Esc, or a plain click elsewhere,
-  leaves things as they were. Clicking a gesture removes it ("Off"), and recording one already used
-  by another action moves it.
+- **Pointer**: the tool shown by the pointer gesture (spotlight or laser) and the five gestures: the
+  pen, the spotlight/highlighter, click-to-advance, the click that opens an element's source in the
+  editor (Alt + click by default) and [measuring](#measuring) (Control held). "Set gesture" records
+  one: hold the keys you want, any of Shift, Control, Alt and ⌘/Win together, and click. The button
+  you click with counts for the two click gestures, so they can be a middle or a right click, with
+  or without keys (a right click set here opens no menu on the slides); the pen, the spotlight and
+  measuring take the main button only. For a gesture without keys, click "Set gesture" itself once
+  more; Esc, or a plain click elsewhere, leaves things as they were. Clicking a gesture removes it
+  ("Off"), and recording one already used by another action moves it.
 - **Pen**: how pressure and motion shape a stroke; see [The pen](#the-pen).
 - **Recording**: the microphone and camera, where the camera picture sits, whether a recording
   asks for the screen when it starts, whether a talk is rendered as a video when its recording
@@ -77,6 +77,22 @@ they are changed.
 "Restore default gestures", "Restore the default pen" and "Restore default keys" undo the changes
 of their section. Settings are stored in the browser and apply to every deck you open there.
 
+## Measuring
+
+While a slide is laid out, the player reads its coordinates and lengths off the screen. Hold
+**Control** (the "Coordinates in the slide while held" gesture of the [Pointer settings](#settings)):
+the pointer becomes a crosshair, and a label beside it gives its `x` and `y` in the slide the camera
+is on, in that slide's own units, the ones `x=`, `y=`, `width=` and `at=(x,y)` take, with the slide's
+id above them. Press the main button and drag, still holding the key: the label gives the length from
+where the drag started and its horizontal and vertical parts (`dx`, `dy`), along a dashed line
+between the two points. Released, the measure stays until the pointer moves on; releasing the key
+hides it all. Nothing of it is recorded, printed or exported, and it is off while a recorded talk
+plays. With [`debug`](slides.html#designing-a-slide) on, the dots of the grid show the same
+coordinates.
+
+On a Mac, a browser that makes Control + click a right click is measured all the same, and the slides
+open no menu.
+
 ## Pointer tools
 
 With the default gestures:
@@ -97,6 +113,8 @@ With the default gestures:
 - A click never moves between stops unless you ask for it: the "Click: next stop" gesture is
   off by default, and recording one in the settings (a key + click, or another mouse button) makes
   it behave like the `→` key.
+- Hold **Control** to [measure](#measuring): the pointer is a crosshair and its coordinates in
+  the slide show beside it; **Control + drag** measures a length.
 
 - **Alt + click** an element to open its source line in your editor, when the deck is served by
   `zoomdown serve --editor …` (the element nearest to the pointer counts, a text inside a tile

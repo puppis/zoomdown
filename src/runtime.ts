@@ -1090,7 +1090,7 @@ export class Presenter {
   private _guided = false;
 
   /** The slide the camera is on, or nearest to while it moves (of two that fill the view alike, the inner), and how near. */
-  private _cameraFocus(): { ctx: SlideContext | null; near: number } {
+  cameraFocus(): { ctx: SlideContext | null; near: number } {
     let best: { ctx: SlideContext | null; near: number } = { ctx: null, near: 0 };
     for (const ctx of this.contexts.values()) {
       // Only where the camera can stop: no hidden slide, none left out, no placeholder of an undefined one.
@@ -1445,7 +1445,7 @@ export class Presenter {
    * scaling, opacity multipliers and draw order.
    */
   prepareRender(rendererWidth: number, rendererHeight: number, view: { min: Vec3; max: Vec3 }, cameraWidth: number): void {
-    const focus = this._guided ? this._cameraFocus() : null;
+    const focus = this._guided ? this.cameraFocus() : null;
     // Draw orders are stable: each slide owns a band of them, in the order the tree is walked, so
     // that a later sibling always draws over an earlier one (the pages of a document stacked in a
     // slide, say) whichever of the two changed last; a display numbers its members within its band.

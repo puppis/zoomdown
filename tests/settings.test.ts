@@ -14,7 +14,7 @@ describe('player settings', () => {
     expect(pointerActionFor(settings, 'Alt')).toBe('edit');
     expect(pointerActionFor(settings, 'Shift+Alt')).toBeNull();
     expect(settings.pointer.advance).toBeNull();
-    expect(pointerActionFor(settings, 'Control')).toBeNull();
+    expect(pointerActionFor(settings, 'Control')).toBe('measure');
     expect(settings.pointerMode).toBe('spotlight');
     expect(settings.bindings.pointer).toEqual(['l']);
   });
@@ -85,9 +85,16 @@ describe('player settings', () => {
     }
   });
 
+  it('gives a gesture newer than the saved settings its default, unless one of theirs has its keys', () => {
+    localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: '', pointer: 'Shift', advance: null, edit: 'Alt' } }));
+    expect(loadSettings().pointer.measure).toBe('Control');
+    localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: '', pointer: 'Shift', advance: null, edit: 'Control' } }));
+    expect(loadSettings().pointer).toEqual({ pen: '', pointer: 'Shift', advance: null, edit: 'Control', measure: null });
+  });
+
   it('keeps saved gestures with a pair of keys or a button', () => {
     const settings = defaultSettings();
-    settings.pointer = { pen: '', pointer: 'Shift', advance: 'Middle', edit: 'Shift+Meta' };
+    settings.pointer = { pen: '', pointer: 'Shift', advance: 'Middle', edit: 'Shift+Meta', measure: 'Shift+Control' };
     saveSettings(settings);
     expect(loadSettings().pointer).toEqual(settings.pointer);
     localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: 'Middle' } }));
@@ -96,11 +103,11 @@ describe('player settings', () => {
 
   it('keeps valid saved gestures and the pointer mode, ignoring corrupt values', () => {
     const settings = defaultSettings();
-    settings.pointer = { pen: 'Control', pointer: 'Shift', advance: null, edit: 'Alt' };
+    settings.pointer = { pen: 'Control', pointer: 'Shift', advance: null, edit: 'Alt', measure: 'Meta' };
     settings.pointerMode = 'laser';
     saveSettings(settings);
     const loaded = loadSettings();
-    expect(loaded.pointer).toEqual({ pen: 'Control', pointer: 'Shift', advance: null, edit: 'Alt' });
+    expect(loaded.pointer).toEqual({ pen: 'Control', pointer: 'Shift', advance: null, edit: 'Alt', measure: 'Meta' });
     expect(loaded.pointerMode).toBe('laser');
     localStorage.setItem('zoomdown:settings', JSON.stringify({ pointer: { pen: 'Hyper' }, pointerMode: 'torch' }));
     const fallback = loadSettings();

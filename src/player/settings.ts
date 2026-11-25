@@ -198,7 +198,7 @@ export const DEFAULT_BINDINGS: Record<ActionName, string[]> = {
 };
 
 /** Mouse gestures on the stage: the keys held, and for a click also the mouse button, that select each tool. */
-export type PointerAction = 'pen' | 'pointer' | 'advance' | 'edit';
+export type PointerAction = 'pen' | 'pointer' | 'advance' | 'edit' | 'measure';
 
 export interface PointerActionInfo {
   name: PointerAction;
@@ -212,6 +212,7 @@ export const POINTER_ACTIONS: PointerActionInfo[] = [
   { name: 'pointer', label: 'Spotlight or laser while held; drag to highlight', kind: 'hold' },
   { name: 'advance', label: 'Click: next stop (off unless you set a gesture)', kind: 'click' },
   { name: 'edit', label: 'Click: open the source of the element in the editor (preview server)', kind: 'click' },
+  { name: 'measure', label: 'Coordinates in the slide while held; drag to measure a length', kind: 'hold' },
 ];
 
 /**
@@ -256,7 +257,7 @@ export function renderPixelRatio(rendering: RenderingSettings): number {
 export type PointerBindings = Record<PointerAction, string | null>;
 
 /** Click-to-advance has no gesture by default: a click on a slide draws, and only the keys move between stops. */
-export const DEFAULT_POINTER_BINDINGS: PointerBindings = { pen: '', pointer: 'Shift', advance: null, edit: 'Alt' };
+export const DEFAULT_POINTER_BINDINGS: PointerBindings = { pen: '', pointer: 'Shift', advance: null, edit: 'Alt', measure: 'Control' };
 
 export type PointerMode = 'spotlight' | 'laser';
 
@@ -329,7 +330,8 @@ export function keyCombo(event: KeyboardEvent): string | null {
   return parts.join('+');
 }
 
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+/** Whether the player runs on a Mac (or an iPad), where keys are named by their symbols. */
+export const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
 const PRETTY: Record<string, string> = {
   Control: IS_MAC ? '⌃' : 'Ctrl', Alt: IS_MAC ? '⌥' : 'Alt', Meta: IS_MAC ? '⌘' : 'Win', Shift: IS_MAC ? '⇧' : 'Shift',
@@ -427,6 +429,12 @@ export function loadSettings(): PlayerSettings {
       for (const action of POINTER_ACTIONS) {
         const combo = saved.pointer[action.name];
         if (combo === null || (typeof combo === 'string' && validGesture(action.name, combo))) settings.pointer[action.name] = combo;
+      }
+      // A gesture newer than the settings saved gives way to one of theirs that has its keys.
+      for (const action of POINTER_ACTIONS) {
+        if (action.name in saved.pointer) continue;
+        const own = settings.pointer[action.name];
+        if (POINTER_ACTIONS.some((other) => other.name !== action.name && other.name in (saved.pointer as object) && settings.pointer[other.name] === own)) settings.pointer[action.name] = null;
       }
     }
     if (saved?.pointerMode === 'spotlight' || saved?.pointerMode === 'laser') settings.pointerMode = saved.pointerMode;

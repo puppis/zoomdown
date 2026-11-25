@@ -201,6 +201,9 @@ course extend, it serves them all. Nothing needs to be removed before a deck goe
 printouts and videos never draw the frame and the dots. They are there only in the preview and in
 the desktop app, so take the line out before presenting from one of those.
 
+To read a coordinate or a length exactly, hold Control in the player: the pointer shows its
+coordinates in the slide, and a drag measures a length ([Measuring](player.html#measuring)).
+
 The `slide` style sets `width` and `height`, `flow_top`, `flow_left`, `transition` and `preview` for
 every slide in the same way.
 

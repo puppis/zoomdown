@@ -11,7 +11,7 @@ import playerCss from './player.css?inline';
 import {
   ACTIONS, ACTION_GROUPS, CORNERS, DEFAULT_POINTER_BINDINGS, DEFAULT_RECORDING, DEFAULT_TIP_SIZE, PIP_SIZES, POINTER_ACTIONS, TIP_SIZES,
   type ActionInfo, type ActionName, type Feature, type PlayerSettings, type PointerAction, type PointerActionInfo, type PointerMode,
-  actionFor, defaultSettings, describeCombo, describeGesture, describeModifiers, enabledFeatures, featureOf, gestureOf, keyCombo, loadSettings, modifierCombo, pointerActionFor, saveSettings, validGesture,
+  IS_MAC, actionFor, defaultSettings, describeCombo, describeGesture, describeModifiers, enabledFeatures, featureOf, gestureOf, keyCombo, loadSettings, modifierCombo, pointerActionFor, saveSettings, validGesture,
 } from './settings';
 import {
   DEFAULT_PEN_STYLE, InkSurface, PEN_PRESETS, PEN_PRESET_LABELS, newStrokeId, type InkSample, type InkStroke, type InkTool, type PenPreset,
@@ -22,6 +22,7 @@ import { PEN_COLORS, Swatches } from './swatches';
 import { Recorder, initialEvents, type CapturedMedia } from './recorder';
 import { Playback } from './playback';
 import { exportMimeType, exportVideo, type ExportSource } from './export';
+import { MeasureOverlay, type MeasuredPoint } from './measure';
 import { PRINT_WIDTHS, printDeck, printPages, type PrintPages } from './print';
 import { zipFiles } from './zip';
 import {
@@ -186,6 +187,8 @@ export class PlayerUI {
   private readonly _board: SVGSVGElement;
   private readonly _boardInk: InkSurface;
   private readonly _remoteCursor: HTMLElement;
+  /** The coordinates and the measure shown while the measure gesture is held. */
+  private _measure!: MeasureOverlay;
   private readonly _boardButton: HTMLButtonElement;
   private readonly _buttons = new Map<number, HTMLButtonElement>();
   private readonly _deck: ResolvedDeck;
@@ -465,6 +468,7 @@ export class PlayerUI {
     this._padRequest = el('div', { class: 'pad-request', role: 'dialog', 'aria-label': 'A tablet asks to draw here', hidden: '' });
     this._cableOffer = el('div', { class: 'pad-request cable-offer', role: 'dialog', 'aria-label': 'Pair the tablet plugged in by cable', hidden: '' });
     this.stageHost.append(this._boardLayer, this._highlights, this._screen, this._system, this._camera, this._spotlight, this._remoteCursor, this._error, this._loading, this._padRequest, this._cableOffer);
+    this._measure = new MeasureOverlay(this.stageHost);
 
     this._previous = el('button', { class: 'previous', 'aria-label': 'Previous stop', title: 'Previous stop (←)', text: '←' });
     this._next = el('button', { class: 'next', 'aria-label': 'Next stop', title: 'Next stop (→)', text: '→' });
@@ -619,13 +623,14 @@ export class PlayerUI {
 
   private _renderShortcuts(): void {
     const keys = (action: ActionName) => this._settings.bindings[action].map(describeCombo).join(' / ') || '—';
-    const { pen, pointer, advance, edit } = this._settings.pointer;
+    const { pen, pointer, advance, edit, measure } = this._settings.pointer;
     const gestures = [
       pen === null ? null : `${describeGesture(pen, 'drag')}: draw with the pen while drawing is on (${keys('draw')} toggles it, the whiteboard turns it on; ${keys('color1')}–${keys('color4')} are the colors, which turn it on, and off again for the color in use; a stylus always draws)`,
       pointer === null ? null : `${describeGesture(pointer, 'hold')}: spotlight or laser (${keys('pointer')} switches)`,
       pointer === null ? null : `${describeGesture(pointer, 'drag')}: highlight · ${pointer ? describeGesture(pointer, 'scroll') : 'scroll'}: resize`,
       advance === null ? null : `${describeGesture(advance, 'click')}: next stop`,
       edit === null || !this._editSource ? null : `${describeGesture(edit, 'click')}: open the element's source in the editor`,
+      measure === null ? null : `${describeGesture(measure, 'hold')}: coordinates in the slide · ${describeGesture(measure, 'drag')}: measure a length`,
     ].filter((line): line is string => line !== null);
     const lines = [
       `${keys('next')}: continue`, `${keys('previous')}: previous stop`, `${keys('replay')}: replay`, `${keys('home')}: overview`,
@@ -4012,7 +4017,10 @@ export class PlayerUI {
   private _pressedTool(event: MouseEvent): PointerAction | null {
     if (this._playback) return null;
     const gesture = gestureOf(event);
-    return gesture === null ? null : pointerActionFor(this._settings, gesture);
+    const tool = gesture === null ? null : pointerActionFor(this._settings, gesture);
+    // On a Mac, Control with the main button is a right click to some browsers: the tool held with Control takes it.
+    if (tool === null && event.ctrlKey && event.button === 2 && IS_MAC) return pointerActionFor(this._settings, modifierCombo(event));
+    return tool;
   }
 
   private _drawingTool(pointerType?: string): InkTool | null {
@@ -4342,6 +4350,27 @@ export class PlayerUI {
     stage.classList.toggle('sketch-active', tool === 'pen' && this._pointer !== null && this._penReady());
     // Links and live pages give way to a tool selected with a held key, never to a plain gesture.
     stage.classList.toggle('tool-held', tool !== null && this._modifiers !== '' && this._pointer !== null);
+    this._showMeasure(tool === 'measure' ? this._pointer : null);
+  }
+
+  /** A page point in the coordinates of the slide the camera is on, and that slide's name; null without a deck. */
+  private _slidePoint(clientX: number, clientY: number): { point: MeasuredPoint; slide: string } | null {
+    const stage = this._stage;
+    const ctx = stage?.presenter?.cameraFocus().ctx;
+    if (!stage || !ctx) return null;
+    const bounds = this.stageHost.getBoundingClientRect();
+    const world = stage.pixelToWorld(clientX - bounds.left, clientY - bounds.top);
+    const [x, y] = ctx.toLocal([world.x, world.y, 0]);
+    const spec = (ctx.slide as { spec?: { id?: string } }).spec;
+    return { point: { x, y, clientX, clientY }, slide: spec?.id ? `#${spec.id}` : ctx.slide.name };
+  }
+
+  /** The measure's label at the pointer, or none. */
+  private _showMeasure(at: { x: number; y: number } | null): void {
+    const found = at ? this._slidePoint(at.x, at.y) : null;
+    this.stageHost.classList.toggle('measuring', found !== null);
+    if (found) this._measure.show(found.point, found.slide);
+    else this._measure.hide();
   }
 
   private _releaseSpotlight(): void {
@@ -4402,6 +4431,13 @@ export class PlayerUI {
         void this._player?.next();
         return;
       }
+      if (tool === 'measure') {
+        event.preventDefault();
+        const found = this._slidePoint(event.clientX, event.clientY);
+        if (found) this._measure.begin(found.point);
+        this._updateSpotlight();
+        return;
+      }
       if (tool === 'edit') {
         if (event.button === 0) event.preventDefault();
         const at = { x: event.clientX, y: event.clientY };
@@ -4423,6 +4459,7 @@ export class PlayerUI {
       }
       if (event.pointerType === 'pen') this._penSeen = performance.now();
       if (this._live && this._live.pointerId === event.pointerId) this._finishStroke();
+      this._measure.end();
     };
     document.addEventListener('pointerup', release, { signal: this._abort.signal });
     stage.addEventListener('pointercancel', release);

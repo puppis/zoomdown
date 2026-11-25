@@ -56,7 +56,7 @@ search box on every page finds any name. `docs/markup.md` is the compact dialect
   the stop in reverse), replay, Home, speed, a settings dialog with editable key bindings, undo
   and redo of strokes,
   fullscreen, deep links (`#step=N`), a pressure-sensitive pen (`D`, then drag) with color, tip and
-  configurable ink styles, a spotlight or laser (hold Shift, `L` switches) and a highlighter
+  configurable ink styles, coordinates and lengths in the slide while Control is held (a design aid), a spotlight or laser (hold Shift, `L` switches) and a highlighter
   (Shift + drag) with configurable gestures, an unbounded whiteboard (`W`) with its own history,
   a companion tablet that mirrors strokes both ways over the preview server and shows the presenter notes, a camera view (`C`),
   `href=` links on any element, loops and automatic advancement.

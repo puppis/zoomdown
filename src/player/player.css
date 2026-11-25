@@ -138,6 +138,18 @@ body.zd-page { margin: 0; height: 100vh; overflow: hidden; background: var(--bac
 /* Drawing on: live pages are inert too, so that a stroke can cross them. */
 .zd-stage.drawing-on .iframes iframe { pointer-events: none; }
 .zd-stage.spotlight-active, .zd-stage.sketch-active, .zd-stage.stroking { user-select: none; }
+/* Measuring: a crosshair, the coordinates in the slide beside it, and the line of a drag. */
+.zd-stage.measuring { cursor: crosshair; user-select: none; }
+.zd-stage .measure-label {
+  position: absolute; z-index: 4; pointer-events: none; padding: 3px 7px; border-radius: 6px; white-space: pre;
+  font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--foreground);
+  background: color-mix(in srgb, var(--background) 88%, transparent); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+}
+.zd-stage .measure-label .slide { display: block; font-size: 10px; color: var(--muted); }
+.zd-stage .measure-label[hidden] { display: none; }
+.zd-stage .measure-line { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: visible; }
+.zd-stage .measure-line line { stroke: #FC6255; stroke-width: 1.5; stroke-dasharray: 5 3; }
+.zd-stage .measure-line circle { fill: #FC6255; }
 .zd-stage .error, .zd-stage .loading {
   position: absolute; z-index: 3; background: var(--background); border: 1px solid var(--border);
   padding: 18px; border-radius: 8px; max-width: 80%; color: var(--foreground);

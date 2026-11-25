@@ -157,6 +157,13 @@ export class Stage {
     };
   }
 
+  /** Map canvas pixels (origin at the top-left corner of the stage) to a world point. */
+  pixelToWorld(x: number, y: number): { x: number; y: number } {
+    const view = this._view();
+    const center = this.presenter?.camera.center ?? ([0, 0, 0] as Vec3);
+    return { x: center[0] + (x / this._width - 0.5) * view.width, y: center[1] + (0.5 - y / this._height) * view.height };
+  }
+
   /** Pixel rectangle of the central presentation viewport inside the canvas. */
   viewportRect(): { left: number; top: number; width: number; height: number } {
     const view = this._view();
