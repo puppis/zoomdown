@@ -25,6 +25,14 @@ describe('flags of several words', () => {
     expect(b.attributes.skip_return).toBe('true');
   });
 
+  it('say where they go when they are written on an element', () => {
+    const deck = (body: string) => () => new MarkupParser().parse(`::: slide {#a}\n${body}\n:::`);
+    expect(deck('# Title {step=-1 only-this}')).toThrow(/^Line 2: Unknown attributes: only-this \(only-this goes on a slide, as in ::: slide \{#id only-this\}, or on the include or subslide that places it\)$/);
+    expect(deck('Some text {#t skip_return nonsense=2}')).toThrow(/Unknown attributes: nonsense, skip-return \(skip-return goes on a slide/);
+    expect(deck('Some text {#t nonsense=2}')).toThrow(/^Line 2: Unknown attributes: nonsense$/);
+    expect(deck('[[include: #b x=0 y=0 width=3 focus-only]]')).toThrow(/Unknown attributes: focus-only$/);
+  });
+
   it('leave the arguments of a snippet as they are written', () => {
     expect(parseAttributes('only-this=yes', 1, { css: false })).toEqual({ 'only-this': 'yes' });
   });

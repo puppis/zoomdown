@@ -15,7 +15,7 @@ import {
   LABEL_SIDES, LAYOUT, SHAPE_LABEL_ATTRS, NEIGHBORS, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, STROKE_ATTRS, TEXT_LIKE, TIMING_ATTRS, TREMBLE_ATTRS,
   VECTOR_KINDS, VERTICAL_POSITION, VIDEO_EXTENSIONS, FILL_STYLE_NAMES, CHART_ATTRS, CHART_TYPE_NAMES, TABLE_ATTRS, TABLE_RULE_NAMES,
   INHERITED_ATTRS, gradientColor,
-  ActionSpec, AlignSpec, AnimationStep, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
+  ActionSpec, AlignSpec, AnimationStep, BARE_FLAGS, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
   type CellAlignment,
   type ListItem,
   NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, roleStyledKeys, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
@@ -2253,7 +2253,13 @@ export class ASTTransformer {
 
   private _checkAttrs(attrs: Attributes, allowed: Set<string>, line: number): void {
     const unknown = Object.keys(attrs).filter((key) => !allowed.has(key)).sort();
-    if (unknown.length) throw new MarkupError(`Unknown attributes: ${unknown.join(', ')}`, line);
+    if (unknown.length) {
+      // A flag is named as the documentation writes it, and one of a slide says where it goes.
+      const shown = (key: string) => (BARE_FLAGS.has(key) ? key.replace(/_/g, '-') : key);
+      const flag = unknown.find((key) => BARE_FLAGS.has(key) && key !== 'focus_only');
+      const hint = flag && !allowed.has(flag) ? ` (${shown(flag)} goes on a slide, as in ::: slide {#id ${shown(flag)}}, or on the include or subslide that places it)` : '';
+      throw new MarkupError(`Unknown attributes: ${unknown.map(shown).join(', ')}${hint}`, line);
+    }
     for (const key of [...GEOMETRY, 'font_size', 'size', 'buff', 'radius', 'corner_radius', 'stroke_width', 'fill_opacity', 'opacity', 'dx', 'dy', 'run_time', 'lag',
       'start_angle', 'scale', 'roughness', 'bowing', 'hachure_angle', 'hachure_gap', 'fill_weight', 'seed', 'smoothness', 'tremble_amplitude', 'tremble_rate',
       'padding_x', 'padding_y', 'header_opacity', 'stripe_opacity', 'min', 'max', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'sublabel_buff', 'sublabel_font_size', 'halo_width',
