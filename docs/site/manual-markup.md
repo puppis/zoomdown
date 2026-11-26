@@ -23,7 +23,7 @@ directive they are separated by spaces or commas; elsewhere by spaces. Each attr
 | `key="(x,y) (x,y)"` | parentheses keep a tuple whole, quoted or not: `at=center:(3,-2)` |
 | `#name` | the identifier of the element, slide or child: the same as `id=name` |
 | `.name` | a [style class](#style-roles-and-classes) to apply; several are allowed, in order |
-| `below:#id` | a [relative position](#relative-placement), equivalent to `below=#id`, for `below`, `above`, `left-of`, `right-of`, `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` |
+| `below:#id` | a [relative position](#relative-placement), equivalent to `below=#id`, for `below`, `above`, `left-of`, `right-of`, `above-left-of`, `above-right-of`, `below-left-of`, `below-right-of`, `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` |
 | `flag` | a bare flag means `flag=true`: `start-here`, `only-this`, `skip-return`, `return-to-parent`, `preview`, `debug`, `focus-only` |
 | `style="color: red"` | an alternative to `color=`; only the CSS `color` property is accepted, and not together with `color=` |
 
@@ -307,7 +307,7 @@ Text elements take the common attributes:
 | `width` | units | the width available in the flow | the wrapping width |
 | `height` | units | | scale the laid-out block to this height |
 | `anchor` | `center`, `top`, `bottom`, `left`, `right`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `left-baseline`, `baseline`, `right-baseline` | `layout.textAnchor`, left-baseline | the point of the block that `x`, `y`, `at` and the alignments place |
-| `at`, `dx`, `dy`, `buff`, `below`, `above`, `left-of`, `right-of`, `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` | | | relative placement, see [Positioning](#positioning) |
+| `at`, `dx`, `dy`, `buff`, `below`, `above`, `left-of`, `right-of`, `above-left-of`, `above-right-of`, `below-left-of`, `below-right-of`, `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` | | | relative placement, see [Positioning](#positioning) |
 | `angle` | radians | 0 | turn the placed block counterclockwise about its anchor; see [Turning](#turning) |
 | `color` | color | `layout.color` | the text color; inline spans may override parts |
 | `font` | family | `layout.font` | the typeface (text only; code and formulas have their own) |
@@ -872,8 +872,8 @@ own, filled by the flow from where it stands; written right after a block placed
 or `at=` a point, by its left edge) and right of that block's right edge, it starts a column
 beside it instead, its top at that block's top, and the blocks after it go on in its column
 (see [Columns side by side](positioning.html#after-a-placed-block)). An explicit `y` or a vertical alignment sets the
-height, keeping the flow's left edge; a direction (`below`, `above`, `left-of`, `right-of`) or
-`at` places the element entirely.
+height, keeping the flow's left edge; a direction (`below`, `above`, `left-of`, `right-of`, or a
+diagonal one such as `below-right-of`) or `at` places the element entirely.
 
 ### Coordinates and anchors
 
@@ -890,9 +890,10 @@ omitted coordinate is the flow position, unless `anchor=center`; for any other e
 | Attribute | Meaning |
 | --- | --- |
 | `below:#id`, `above:#id`, `left-of:#id`, `right-of:#id` | put the element next to `#id` on that side, centered on it across the other axis, at distance `buff` (`layout.gap` by default); one direction at most. Between two texts, side by side they share the first baseline, and one below the other they are a line apart: the gap between their lines (font ascent and descent, not ink) is the line gap plus `buff` |
+| `above-left-of:#id`, `above-right-of:#id`, `below-left-of:#id`, `below-right-of:#id` | put the element diagonally beyond that corner of `#id`, its opposite corner `buff` away from it along both axes (`above-right-of:#id buff=0` makes the two boxes touch at a corner). A diagonal sets both coordinates, so it takes no alignment nor `x`, `y`; `dx`, `dy` move it. Beside a corner of the slide it keeps `layout.margin` from both sides: `below-right-of=#TOPLEFT` |
 | `left-aligned:#id`, `right-aligned:#id`, `top-aligned:#id`, `bottom-aligned:#id` | align that edge with the edge of `#id` |
 | `baseline-aligned:#id` | align the first baselines; both elements must be text, formulas or listings |
-| `buff` | the distance of a direction, or alone, the space after the block before of a block that flows down; negative, the element overlaps the other by that much (`above:#id buff=-0.5`) |
+| `buff` | the distance of a direction (of a diagonal, along each axis), or alone, the space after the block before of a block that flows down; negative, the element overlaps the other by that much (`above:#id buff=-0.5`) |
 | `x` or `y` with a reference | overrides the axis the reference leaves centered |
 
 A reference names an element of the same slide and scope that is not a connection or an

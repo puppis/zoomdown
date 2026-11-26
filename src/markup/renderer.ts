@@ -472,11 +472,14 @@ export function placeRelative(
     const reference = referenced(objects, textReference(attrs[key].slice(1)));
     // Beside an edge of the slide, a margin from it, as the flow keeps.
     const buff = Number(attrs.buff ?? ((reference as EdgeMobject).markupEdge ? edgeGap : gap));
-    obj.nextTo(reference, direction, buff);
+    // A diagonal keeps `buff` along both axes, corner to corner (nextTo spreads it along the diagonal).
+    const diagonal = direction[0] !== 0 && direction[1] !== 0;
+    obj.nextTo(reference, direction, diagonal ? buff * Math.SQRT2 : buff);
     // Beside a corner, against the side of the slide it shares with it (below #TOPLEFT, on the left
     // edge), not centered on it half off the slide; an alignment or a coordinate below may move it.
+    // Diagonally from it (below-right-of=#TOPLEFT), a margin from both sides.
     const corner = SLIDE_CORNERS[(reference as EdgeMobject).markupEdge ?? ''];
-    if (corner) {
+    if (corner && !diagonal) {
       const [vertical, horizontal] = corner.split('-');
       obj.alignTo(reference, direction[0] === 0 ? (horizontal === 'left' ? [-1, 0, 0] : [1, 0, 0]) : (vertical === 'top' ? [0, 1, 0] : [0, -1, 0]));
     }
@@ -510,7 +513,7 @@ export function placeRelative(
     // the other would otherwise stagger them, and an arrow between them would slant.
     const myBody = (obj as BodyMobject).markupBody;
     const theirBody = (reference as BodyMobject).markupBody;
-    if (myBody && theirBody) {
+    if (myBody && theirBody && !diagonal) {
       const axis = direction[0] !== 0 ? 1 : 0;
       const delta: [number, number, number] = [0, 0, 0];
       delta[axis] = theirBody.getCenter()[axis] - myBody.getCenter()[axis];

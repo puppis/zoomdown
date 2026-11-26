@@ -300,12 +300,22 @@ export const EXIT_STYLES = new Set(['fade', 'shrink', 'uncreate']);
 /** Attributes of `[[animate: ...]]` that describe the target state. */
 export const ANIMATE_PROPS = new Set(['x', 'y', 'at', 'dx', 'dy', 'anchor', 'angle', 'scale', 'opacity', 'color']);
 export const GEOMETRY = new Set(['x', 'y', 'width', 'height', 'angle']);
+/**
+ * The directions an element may stand in from another: beyond one side of its box, or, diagonally,
+ * beyond one of its corners, `buff` away along both axes.
+ */
 export const NEIGHBORS: Record<string, [number, number, number]> = {
   below: [0, -1, 0],
   above: [0, 1, 0],
   'left-of': [-1, 0, 0],
   'right-of': [1, 0, 0],
+  'above-left-of': [-1, 1, 0],
+  'above-right-of': [1, 1, 0],
+  'below-left-of': [-1, -1, 0],
+  'below-right-of': [1, -1, 0],
 };
+/** The diagonal directions, which set both coordinates. */
+export const DIAGONALS = new Set(['above-left-of', 'above-right-of', 'below-left-of', 'below-right-of']);
 export const ALIGNMENTS: Record<string, [number, number, number]> = {
   'left-aligned': [-1, 0, 0],
   'right-aligned': [1, 0, 0],
@@ -313,8 +323,8 @@ export const ALIGNMENTS: Record<string, [number, number, number]> = {
   'bottom-aligned': [0, -1, 0],
 };
 export const POSITION_REFERENCES = new Set([...Object.keys(NEIGHBORS), ...Object.keys(ALIGNMENTS), 'baseline-aligned']);
-export const HORIZONTAL_POSITION = new Set(['left-of', 'right-of', 'left-aligned', 'right-aligned']);
-export const VERTICAL_POSITION = new Set(['above', 'below', 'top-aligned', 'bottom-aligned', 'baseline-aligned']);
+export const HORIZONTAL_POSITION = new Set(['left-of', 'right-of', 'left-aligned', 'right-aligned', ...DIAGONALS]);
+export const VERTICAL_POSITION = new Set(['above', 'below', 'top-aligned', 'bottom-aligned', 'baseline-aligned', ...DIAGONALS]);
 export const LAYOUT = new Set([...GEOMETRY, ...POSITION_REFERENCES, 'buff', 'dx', 'dy', 'anchor', 'at', 'class']);
 /** Timing of an element's own fade-in and fade-out, in seconds. */
 export const TIMING_ATTRS = new Set(['run_time', 'lag']);

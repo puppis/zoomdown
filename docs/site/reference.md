@@ -108,6 +108,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | `#TOPLEFT`, `#TOPRIGHT`, `#BOTTOMLEFT`, `#BOTTOMRIGHT` | any reference and `at=` | the corners of the slide: `at=#TOPRIGHT` fills the top-right corner, `below=#TOPLEFT` stands a margin below the top edge, on the left one |
 | `#LAST`, `#id.text` | any reference | the element written just before in the same slide or group; a list item's text without its marker |
 | `below`, `above`, `left-of`, `right-of` | elements, children | place beside `#id`, at distance `buff` |
+| `above-left-of`, `above-right-of`, `below-left-of`, `below-right-of` | elements, children | place diagonally beyond that corner of `#id`, `buff` away along both axes |
 | `buff` alone | blocks that flow down | the space after the block before, as `below:` measures it |
 | `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` | elements, children | align an edge or baseline with `#id` |
 | `dx`, `dy` | positioned elements | offset after placement |

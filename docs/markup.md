@@ -540,7 +540,9 @@ the flow, and follows the same reference rules (same slide, same group, no arrow
 ```
 
 `below`, `above`, `left-of` and `right-of` place an element beyond the reference's bounding edge,
-centered on the other axis, at distance `buff` (default `layout.gap`). `left-aligned`,
+centered on the other axis, at distance `buff` (default `layout.gap`); `above-left-of`,
+`above-right-of`, `below-left-of` and `below-right-of` place it diagonally beyond that corner, `buff`
+away along both axes, and set both coordinates. `left-aligned`,
 `right-aligned`, `top-aligned` and `bottom-aligned` match an edge without moving the other axis.
 `baseline-aligned` matches the typographic baseline of text, math or listings. One direction and at
 most one constraint per axis are allowed; an explicit coordinate may set the free axis. References

@@ -60,7 +60,7 @@ describe('styles fill in only what fits (rule A)', () => {
   });
 
   it('keep the conflicts written on the element itself an error', () => {
-    expect(() => parse('v: color=green', '[x]{.v at=(0,0) buff=0.1}')).toThrow(/at= cannot be combined with buff: buff is the distance that below, .* use dx and dy$/);
+    expect(() => parse('v: color=green', '[x]{.v at=(0,0) buff=0.1}')).toThrow(/at= cannot be combined with buff: buff is the distance that a direction \(below, .* use dx and dy$/);
     expect(() => parse('v: color=green', 'A {#a}\n\n[x]{y=1 below:#a}')).toThrow(/below and y cannot be combined: each sets the vertical position\. Keep one of them$/);
   });
 

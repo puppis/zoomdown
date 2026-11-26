@@ -97,6 +97,7 @@ function placedAtPoint(item: ElementSpec | IncludeSpec | CodeSlideSpec): boolean
   return 'y' in attrs || ('at' in attrs && 'point' in parseAt(attrs.at, item.line).target);
 }
 
+// Every direction sets both coordinates: a straight one centers the element across it.
 const SETS_X = (key: string) => key in NEIGHBORS || key === 'left-aligned' || key === 'right-aligned';
 const SETS_Y = (key: string) => key in NEIGHBORS || key === 'top-aligned' || key === 'bottom-aligned' || key === 'baseline-aligned';
 

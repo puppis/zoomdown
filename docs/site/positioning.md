@@ -137,6 +137,11 @@ Round with pivot *r* … {step=1}
   as lines of type: side by side on one baseline, and one below the other a line apart, `buff`
   plus the line gap between the bottom of one's last line and the top of the other's first, as
   their font measures them.
+- `above-left-of`, `above-right-of`, `below-left-of` and `below-right-of` place the element
+  diagonally, beyond that corner of the reference: `above-right-of:#box` puts the element's
+  bottom-left corner `buff` to the right of and `buff` above the box's top-right one (with `buff=0`
+  the corners touch; negative, the two overlap). A diagonal sets both coordinates: it takes no
+  alignment, `x` or `y`, and `dx`/`dy` move the element from there.
 - `left-aligned`, `right-aligned`, `top-aligned` and `bottom-aligned` match an edge without moving
   the other axis.
 - `baseline-aligned` matches the typographic baseline of text, math or listings.
@@ -168,7 +173,7 @@ element:
 [A footer, centered at the bottom]{above=#BOTTOM}
 [[rectangle: #box width=3 height=1 right-of=#LEFTMOST top-aligned=#TOP]]
 [[icon: server at=#TOPRIGHT dx=-0.5 dy=-0.5]]
-[A page number]{at=#BOTTOMRIGHT dx=-0.3 dy=0.3}
+[A page number]{above-left-of=#BOTTOMRIGHT buff=0.3}
 [Under the top-left corner]{below=#TOPLEFT}
 [Right in the middle]{at=center:#CENTER}
 ```
@@ -186,7 +191,8 @@ element:
 - Beside a corner, an element stands `layout.margin` from it and against the side of the slide the
   two share: `below=#TOPLEFT` is a margin below the top edge, on the left edge; `left-of=#BOTTOMRIGHT`
   a margin from the right edge, on the bottom one. An alignment or a coordinate sets the other axis
-  otherwise (`below=#TOPLEFT x=-6`).
+  otherwise (`below=#TOPLEFT x=-6`). Diagonally inward from a corner, an element keeps the margin
+  from both sides: `below-right-of=#TOPLEFT`, `above-left-of=#BOTTOMRIGHT buff=0.3`.
 
 They follow the slide's `width` and `height`. The names are reserved: no element or slide may take
 one. A group has coordinates of its own, so the elements inside it cannot reference the slide's

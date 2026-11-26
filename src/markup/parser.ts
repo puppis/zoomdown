@@ -13,7 +13,7 @@ import {
   CUSTOM_DIRECTIVE, LIBRARY_NAME,
   ENTER_STYLES, EXIT_STYLES, FILL_ATTRS, GEOMETRY, GROUP_ANCHORS, GROUP_ATTRS, HORIZONTAL_POSITION, ICON_KINDS, IDENTIFIER,
   LABEL_SIDES, LAYOUT, SHAPE_LABEL_ATTRS, NEIGHBORS, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, STROKE_ATTRS, TEXT_LIKE, TIMING_ATTRS, TREMBLE_ATTRS,
-  VECTOR_KINDS, VERTICAL_POSITION, VIDEO_EXTENSIONS, FILL_STYLE_NAMES, CHART_ATTRS, CHART_TYPE_NAMES, TABLE_ATTRS, TABLE_RULE_NAMES,
+  VECTOR_KINDS, VERTICAL_POSITION, VIDEO_EXTENSIONS, FILL_STYLE_NAMES, CHART_ATTRS, CHART_TYPE_NAMES, DIAGONALS, TABLE_ATTRS, TABLE_RULE_NAMES,
   INHERITED_ATTRS, gradientColor,
   ActionSpec, AlignSpec, AnimationStep, BARE_FLAGS, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
   type CellAlignment,
@@ -2126,14 +2126,15 @@ export class ASTTransformer {
       }
     }
     const placing = (key: string) => key === 'x' || key === 'y' || key === 'at' || POSITION_REFERENCES.has(key);
-    const axis = (key: string) => (key === 'x' || HORIZONTAL_POSITION.has(key) ? 'x' : key === 'y' || VERTICAL_POSITION.has(key) ? 'y' : null);
+    // The axes a key sets: a diagonal direction sets both.
+    const axes = (key: string) => [...(key === 'x' || HORIZONTAL_POSITION.has(key) ? ['x'] : []), ...(key === 'y' || VERTICAL_POSITION.has(key) ? ['y'] : [])];
     const kept = Object.keys(attrs).filter((key) => placing(key) && !fromStyle(key));
     const roles = roleStyledKeys(item);
     const rank = (key: string) => (roles.has(key) ? 10 : 0) + (key === 'at' ? 0 : key in NEIGHBORS ? 1 : 2);
     const offered = Object.keys(attrs).filter((key) => placing(key) && fromStyle(key)).sort((a, b) => rank(a) - rank(b));
     for (const key of offered) {
       const fits = !kept.includes('at') && (key !== 'at' || !kept.length)
-        && !kept.some((other) => axis(other) === axis(key))
+        && !kept.some((other) => axes(other).some((one) => axes(key).includes(one)))
         && !((key === 'x' || key === 'y') && kept.some((other) => other in NEIGHBORS));
       if (fits) kept.push(key);
       else delete attrs[key];
@@ -2318,7 +2319,7 @@ export class ASTTransformer {
       const others = keys.filter((key) => POSITION_REFERENCES.has(key) || ['x', 'y', 'buff'].includes(key));
       if (others.length) {
         const what = others.every((key) => key === 'buff')
-          ? 'buff is the distance that below, above, left-of and right-of keep, or from the block before. To move an element away from where at= places it, use dx and dy'
+          ? 'buff is the distance that a direction (below, above, left-of, right-of, below-right-of, …) keeps, or from the block before. To move an element away from where at= places it, use dx and dy'
           : `at= places the element by itself. Keep one of them${others.includes('buff') ? ' (buff goes with a direction)' : ''}; dx and dy move an element placed by at=`;
         throw new MarkupError(`at= cannot be combined with ${listed(others)}: ${what}`, item.line);
       }
@@ -2340,11 +2341,20 @@ export class ASTTransformer {
       throw new MarkupError('baseline-aligned is only supported on text, math and code', item.line);
     }
     const directions = keys.filter((key) => key in NEIGHBORS);
-    if (directions.length > 1) throw new MarkupError(`${listed(directions)} cannot be combined: an element stands in one direction of another. Keep one of them; an alignment (left-aligned, top-aligned, …) or a coordinate may set the other axis`, item.line);
+    if (directions.length > 1) {
+      const across = directions.length === 2 && directions.every((key) => !DIAGONALS.has(key)) && new Set(directions.map((key) => NEIGHBORS[key][0] === 0)).size === 2;
+      const hint = across
+        ? `; to stand diagonally from another element, use one diagonal direction, such as ${directions.find((key) => NEIGHBORS[key][0] === 0)}-${directions.find((key) => NEIGHBORS[key][0] !== 0)}`
+        : '; an alignment (left-aligned, top-aligned, …) or a coordinate may set the other axis';
+      throw new MarkupError(`${listed(directions)} cannot be combined: an element stands in one direction of another. Keep one of them${hint}`, item.line);
+    }
     for (const [coordinate, constraints] of [['x', HORIZONTAL_POSITION], ['y', VERTICAL_POSITION]] as const) {
       const specified = keys.filter((key) => constraints.has(key));
       if (specified.length > 1 || (specified.length && coordinate in attrs)) {
         const both = [...specified, ...(coordinate in attrs ? [coordinate] : [])];
+        if (both.some((key) => DIAGONALS.has(key))) {
+          throw new MarkupError(`${listed(both)} cannot be combined: a diagonal direction sets both coordinates. Keep one of them; dx and dy move an element placed diagonally`, item.line);
+        }
         throw new MarkupError(`${listed(both)} cannot be combined: each sets the ${coordinate === 'x' ? 'horizontal' : 'vertical'} position. Keep one of them`, item.line);
       }
     }
