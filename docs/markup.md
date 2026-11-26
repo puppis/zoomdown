@@ -549,9 +549,11 @@ once during preparation, so show/hide never reflows. Includes and subslides acce
 attributes against local elements.
 
 `#TOP`, `#BOTTOM`, `#LEFTMOST`, `#RIGHTMOST` and `#CENTER` name the edges of the slide and its
-center, in any reference and in `at=` (`above=#BOTTOM` stands `layout.margin` above the bottom edge,
-`left-aligned=#LEFTMOST` against the left one, `at=top-right:#RIGHTMOST.top` in the corner); they are
-reserved, and the elements of a group cannot reference them.
+center, and `#TOPLEFT`, `#TOPRIGHT`, `#BOTTOMLEFT` and `#BOTTOMRIGHT` its corners, in any reference
+and in `at=` (`above=#BOTTOM` stands `layout.margin` above the bottom edge, `left-aligned=#LEFTMOST`
+against the left one, `at=#TOPRIGHT` fills the top-right corner, `below=#TOPLEFT` stands a margin
+below the top edge, on the left one); they are reserved, and the elements of a group cannot
+reference them.
 
 `#LAST` names the element written just before in the same slide or group, in any reference
 (constraints, `at=`, arrow ends, attachment targets), arrows, lines, attachments and subslides

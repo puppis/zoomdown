@@ -20,7 +20,7 @@ import {
   type ListItem,
   NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, roleStyledKeys, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
   RELATIVE_STEP, type StepMode,
-  elementStep, hasSeparator, numberValue, parseAt, SLIDE_EDGES, BOX_ANCHORS, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, shownName, span, stepValue, textReference,
+  elementStep, hasSeparator, numberValue, parseAt, SLIDE_EDGES, BOX_ANCHORS, slidePart, parseAttributes, parseColor, parseTremble, polylinePoints, positionOrder, shownName, span, stepValue, textReference,
 } from './ast';
 
 type Env = { line?: number };
@@ -1407,7 +1407,7 @@ export class MarkupParser {
 const RESERVED_LAST = 'LAST is reserved: #LAST names the element written just before';
 
 /** The error for an element or a slide named as one of the slide's edges. */
-const reservedEdge = (id: string) => `${id} is reserved: #${id} names the slide's ${id === 'CENTER' ? 'center' : `${id.toLowerCase().replace(/most$/, '')} edge`}`;
+const reservedEdge = (id: string) => `${id} is reserved: #${id} names the slide's ${slidePart(id)}`;
 
 /** The attributes whose values name elements as `#id`: relative constraints, `at=` and the ends of an arrow or a line. */
 const NAMING_KEYS = [...POSITION_REFERENCES, 'at', 'from', 'to'];
@@ -2307,9 +2307,9 @@ export class ASTTransformer {
     const scopeOfTarget = (target: ElementSpec | IncludeSpec) => (target instanceof IncludeSpec ? '' : scopeOf.get(target.id));
     const decoration = (target: ElementSpec | IncludeSpec) => target instanceof ElementSpec && (CONNECTIONS.has(target.kind) || ATTACHMENTS.has(target.kind));
     const keys = Object.keys(attrs);
-    // The slide's edges and center stand for the canvas of the slide, whose coordinates a group does not share.
+    // The slide's edges, corners and center stand for the canvas of the slide, whose coordinates a group does not share.
     const edge = (reference: string) => {
-      if (scope !== '') throw new MarkupError(`${reference} names an edge of the slide, which an element inside a group cannot reference: place the group instead`, item.line);
+      if (scope !== '') throw new MarkupError(`${reference} names the slide's ${slidePart(reference.slice(1))}, which an element inside a group cannot reference: place the group instead`, item.line);
     };
     if (('dx' in attrs || 'dy' in attrs) && !keys.some((key) => POSITION_REFERENCES.has(key) || ['x', 'y', 'at'].includes(key))) {
       throw new MarkupError('dx and dy require coordinates, at= or a relative constraint', item.line);
@@ -2358,7 +2358,7 @@ export class ASTTransformer {
       }
       if (SLIDE_EDGES.has(reference.slice(1))) {
         edge(reference);
-        if (key === 'baseline-aligned') throw new MarkupError('baseline-aligned must reference text, math or code, not an edge of the slide', item.line);
+        if (key === 'baseline-aligned') throw new MarkupError(`baseline-aligned must reference text, math or code, not the slide's ${slidePart(reference.slice(1))}`, item.line);
         continue;
       }
       const target = lookup(textReference(reference.slice(1)).id);

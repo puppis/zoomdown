@@ -35,9 +35,39 @@ describe('the edges of the slide', () => {
     expect((await box(rect('at=top:#TOP'))).top).toBeCloseTo(4.5, 6);
   });
 
+  it('fill a corner, inset with dx and dy, unless the element names its own anchor', async () => {
+    const corners = { TOPLEFT: [-8, 4.5], TOPRIGHT: [8, 4.5], BOTTOMLEFT: [-8, -4.5], BOTTOMRIGHT: [8, -4.5] };
+    for (const [name, [x, y]] of Object.entries(corners)) {
+      const r = await box(rect(`at=#${name}`));
+      expect([x < 0 ? r.left : r.right, y > 0 ? r.top : r.bottom]).toEqual([expect.closeTo(x, 6), expect.closeTo(y, 6)]);
+    }
+    const inset = await box(rect('at=#TOPRIGHT dx=-0.5 dy=-0.5'));
+    expect([inset.right, inset.top]).toEqual([expect.closeTo(7.5, 6), expect.closeTo(4, 6)]);
+    expect((await box(rect('at=center:#BOTTOMLEFT'))).center.slice(0, 2)).toEqual([expect.closeTo(-8, 6), expect.closeTo(-4.5, 6)]);
+    expect((await box(rect('at=#TOPLEFT anchor=center'))).center.slice(0, 2)).toEqual([expect.closeTo(-8, 6), expect.closeTo(4.5, 6)]);
+    const text = await slide('width=16 height=9', '[Corner]{#t at=#BOTTOMRIGHT}');
+    expect([element(text, 't').getRight()[0], element(text, 't').getBottom()[1]]).toEqual([expect.closeTo(8, 6), expect.closeTo(-4.5, 6)]);
+  });
+
+  it('place an element beside a corner a margin away, against the side of the slide they share', async () => {
+    const below = await box(rect('below=#TOPLEFT'));
+    expect([below.left, below.top]).toEqual([expect.closeTo(-8, 6), expect.closeTo(4.5 - margin, 6)]);
+    const left = await box(rect('left-of=#BOTTOMRIGHT'));
+    expect([left.right, left.bottom]).toEqual([expect.closeTo(8 - margin, 6), expect.closeTo(-4.5, 6)]);
+    const above = await box(rect('above=#BOTTOMRIGHT buff=0.25'));
+    expect([above.right, above.bottom]).toEqual([expect.closeTo(8, 6), expect.closeTo(-4.5 + 0.25, 6)]);
+    const right = await box(rect('right-of=#TOPLEFT'));
+    expect([right.left, right.top]).toEqual([expect.closeTo(-8 + margin, 6), expect.closeTo(4.5, 6)]);
+    // An alignment or a coordinate of the other axis has the last word.
+    expect((await box(rect('below=#TOPRIGHT x=0'))).center[0]).toBeCloseTo(0, 6);
+    expect((await box(rect('below=#TOPLEFT left-aligned=#CENTER'))).left).toBeCloseTo(0, 6);
+  });
+
   it('follow the size of the slide', async () => {
     const wide = await box(rect('above=#BOTTOM left-aligned=#LEFTMOST buff=0'), 'width=20 height=12');
     expect([wide.left, wide.bottom]).toEqual([expect.closeTo(-10, 6), expect.closeTo(-6, 6)]);
+    const corner = await box(rect('at=#TOPRIGHT'), 'width=20 height=12');
+    expect([corner.right, corner.top]).toEqual([expect.closeTo(10, 6), expect.closeTo(6, 6)]);
   });
 
   it('place a text, an include and elements placed after it', async () => {
@@ -51,10 +81,12 @@ describe('the edges of the slide', () => {
     expect(parse('[x]{#TOP}')).toThrow(/TOP is reserved: #TOP names the slide's top edge/);
     expect(parse('[x]{#LEFTMOST}')).toThrow(/#LEFTMOST names the slide's left edge/);
     expect(parse('[x]{#CENTER}')).toThrow(/#CENTER names the slide's center/);
+    expect(parse('[x]{#BOTTOMRIGHT}')).toThrow(/BOTTOMRIGHT is reserved: #BOTTOMRIGHT names the slide's bottom-right corner/);
     expect(() => new MarkupParser().parse('::: slide {#BOTTOM}\nx\n:::')).toThrow(/BOTTOM is reserved/);
-    expect(parse('::: {.group #g}\n[x]{above=#BOTTOM}\n:::')).toThrow(/#BOTTOM names an edge of the slide, which an element inside a group cannot reference: place the group instead/);
+    expect(parse('::: {.group #g}\n[x]{above=#BOTTOM}\n:::')).toThrow(/#BOTTOM names the slide's bottom edge, which an element inside a group cannot reference: place the group instead/);
+    expect(parse('::: {.group #g}\n[x]{at=#TOPLEFT}\n:::')).toThrow(/#TOPLEFT names the slide's top-left corner, which an element inside a group/);
     expect(parse('::: {.group #g above=#BOTTOM}\nx\n:::')).not.toThrow();
-    expect(parse('[x]{baseline-aligned:#TOP}')).toThrow(/baseline-aligned must reference text, math or code, not an edge of the slide/);
+    expect(parse('[x]{baseline-aligned:#TOP}')).toThrow(/baseline-aligned must reference text, math or code, not the slide's top edge/);
     expect(parse('[x]{at=left-baseline:#TOP.baseline}')).toThrow(/#TOP takes a box anchor/);
     expect(parse('[x]{at=#TOP.left above=#BOTTOM}')).toThrow(/at= cannot be combined with above/);
   });

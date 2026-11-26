@@ -31,7 +31,7 @@ import { VideoClip } from '../video';
 import { IframeHost } from './iframe';
 import {
   ALIGNMENTS, BRACE_SIDES, CONNECTIONS, GROUP_ANCHORS, NEIGHBORS, POSITION_REFERENCES, SHAPES, TEXT_ANCHORS, TEXT_LIKE, VIDEO_EXTENSIONS,
-  ElementSpec, CodeSlideSpec, GroupSpec, IncludeSpec, InlineSpan, MarkupError, TableSpec, type AtExpression, attachmentReferences, attachmentTargets, connectionEnd, endpoint, gradientColor, numberValue, parseAt, parseColor, textReference,
+  ElementSpec, CodeSlideSpec, GroupSpec, IncludeSpec, InlineSpan, MarkupError, TableSpec, type AtExpression, attachmentReferences, attachmentTargets, connectionEnd, endpoint, gradientColor, numberValue, parseAt, parseColor, SLIDE_CORNERS, textReference,
   polylinePoints, span,
 } from './ast';
 import { MarkupParser } from './parser';
@@ -406,6 +406,8 @@ export function anchorPoint(obj: Mobject, anchor: string): [number, number, numb
 export function atAnchor(item: ElementSpec | IncludeSpec | CodeSlideSpec, at: AtExpression, textAnchor = 'left-baseline'): string {
   if (at.anchor) return at.anchor;
   if ('point' in at.target && !item.attributes.anchor) return 'center';
+  // At a corner of the slide, an element fills it: its own corner of that side lands there.
+  if ('id' in at.target && at.target.id in SLIDE_CORNERS && !item.attributes.anchor) return SLIDE_CORNERS[at.target.id];
   return elementAnchor(item, textAnchor);
 }
 
@@ -422,14 +424,18 @@ export function applyOpacity(obj: Mobject, opacity: number): void {
   }
 }
 
-/** A slide's edge or center as a reference of positions: a line along the side of its canvas, or a point. */
+/** A slide's edge, corner or center as a reference of positions: a line along the side of its canvas, or a point. */
 type EdgeMobject = Mobject & { markupEdge?: string };
 
-/** The slide's edges and center, `#TOP`, `#BOTTOM`, `#LEFTMOST`, `#RIGHTMOST` and `#CENTER`, for a canvas of this size. */
+/**
+ * The slide's edges, corners and center, `#TOP`, `#BOTTOM`, `#LEFTMOST`, `#RIGHTMOST`, `#TOPLEFT`,
+ * `#TOPRIGHT`, `#BOTTOMLEFT`, `#BOTTOMRIGHT` and `#CENTER`, for a canvas of this size.
+ */
 export function slideEdges(width: number, height: number): Map<string, Mobject> {
   const [w, h] = [width / 2, height / 2];
   const ends: Record<string, [[number, number], [number, number]]> = {
     TOP: [[-w, h], [w, h]], BOTTOM: [[-w, -h], [w, -h]], LEFTMOST: [[-w, -h], [-w, h]], RIGHTMOST: [[w, -h], [w, h]], CENTER: [[0, 0], [0, 0]],
+    TOPLEFT: [[-w, h], [-w, h]], TOPRIGHT: [[w, h], [w, h]], BOTTOMLEFT: [[-w, -h], [-w, -h]], BOTTOMRIGHT: [[w, -h], [w, -h]],
   };
   return new Map(Object.entries(ends).map(([name, [a, b]]) => {
     const line = new Line({ start: [a[0], a[1], 0], end: [b[0], b[1], 0] }) as EdgeMobject;
@@ -467,6 +473,13 @@ export function placeRelative(
     // Beside an edge of the slide, a margin from it, as the flow keeps.
     const buff = Number(attrs.buff ?? ((reference as EdgeMobject).markupEdge ? edgeGap : gap));
     obj.nextTo(reference, direction, buff);
+    // Beside a corner, against the side of the slide it shares with it (below #TOPLEFT, on the left
+    // edge), not centered on it half off the slide; an alignment or a coordinate below may move it.
+    const corner = SLIDE_CORNERS[(reference as EdgeMobject).markupEdge ?? ''];
+    if (corner) {
+      const [vertical, horizontal] = corner.split('-');
+      obj.alignTo(reference, direction[0] === 0 ? (horizontal === 'left' ? [-1, 0, 0] : [1, 0, 0]) : (vertical === 'top' ? [0, 1, 0] : [0, -1, 0]));
+    }
     // Two texts line up as lines of type: side by side on one baseline; one below the other a
     // line apart, its first line's top `buff` below the other's last line (both measured by
     // their fonts, not their ink), and the lines' own gap between them.

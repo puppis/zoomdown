@@ -437,11 +437,24 @@ export function positionTargets(item: ElementSpec | IncludeSpec | CodeSlideSpec)
 }
 
 /**
- * The names of the slide's own edges and center, which positions may reference as they reference
- * elements (`above=#BOTTOM`, `right-of=#LEFTMOST`, `at=#CENTER`, `at=top-left:#TOP.left`): each
- * edge a line along the side of the canvas, the center a point at its origin.
+ * The corners of the slide, each with the anchor of an element that fills it: `at=#TOPRIGHT` puts
+ * an element's top-right corner there, and beside a corner an element keeps to the slide.
  */
-export const SLIDE_EDGES = new Set(['TOP', 'BOTTOM', 'LEFTMOST', 'RIGHTMOST', 'CENTER']);
+export const SLIDE_CORNERS: Record<string, string> = { TOPLEFT: 'top-left', TOPRIGHT: 'top-right', BOTTOMLEFT: 'bottom-left', BOTTOMRIGHT: 'bottom-right' };
+
+/**
+ * The names of the slide's own edges, corners and center, which positions may reference as they
+ * reference elements (`above=#BOTTOM`, `right-of=#LEFTMOST`, `at=#CENTER`, `at=#TOPRIGHT`): each
+ * edge a line along the side of the canvas, each corner and the center a point.
+ */
+export const SLIDE_EDGES = new Set(['TOP', 'BOTTOM', 'LEFTMOST', 'RIGHTMOST', 'CENTER', ...Object.keys(SLIDE_CORNERS)]);
+
+/** What one of the slide's names stands for, in messages: its top edge, its top-left corner, its center. */
+export function slidePart(id: string): string {
+  if (id === 'CENTER') return 'center';
+  if (id in SLIDE_CORNERS) return `${SLIDE_CORNERS[id]} corner`;
+  return `${id.toLowerCase().replace(/most$/, '')} edge`;
+}
 
 /** A parsed `at=` placement: `[anchor:]#id[.anchor]` or `[anchor:](x,y)`. */
 export interface AtExpression {

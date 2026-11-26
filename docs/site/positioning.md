@@ -160,13 +160,16 @@ during preparation; dependency cycles are reported with their line.
 ## The edges of the slide
 
 `#TOP`, `#BOTTOM`, `#LEFTMOST` and `#RIGHTMOST` name the four edges of the slide, each a line along
-its side of the canvas, and `#CENTER` its center, the origin. Every reference takes them, as it
-takes an element:
+its side of the canvas; `#TOPLEFT`, `#TOPRIGHT`, `#BOTTOMLEFT` and `#BOTTOMRIGHT` its four corners,
+and `#CENTER` its center, the origin, each a point. Every reference takes them, as it takes an
+element:
 
 ```markdown
 [A footer, centered at the bottom]{above=#BOTTOM}
 [[rectangle: #box width=3 height=1 right-of=#LEFTMOST top-aligned=#TOP]]
-[[icon: server at=top-right:#RIGHTMOST.top dx=-0.5 dy=-0.5]]
+[[icon: server at=#TOPRIGHT dx=-0.5 dy=-0.5]]
+[A page number]{at=#BOTTOMRIGHT dx=-0.3 dy=0.3}
+[Under the top-left corner]{below=#TOPLEFT}
 [Right in the middle]{at=center:#CENTER}
 ```
 
@@ -177,10 +180,17 @@ takes an element:
   is the top-left corner of the canvas, with no margin.
 - With `at=`, an edge's anchors are its middle (`#TOP`, `#TOP.center`) and its ends (`#TOP.left`,
   `#BOTTOM.right`, …, the corners of the canvas); `#CENTER` is the center.
+- At a corner, an element fills it: `at=#TOPRIGHT` puts the element's own top-right corner there,
+  flush with both edges, and `dx`/`dy` move it in (`at=#TOPRIGHT dx=-0.5 dy=-0.5`). An anchor of its
+  own, `at=center:#TOPRIGHT` or `anchor=`, puts that anchor on the corner instead.
+- Beside a corner, an element stands `layout.margin` from it and against the side of the slide the
+  two share: `below=#TOPLEFT` is a margin below the top edge, on the left edge; `left-of=#BOTTOMRIGHT`
+  a margin from the right edge, on the bottom one. An alignment or a coordinate sets the other axis
+  otherwise (`below=#TOPLEFT x=-6`).
 
 They follow the slide's `width` and `height`. The names are reserved: no element or slide may take
 one. A group has coordinates of its own, so the elements inside it cannot reference the slide's
-edges; place the group itself against them.
+edges, corners or center; place the group itself against them.
 
 ## The element before, and an item's text
 
