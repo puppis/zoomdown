@@ -37,7 +37,7 @@ search box on every page finds any name. `docs/markup.md` is the compact dialect
   transforms compose automatically and child viewports stay ordinary animatable objects.
 - **Programs as resumable subcalls**: `build(ctx)` runs once, `construct(ctx)` runs on entry and may
   `yield ctx.visit(child)` from an async generator; remaining children are visited automatically;
-  `skipReturn`, `ctx.skipNext()`, `ctx.autoAdvance()`, `ctx.stop({ loop, autoNext, notes })`.
+  `forceReturn` and `skipReturn` on `addChild`, `ctx.skipNext()`, `ctx.autoAdvance()`, `ctx.stop({ loop, autoNext, notes })`.
 - **First-entry fades, coordinate grids and design borders** (`PresenterConfig`), `padding`,
   `transitionTime`, `transition` (`zoom`, `cut` or a module of the deck's own; a slide's own setting governs the camera's arrival at it), `pauseOnEntry`/`pauseOnReturn`.
 - **Selective rendering** (`onlyThis`), **placeholders**, **`startHere`**.

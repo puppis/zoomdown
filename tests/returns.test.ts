@@ -31,9 +31,29 @@ describe('leaving a child', () => {
     }
   });
 
+  it('zooms back to the parent after a child whose include says force-return, though its next sibling follows at once', async () => {
+    const back = ['p:entry:', 'a:entry:FocusOp', 'a:program:PlayOp', 'p:return:FocusOp', 'b:entry:FocusOp', 'p:return:FocusOp'];
+    // Numbered visits, one after the other or at the same step, and visits in source order.
+    for (const steps of ['[[include: #a step=3 force-return]]\n[[include: #b step=4]]', '[[include: #a step=3 force-return]]\n[[include: #b step=3]]', '[[include: #a force-return]]\n[[include: #b]]']) {
+      expect(await clips(markup(steps)), steps).toEqual(back);
+    }
+    // The same through a subslide, and with a cut into the child.
+    expect(await clips(markup('[[subslide: #a step=3 force-return]]\n[[include: #b step=4]]'))).toEqual(back);
+    expect(await clips(markup('[[include: #a step=3 transition=cut force-return]]\n[[include: #b step=4]]'))).toEqual(back);
+    // force-return=false changes nothing: straight on to the sibling, as by default.
+    expect(await clips(markup('[[include: #a step=3 force-return=false]]\n[[include: #b step=4]]'))).toEqual(['p:entry:', 'a:entry:FocusOp', 'a:program:PlayOp', 'b:entry:FocusOp', 'p:return:FocusOp']);
+  });
+
   it('stays on the child the author told to skip its return', async () => {
     const deck = markup('[[include: #a step=3 skip-return]]\n[[dot: #mid x=0 y=-2 step=4]]\n[[include: #b step=6]]');
     expect(await clips(deck)).toEqual(['p:entry:', 'a:entry:FocusOp', 'a:program:PlayOp', 'p:program:PlayOp', 'b:entry:FocusOp', 'p:return:FocusOp']);
+  });
+
+  it('leaves the default to skip-return=false: back to the parent for its step, as without it', async () => {
+    const deck = markup('[[include: #a step=3 skip-return=false]]\n[[dot: #mid x=0 y=-2 step=4]]\n[[include: #b step=6]]');
+    expect(await clips(deck)).toEqual(['p:entry:', 'a:entry:FocusOp', 'a:program:PlayOp', 'p:return:FocusOp', 'p:program:PlayOp', 'b:entry:FocusOp', 'p:return:FocusOp']);
+    const last = markup('[[include: #a step=3]]\n[[include: #b step=4 skip-return=false]]');
+    expect(await clips(last)).toEqual(['p:entry:', 'a:entry:FocusOp', 'a:program:PlayOp', 'b:entry:FocusOp', 'p:return:FocusOp']);
   });
 
   it('zooms back before the next child\'s early members appear on the parent', async () => {

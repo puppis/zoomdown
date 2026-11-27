@@ -29,7 +29,7 @@ root: a slide runs its own steps and visits its children in order, each visit zo
 goes straight to the next sibling, and zooms back out to the parent after the last one. The
 order within a slide is the source order of its includes, unless an include carries `step=N`,
 which interleaves the visit with the parent's numbered fragments. A child's content is invisible
-until its first visit and fades in then, unless its include says `preview=true` or `presenter.revealOnEntry` is `false`. `return-to-parent` and `skip-return` on an include
+until its first visit and fades in then, unless its include says `preview=true` or `presenter.revealOnEntry` is `false`. `force-return` and `skip-return` on an include
 change where the camera goes when its child ends; `[[skip_next: step=N]]` drops one event after a step. A deck whose slides include none
 of the others is a forest of single slides, a [flat document](documents.html) read page after
 page, as a PDF opened in the player is.

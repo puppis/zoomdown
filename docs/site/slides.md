@@ -132,7 +132,7 @@ first, then the child is visited. When a child ends, the camera goes straight to
 when nothing happens in between, and zooms back to the parent when the parent has a step of its
 own before the next child, and after the last one; the parent then resumes with its previous
 state, and children keep their final appearance as previews. `skip-return` on a child's include
-keeps the camera on it even then, and `return-to-parent` brings it back even before a sibling that
+keeps the camera on it even then, and `force-return` brings it back even before a sibling that
 follows at once ([Leaving a child](#leaving-a-child)).
 
 ```markdown
@@ -148,8 +148,8 @@ follows at once ([Leaving a child](#leaving-a-child)).
 | --- | --- | --- |
 | `start-here=true` | slide, include, subslide | open playback at this slide (at most one in a deck) |
 | `only-this=true` | slide, include, subslide | draw and play only the slides that say so, while editing; nothing of any other is drawn, but for a frame around each child of a slide that is. A slide with `start-here` must be among them, and an export is as partial as the preview, without the frames |
-| `return-to-parent` | include, subslide | zoom back to the parent after this child even when a sibling follows at once; `return-to-parent=false` is `skip-return` |
-| `skip-return` | include, subslide | leave this child straight for the next stop even when it is the last one, without zooming back to the parent; `skip-return=false` is `return-to-parent` |
+| `force-return` | include, subslide | zoom back to the parent after this child even when a sibling follows at once; `=false` changes nothing |
+| `skip-return` | include, subslide | leave this child straight for the next stop, without zooming back to the parent, even when the parent has a step next or it is the last child; `=false` changes nothing |
 | `transition=cut` | slide, include, subslide | arrive at this slide without a camera animation; `transition=zoom` restores the zoom under a `cut` deck; any other name is a camera transition of the deck's own ([Extending a deck](extending.html#camera-transitions)) |
 | `preview=true` | slide, include, subslide | show the child's content before its first visit instead of fading it in on entry, as the tiles of the tour's front page do |
 | `debug=true` | slide, include, subslide | draw the slide for its design: see [Designing a slide](#designing-a-slide) |
@@ -161,18 +161,23 @@ A flag written bare means `=true`: `[[include: #proof preview]]`.
 By default a child returns to its parent only when it has to: when the parent has a step of its own
 before the next child, and after the last child. Between two children visited one after the other
 the camera goes straight from sibling to sibling, and it comes back once at the end.
-`return-to-parent` and `skip-return` force either choice for one child. They say how the parent is
-left and come back to, so they belong to the include (or subslide) that places the child in the
-parent, never to the slide itself, which `::: slide` refuses:
+
+The parent may decide otherwise for one child, on the include (or subslide) that places it:
+`force-return` brings the camera back to the parent after that child even when a sibling follows
+at once, and `skip-return` never brings it back, so the deck goes on from inside the child. The
+choice is the parent's, so `::: slide` refuses both:
 
 ```markdown
-[[include: #first x=-4 y=-2 width=6 step=1 return-to-parent]]   ← back to the parent after it
+[[include: #first x=-4 y=-2 width=6 step=1 force-return]]   ← back to the parent after it
 [[include: #second x=4 y=-2 width=6 step=2]]
-[[include: #proof x=0 y=-5 width=4 skip-return]]                ← the deck goes on from inside it
+[[include: #proof x=0 y=-5 width=4 skip-return]]            ← the deck goes on from inside it
 ```
 
-They are the two sides of one choice and are never written together: `skip-return=false` is
-`return-to-parent`.
+Written bare, as they are meant to be, they force their choice; `=false` changes nothing and
+leaves the default: `skip-return=false` does not make the camera zoom back, nor does
+`force-return=false` keep it in the child. Both written bare contradict each other and
+are refused. `return-to-parent`, the former name of `force-return`, is refused with a message
+that names the new one.
 
 ## Designing a slide
 

@@ -57,11 +57,12 @@ every construct of this page live, each next to the listing that produced it; op
   drawn, but for a frame around each child of a slide that is.
 - When a child ends, the camera goes straight to the next sibling when nothing happens in between,
   and zooms back to the parent when the parent has a step of its own before the next child, and
-  after the last one. `return-to-parent` on the include or subslide that places a child zooms back
-  after it even when a sibling follows at once; `skip-return` leaves it straight for the next stop even when
-  the parent plays first or it is the last one. The two are one choice seen from both sides
-  (`skip-return=false` is `return-to-parent`); a flag written bare means `=true`. They say how the
-  parent is left, so `::: slide` refuses them.
+  after the last one. `force-return` on the include or subslide that places a child zooms back
+  after it even when a sibling follows at once; `skip-return` leaves it straight for the next stop
+  even when the parent plays first or it is the last one. They are written bare and cannot both be
+  given; `=false` changes nothing (`skip-return=false` leaves the default, it does not force the
+  way back). They say how the parent is left, so `::: slide` refuses them; `return-to-parent` is
+  the former name of `force-return`.
 - `preview=true` on a slide, include or subslide shows its content before its first visit instead of
   fading it in on entry.
 - `debug` on a slide, include or subslide draws a frame around it and faint dots at its whole

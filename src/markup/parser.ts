@@ -15,7 +15,7 @@ import {
   LABEL_SIDES, LAYOUT, SHAPE_LABEL_ATTRS, NEIGHBORS, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, STROKE_ATTRS, TEXT_LIKE, TIMING_ATTRS, TREMBLE_ATTRS,
   VECTOR_KINDS, VERTICAL_POSITION, VIDEO_EXTENSIONS, FILL_STYLE_NAMES, CHART_ATTRS, CHART_TYPE_NAMES, DIAGONALS, TABLE_ATTRS, TABLE_RULE_NAMES,
   INHERITED_ATTRS, gradientColor,
-  ActionSpec, AlignSpec, AnimationStep, BARE_FLAGS, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
+  ActionSpec, AlignSpec, AnimationStep, BARE_FLAGS, RENAMED_ATTRIBUTES, ElementSpec, EventSpec, GroupSpec, CodeSlideSpec, IncludeSpec, InlineSpan, MarkupDocument, MarkupError, TableSpec,
   type CellAlignment,
   type ListItem,
   NextSpec, SkipNextSpec, SlideItem, SlideSpec, StepChange, StyleSheet, Attributes, applyStyles, roleStyledKeys, attachmentTargets, checkClassName, childKey, connectionEnd, endpoint, styledKeys,
@@ -1407,7 +1407,7 @@ export class MarkupParser {
 const RESERVED_LAST = 'LAST is reserved: #LAST names the element written just before';
 
 /** The flags that say how the camera leaves a child for its parent: they go on the include or subslide that places it. */
-const RETURN_FLAGS = new Set(['skip_return', 'return_to_parent']);
+const RETURN_FLAGS = new Set(['skip_return', 'force_return']);
 
 /** The error for an element or a slide named as one of the slide's edges. */
 const reservedEdge = (id: string) => `${id} is reserved: #${id} names the slide's ${slidePart(id)}`;
@@ -2029,10 +2029,11 @@ export class ASTTransformer {
 
   /** The boolean flags of a slide or include are true or false, and the two sides of the return choice are not both given. */
   private static _checkFlags(attrs: Attributes, line: number): void {
-    for (const flag of ['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug']) {
+    for (const flag of ['start_here', 'only_this', 'skip_return', 'force_return', 'preview', 'debug']) {
       if (!['true', 'false'].includes(attrs[flag] ?? 'false')) throw new MarkupError(`${shownName(flag)} must be true or false`, line);
     }
-    if ('skip_return' in attrs && 'return_to_parent' in attrs) throw new MarkupError('Use skip-return or return-to-parent, not both', line);
+    // False changes nothing, so only two true flags contradict each other.
+    if (attrs.skip_return === 'true' && attrs.force_return === 'true') throw new MarkupError('Use skip-return or force-return, not both', line);
   }
 
   private static _checkTransition(attrs: Attributes, line: number): void {
@@ -2105,7 +2106,7 @@ export class ASTTransformer {
 
   /** The attributes an include or a subslide takes. */
   static childAttributes(item: IncludeSpec | CodeSlideSpec): Set<string> {
-    return new Set([...LAYOUT, 'step', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', 'debug', ...(item instanceof IncludeSpec && 'src' in item.attributes ? ['src'] : [])]);
+    return new Set([...LAYOUT, 'step', 'only_this', 'start_here', 'skip_return', 'force_return', 'transition', 'preview', 'debug', ...(item instanceof IncludeSpec && 'src' in item.attributes ? ['src'] : [])]);
   }
 
   /**
@@ -2272,6 +2273,9 @@ export class ASTTransformer {
   }
 
   private _checkAttrs(attrs: Attributes, allowed: Set<string>, line: number): void {
+    for (const [old, now] of Object.entries(RENAMED_ATTRIBUTES)) {
+      if (old in attrs) throw new MarkupError(`${shownName(old)} is now called ${shownName(now)}, written bare as in [[include: #id ${shownName(now)}]]`, line);
+    }
     const unknown = Object.keys(attrs).filter((key) => !allowed.has(key)).sort();
     if (unknown.length) {
       // A flag is named as the documentation writes it, and one of a slide or an include says where it goes.

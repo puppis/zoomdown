@@ -136,11 +136,11 @@ function instantiateSlide(spec: CodeSlideSpec, namespace: SlideNamespace | null)
   return child;
 }
 
-/** The return choice `skip-return` or `return-to-parent` makes; null when neither is written. */
-function returnChoice(attrs: Record<string, string>): boolean | null {
-  if ('return_to_parent' in attrs) return attrs.return_to_parent === 'true';
-  if ('skip_return' in attrs) return attrs.skip_return !== 'true';
-  return null;
+/** The return choice `force-return` or `skip-return` makes; undefined when neither is true, which leaves the default. */
+function returnChoice(attrs: Record<string, string>): boolean | undefined {
+  if (attrs.force_return === 'true') return true;
+  if (attrs.skip_return === 'true') return false;
+  return undefined;
 }
 
 /** A compiled markup component using normal local membership and child calls. */
@@ -883,7 +883,8 @@ export class SlideBuilder {
         const attrs = item.attributes;
         if ('only_this' in attrs) child.onlyThis = attrs.only_this === 'true';
         if ('start_here' in attrs) child.startHere = attrs.start_here === 'true';
-        if ('skip_return' in attrs || 'return_to_parent' in attrs) child.returnToParent = returnChoice(attrs);
+        const returns = returnChoice(attrs);
+        if (returns !== undefined) child.returnToParent = returns;
         if ('transition' in attrs) child.transition = attrs.transition as TransitionMode;
         if ('preview' in attrs) child.preview = attrs.preview === 'true';
         if ('debug' in attrs) child.debug = attrs.debug === 'true';

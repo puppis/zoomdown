@@ -24,7 +24,7 @@ directive they are separated by spaces or commas; elsewhere by spaces. Each attr
 | `#name` | the identifier of the element, slide or child: the same as `id=name` |
 | `.name` | a [style class](#style-roles-and-classes) to apply; several are allowed, in order |
 | `below:#id` | a [relative position](#relative-placement), equivalent to `below=#id`, for `below`, `above`, `left-of`, `right-of`, `above-left-of`, `above-right-of`, `below-left-of`, `below-right-of`, `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` |
-| `flag` | a bare flag means `flag=true`: `start-here`, `only-this`, `skip-return`, `return-to-parent`, `preview`, `debug`, `focus-only` |
+| `flag` | a bare flag means `flag=true`: `start-here`, `only-this`, `skip-return`, `force-return`, `preview`, `debug`, `focus-only` |
 | `style="color: red"` | an alternative to `color=`; only the CSS `color` property is accepted, and not together with `color=` |
 
 Attribute names are written with hyphens: `font-size`, `fill-color`, `only-this`, `right-of`. The
@@ -139,8 +139,8 @@ and the relative references, plus:
 | `angle` | radians | 0 | rotation of the child's viewport |
 | `step` | integer ≥ 1 | after the numbered steps, in source order | the step at which the child is visited; children without a step are visited after the last numbered one, in order |
 | `start-here`, `only-this`, `transition`, `preview`, `debug` | as for slides | | the same flags, set from the parent's side |
-| `return-to-parent` | `true`, `false` | unset | after the child's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset); includes and subslides only, never `::: slide` |
-| `skip-return` | flag | unset | `return-to-parent=false`, from the other side; not together with it |
+| `force-return` | flag | unset | after the child's own program, zoom back to the parent before the next stop even when a sibling follows at once; includes and subslides only, never `::: slide`; `=false` changes nothing |
+| `skip-return` | flag | unset | after the child's own program, go straight on to the next stop, never zooming back to the parent; not together with `force-return`; `=false` changes nothing |
 | `verdict` | inline text | none | a line under the tile, `#child-verdict`, centered and wrapped at the tile's width, shown at the click after the visit; styled by the `verdict` style, which may place it elsewhere (includes only) |
 
 An include written after another include, with nothing that flows between them (directives,
@@ -177,10 +177,14 @@ pages, by the document's bookmarks when it has them. The exports copy or embed t
 
 ### Flags of slides and children
 
-`start-here`, `only-this`, `skip-return`, `return-to-parent`, `preview`, `debug` and `focus-only`
-may be written bare: `only-this` means `only-this=true`. `skip-return` and `return-to-parent` are
-two sides of one choice and cannot both be given; they go on the include or subslide that places a
-child, since they say how the parent is left, and `::: slide` refuses them. At most one slide of the deck may say `start-here`, whether on the slide itself, on the
+`start-here`, `only-this`, `skip-return`, `force-return`, `preview`, `debug` and `focus-only`
+may be written bare: `only-this` means `only-this=true`. `skip-return` and `force-return` override
+the default way back from a child (back to the parent before a step of its own and after the last
+child, straight on from child to child otherwise); they go on the include or subslide that places
+the child, since the parent is the one left, and `::: slide` refuses them. Written bare, as they are meant to be, they force their choice; `=false` changes nothing and
+leaves the default: `skip-return=false` does not make the camera zoom back, nor does
+`force-return=false` keep it in the child.
+The two cannot both be given; `return-to-parent` is the former name of `force-return`. At most one slide of the deck may say `start-here`, whether on the slide itself, on the
 include that places it, or on a code-authored child.
 
 ### debug

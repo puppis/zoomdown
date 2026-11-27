@@ -7,42 +7,61 @@ import { Presenter, PresenterConfig, commonAncestor } from '../src/runtime';
 import { BASE_PAGE_PIXELS, MAX_PAGE_PIXELS, pagePixels } from '../src/pdfdeck';
 
 describe('the return choice', () => {
-  it('is unset by default, and either side of it decides it', () => {
+  it('is unset by default, decided by forceReturn or skipReturn, and left to the default by false', () => {
     expect(new Slide('a').returnToParent).toBeNull();
     expect(new Slide('a').skipReturn).toBe(false);
+    expect(new Slide('a').forceReturn).toBe(false);
     expect(new Slide('a', { skipReturn: true }).returnToParent).toBe(false);
-    expect(new Slide('a', { skipReturn: false }).returnToParent).toBe(true);
-    expect(new Slide('a', { returnToParent: true }).skipReturn).toBe(false);
+    expect(new Slide('a', { forceReturn: true }).returnToParent).toBe(true);
+    // False decides nothing: the default applies.
+    expect(new Slide('a', { skipReturn: false }).returnToParent).toBeNull();
+    expect(new Slide('a', { forceReturn: false }).returnToParent).toBeNull();
+    expect(new Slide('a', { forceReturn: false, skipReturn: true }).returnToParent).toBe(false);
+    expect(() => new Slide('a', { forceReturn: true, skipReturn: true })).toThrow(/contradict/);
+    // The choice itself, for code that computes it.
+    expect(new Slide('a', { returnToParent: true }).forceReturn).toBe(true);
     expect(new Slide('a', { returnToParent: false }).skipReturn).toBe(true);
     expect(new Slide('a', { returnToParent: false, skipReturn: true }).returnToParent).toBe(false);
-    expect(() => new Slide('a', { returnToParent: true, skipReturn: true })).toThrow(/contradict/);
+    expect(() => new Slide('a', { returnToParent: true, skipReturn: true })).toThrow(/contradicts skipReturn/);
     const slide = new Slide('a');
     slide.skipReturn = true;
     expect(slide.returnToParent).toBe(false);
     slide.skipReturn = false;
+    expect(slide.returnToParent).toBeNull();
+    slide.forceReturn = true;
+    expect(slide.returnToParent).toBe(true);
+    slide.skipReturn = false;
     expect(slide.returnToParent).toBe(true);
     const parent = new Slide('p', { width: 16 });
-    const child = parent.addChild(new Slide('c'), { returnToParent: null });
+    const child = parent.addChild(new Slide('c', { forceReturn: true }), { returnToParent: null });
     expect(child.returnToParent).toBeNull();
     parent.addChild(new Slide('d'), { skipReturn: true });
     expect(parent.children[1].returnToParent).toBe(false);
+    // From the parent's side too, false leaves the child as it is.
+    expect(parent.addChild(new Slide('e', { forceReturn: true }), { skipReturn: false, forceReturn: false }).returnToParent).toBe(true);
   });
 
-  it('is written as skip_return or return_to_parent, bare or with a value, but not both', () => {
-    expect(parseAttributes('skip_return', 1)).toEqual({ skip_return: 'true' });
-    expect(parseAttributes('return_to_parent preview', 1)).toEqual({ return_to_parent: 'true', preview: 'true' });
+  it('is written force-return or skip-return on the include, bare, and false leaves the default', () => {
+    expect(parseAttributes('skip-return', 1)).toEqual({ skip_return: 'true' });
+    expect(parseAttributes('force-return preview', 1)).toEqual({ force_return: 'true', preview: 'true' });
     expect(() => parseAttributes('sideways', 1)).toThrow(/Expected an attribute/);
     const source = (attrs: string) => `::: slide {#r}\n[[include: #a ${attrs}]]\n[[include: #b]]\n:::\n::: slide {#a}\nx\n:::\n::: slide {#b}\ny\n:::`;
     const build = (attrs: string) => new SlideBuilder().build(new MarkupParser().parse(source(attrs)));
     expect(build('').children[0].returnToParent).toBeNull();
+    expect(build('skip-return').children[0].returnToParent).toBe(false);
+    expect(build('force-return').children[0].returnToParent).toBe(true);
     expect(build('skip_return').children[0].returnToParent).toBe(false);
-    expect(build('skip_return=false').children[0].returnToParent).toBe(true);
-    expect(build('return_to_parent').children[0].returnToParent).toBe(true);
-    expect(build('return_to_parent=false').children[0].returnToParent).toBe(false);
-    expect(() => build('skip_return return_to_parent')).toThrow(/not both/);
-    expect(() => build('return_to_parent=maybe')).toThrow(/must be true or false/);
+    // False decides nothing: the child is left as the default says.
+    expect(build('skip-return=false').children[0].returnToParent).toBeNull();
+    expect(build('force-return=false').children[0].returnToParent).toBeNull();
+    expect(build('force-return=false skip-return').children[0].returnToParent).toBe(false);
+    expect(() => build('skip-return force-return')).toThrow(/Use skip-return or force-return, not both/);
+    expect(() => build('force-return=maybe')).toThrow(/force-return must be true or false/);
+    // The former name says what it is called now.
+    expect(() => build('return-to-parent')).toThrow(/return-to-parent is now called force-return, written bare as in \[\[include: #id force-return\]\]/);
+    expect(() => build('return_to_parent=false')).toThrow(/is now called force-return/);
     // On the slide itself it is refused: the include says how its child is left.
-    expect(() => new MarkupParser().parse('::: slide {#r}\n[[include: #a]]\n:::\n::: slide {#a return_to_parent}\nx\n:::')).toThrow(/goes on the include that places this slide/);
+    expect(() => new MarkupParser().parse('::: slide {#r}\n[[include: #a]]\n:::\n::: slide {#a force-return}\nx\n:::')).toThrow(/goes on the include that places this slide/);
   });
 });
 

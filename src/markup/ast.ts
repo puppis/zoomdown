@@ -273,7 +273,10 @@ export class MarkupDocument {
 }
 
 /** Boolean attributes that may be written bare: `skip-return` means `skip-return=true`; here by their names with underscores. */
-export const BARE_FLAGS = new Set(['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug', 'focus_only']);
+export const BARE_FLAGS = new Set(['start_here', 'only_this', 'skip_return', 'force_return', 'preview', 'debug', 'focus_only']);
+
+/** Attributes known by an earlier name, which messages point to the new one. */
+export const RENAMED_ATTRIBUTES: Record<string, string> = { return_to_parent: 'force_return' };
 
 /**
  * An attribute as the engine knows it, from the way the source writes it: decks write every name
@@ -716,7 +719,7 @@ export function parseAttributes(source: string, line: number, options: { commas?
     } else if (token.includes(':') && POSITION_REFERENCES.has(token.split(':', 1)[0])) {
       const index = token.indexOf(':');
       [key, value] = [token.slice(0, index), token.slice(index + 1)];
-    } else if (BARE_FLAGS.has(flagName(token))) [key, value] = [token, 'true'];
+    } else if (BARE_FLAGS.has(flagName(token)) || flagName(token) in RENAMED_ATTRIBUTES) [key, value] = [token, 'true'];
     else throw new MarkupError(`Expected an attribute such as x=2; found ${JSON.stringify(token)}`, line);
     // A snippet's arguments are named by its placeholders, whatever their names.
     if (options.css !== false) key = flagName(key);

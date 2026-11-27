@@ -38,31 +38,31 @@ ZoomDown makes zooming presentations: a forest of slides written in Markdown, mo
 [Source on GitHub ↗]{#github-link x=21.35 y=10.4 anchor=right-baseline font-size=26 color=BLUE_E href=https://github.com/puppis/zoomdown}
 
 [1 · A PDF, as it is]{#root-cap-feat-pdf x=-16.5 y=5.35 anchor=bottom font-size=22 color=BLUE_E href=#slide=feat-pdf}
-[[include: #feat-pdf x=-16.5 y=2.6 width=8.6 skip-return=true preview=true]]
+[[include: #feat-pdf x=-16.5 y=2.6 width=8.6 skip-return preview=true]]
 [[rectangle: #root-hit-feat-pdf x=-16.5 y=2.6 width=8.6 height=4.84 opacity=0 href=#slide=feat-pdf]]
 
 [2 · Plain slides, in a row]{#root-cap-feat-plain x=-5.5 y=5.35 anchor=bottom font-size=22 color=BLUE_E href=#slide=feat-plain}
-[[include: #feat-plain x=-5.5 y=2.6 width=8.6 skip-return=true preview=true]]
+[[include: #feat-plain x=-5.5 y=2.6 width=8.6 skip-return preview=true]]
 [[rectangle: #root-hit-feat-plain x=-5.5 y=2.6 width=8.6 height=4.84 opacity=0 href=#slide=feat-plain]]
 
 [3 · Slides as a tree]{#root-cap-feat-tree x=5.5 y=5.35 anchor=bottom font-size=22 color=BLUE_E href=#slide=feat-tree}
-[[include: #feat-tree x=5.5 y=2.6 width=8.6 skip-return=true preview=true]]
+[[include: #feat-tree x=5.5 y=2.6 width=8.6 skip-return preview=true]]
 [[rectangle: #root-hit-feat-tree x=5.5 y=2.6 width=8.6 height=4.84 opacity=0 href=#slide=feat-tree]]
 
 [4 · Spotlight and laser]{#root-cap-feat-spotlight x=16.5 y=5.35 anchor=bottom font-size=22 color=BLUE_E href=#slide=feat-spotlight}
-[[include: #feat-spotlight x=16.5 y=2.6 width=8.6 skip-return=true preview=true]]
+[[include: #feat-spotlight x=16.5 y=2.6 width=8.6 skip-return preview=true]]
 [[rectangle: #root-hit-feat-spotlight x=16.5 y=2.6 width=8.6 height=4.84 opacity=0 href=#slide=feat-spotlight]]
 
 [5 · Pen, tablet and whiteboard]{#root-cap-feat-pen x=-16.5 y=-2.25 anchor=bottom font-size=22 color=BLUE_E href=#slide=feat-pen}
-[[include: #feat-pen x=-16.5 y=-5.0 width=8.6 skip-return=true preview=true]]
+[[include: #feat-pen x=-16.5 y=-5.0 width=8.6 skip-return preview=true]]
 [[rectangle: #root-hit-feat-pen x=-16.5 y=-5.0 width=8.6 height=4.84 opacity=0 href=#slide=feat-pen]]
 
 [6 · Camera, recording and video]{#root-cap-feat-recording x=-5.5 y=-2.25 anchor=bottom font-size=22 color=BLUE_E href=#slide=feat-recording}
-[[include: #feat-recording x=-5.5 y=-5.0 width=8.6 skip-return=true preview=true]]
+[[include: #feat-recording x=-5.5 y=-5.0 width=8.6 skip-return preview=true]]
 [[rectangle: #root-hit-feat-recording x=-5.5 y=-5.0 width=8.6 height=4.84 opacity=0 href=#slide=feat-recording]]
 
 [7 · Formulas, diagrams and motion]{#root-cap-feat-math x=5.5 y=-2.25 anchor=bottom font-size=22 color=BLUE_E href=#slide=feat-math}
-[[include: #feat-math x=5.5 y=-5.0 width=8.6 skip-return=true preview=true]]
+[[include: #feat-math x=5.5 y=-5.0 width=8.6 skip-return preview=true]]
 [[rectangle: #root-hit-feat-math x=5.5 y=-5.0 width=8.6 height=4.84 opacity=0 href=#slide=feat-math]]
 
 [The dialect and the player, in six sections]{#root-cap-sections x=16.5 y=-2.25 anchor=bottom font-size=22 color=BLUE_E href=#slide=sections}
@@ -78,23 +78,23 @@ Everything a slide can hold and everything the player does, one chapter per topi
 [Back to the overview]{#sections-up x=17.35 y=8.2 anchor=right-baseline font-size=24 color=BLUE_E href=#slide=tour}
 
 [1 · Slides and content]{#sections-cap-sec-content x=-12 y=5.5 anchor=bottom font-size=24 color=BLUE_E href=#slide=sec-content}
-[[include: #sec-content x=-12 y=2.2 width=9.4 skip-return=true preview=true]]
+[[include: #sec-content x=-12 y=2.2 width=9.4 skip-return preview=true]]
 [[rectangle: #sections-hit-sec-content x=-12 y=2.2 width=9.4 height=5.2875 opacity=0 href=#slide=sec-content]]
 
 [2 · Presenting]{#sections-cap-sec-presenting x=0 y=5.5 anchor=bottom font-size=24 color=BLUE_E href=#slide=sec-presenting}
-[[include: #sec-presenting x=0 y=2.2 width=9.4 skip-return=true preview=true]]
+[[include: #sec-presenting x=0 y=2.2 width=9.4 skip-return preview=true]]
 [[rectangle: #sections-hit-sec-presenting x=0 y=2.2 width=9.4 height=5.2875 opacity=0 href=#slide=sec-presenting]]
 
 [3 · Diagrams]{#sections-cap-sec-diagrams x=12 y=5.5 anchor=bottom font-size=24 color=BLUE_E href=#slide=sec-diagrams}
-[[include: #sec-diagrams x=12 y=2.2 width=9.4 skip-return=true preview=true]]
+[[include: #sec-diagrams x=12 y=2.2 width=9.4 skip-return preview=true]]
 [[rectangle: #sections-hit-sec-diagrams x=12 y=2.2 width=9.4 height=5.2875 opacity=0 href=#slide=sec-diagrams]]
 
 [4 · Layout and style]{#sections-cap-sec-layout x=-12 y=-2.1 anchor=bottom font-size=24 color=BLUE_E href=#slide=sec-layout}
-[[include: #sec-layout x=-12 y=-5.4 width=9.4 skip-return=true preview=true]]
+[[include: #sec-layout x=-12 y=-5.4 width=9.4 skip-return preview=true]]
 [[rectangle: #sections-hit-sec-layout x=-12 y=-5.4 width=9.4 height=5.2875 opacity=0 href=#slide=sec-layout]]
 
 [5 · Motion and interaction]{#sections-cap-sec-motion x=0 y=-2.1 anchor=bottom font-size=24 color=BLUE_E href=#slide=sec-motion}
-[[include: #sec-motion x=0 y=-5.4 width=9.4 skip-return=true preview=true]]
+[[include: #sec-motion x=0 y=-5.4 width=9.4 skip-return preview=true]]
 [[rectangle: #sections-hit-sec-motion x=0 y=-5.4 width=9.4 height=5.2875 opacity=0 href=#slide=sec-motion]]
 
 [6 · Forests, files and code]{#sections-cap-sec-structure x=12 y=-2.1 anchor=bottom font-size=24 color=BLUE_E href=#slide=sec-structure}
@@ -338,23 +338,23 @@ A deck is a forest of slides, and a slide holds prose, formulas, images, listing
 [Back to the overview]{#sec-content-up x=17.35 y=8.2 anchor=right-baseline font-size=24 color=BLUE_E href=#slide=tour}
 
 [Slides form a forest]{#sec-content-cap-tree x=-12 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=tree}
-[[include: #tree x=-12 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #tree x=-12 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-content-hit-tree x=-12 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=tree]]
 
 [Prose and inline styling]{#sec-content-cap-prose x=0 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=prose}
-[[include: #prose x=0 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #prose x=0 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-content-hit-prose x=0 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=prose]]
 
 [Mathematics]{#sec-content-cap-math x=12 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=math}
-[[include: #math x=12 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #math x=12 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-content-hit-math x=12 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=math]]
 
 [Images and animated images]{#sec-content-cap-images x=-12 y=-1.2999999999999998 anchor=bottom font-size=24 color=BLUE_E href=#slide=images}
-[[include: #images x=-12 y=-4.6 width=9.4 skip-return=true preview=true]]
+[[include: #images x=-12 y=-4.6 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-content-hit-images x=-12 y=-4.6 width=9.4 height=5.2875 opacity=0 href=#slide=images]]
 
 [Code listings]{#sec-content-cap-listings x=0 y=-1.2999999999999998 anchor=bottom font-size=24 color=BLUE_E href=#slide=listings}
-[[include: #listings x=0 y=-4.6 width=9.4 skip-return=true preview=true]]
+[[include: #listings x=0 y=-4.6 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-content-hit-listings x=0 y=-4.6 width=9.4 height=5.2875 opacity=0 href=#slide=listings]]
 
 [Tables and charts]{#sec-content-cap-tables x=12 y=-1.2999999999999998 anchor=bottom font-size=24 color=BLUE_E href=#slide=tables}
@@ -372,11 +372,11 @@ Playing a deck: keys, the spotlight and laser, the pen and the whiteboard, the c
 [Back to the overview]{#sec-presenting-up x=17.35 y=8.2 anchor=right-baseline font-size=24 color=BLUE_E href=#slide=tour}
 
 [The player]{#sec-presenting-cap-player x=-12 y=2.6999999999999997 anchor=bottom font-size=24 color=BLUE_E href=#slide=player}
-[[include: #player x=-12 y=-0.6 width=9.4 skip-return=true preview=true]]
+[[include: #player x=-12 y=-0.6 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-presenting-hit-player x=-12 y=-0.6 width=9.4 height=5.2875 opacity=0 href=#slide=player]]
 
 [Pen, whiteboard and tablet]{#sec-presenting-cap-tablet x=0 y=2.6999999999999997 anchor=bottom font-size=24 color=BLUE_E href=#slide=tablet}
-[[include: #tablet x=0 y=-0.6 width=9.4 skip-return=true preview=true]]
+[[include: #tablet x=0 y=-0.6 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-presenting-hit-tablet x=0 y=-0.6 width=9.4 height=5.2875 opacity=0 href=#slide=tablet]]
 
 [Recording a talk]{#sec-presenting-cap-recording x=12 y=2.6999999999999997 anchor=bottom font-size=24 color=BLUE_E href=#slide=recording}
@@ -394,19 +394,19 @@ Shapes, arrows and lines, braces and boxes, icons and blobs, drawn crisply or by
 [Back to the overview]{#sec-diagrams-up x=17.35 y=8.2 anchor=right-baseline font-size=24 color=BLUE_E href=#slide=tour}
 
 [Shapes and connections]{#sec-diagrams-cap-shapes x=-12 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=shapes}
-[[include: #shapes x=-12 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #shapes x=-12 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-diagrams-hit-shapes x=-12 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=shapes]]
 
 [More shapes, braces and boxes]{#sec-diagrams-cap-more-shapes x=0 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=more-shapes}
-[[include: #more-shapes x=0 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #more-shapes x=0 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-diagrams-hit-more-shapes x=0 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=more-shapes]]
 
 [Hand-drawn shapes]{#sec-diagrams-cap-sketch x=12 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=sketch}
-[[include: #sketch x=12 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #sketch x=12 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-diagrams-hit-sketch x=12 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=sketch]]
 
 [Icons for diagrams]{#sec-diagrams-cap-icons x=-6 y=-1.2999999999999998 anchor=bottom font-size=24 color=BLUE_E href=#slide=icons}
-[[include: #icons x=-6 y=-4.6 width=9.4 skip-return=true preview=true]]
+[[include: #icons x=-6 y=-4.6 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-diagrams-hit-icons x=-6 y=-4.6 width=9.4 height=5.2875 opacity=0 href=#slide=icons]]
 
 [Boxes and blobs]{#sec-diagrams-cap-enclosures x=6 y=-1.2999999999999998 anchor=bottom font-size=24 color=BLUE_E href=#slide=enclosures}
@@ -424,19 +424,19 @@ Where elements go and how they look: the vertical flow, coordinates and anchors,
 [Back to the overview]{#sec-layout-up x=17.35 y=8.2 anchor=right-baseline font-size=24 color=BLUE_E href=#slide=tour}
 
 [Positioning and relative layout]{#sec-layout-cap-layout x=-12 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=layout}
-[[include: #layout x=-12 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #layout x=-12 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-layout-hit-layout x=-12 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=layout]]
 
 [Anchors, offsets and timing]{#sec-layout-cap-anchors x=0 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=anchors}
-[[include: #anchors x=0 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #anchors x=0 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-layout-hit-anchors x=0 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=anchors]]
 
 [Anchor expressions and styles]{#sec-layout-cap-styles x=12 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=styles}
-[[include: #styles x=12 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #styles x=12 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-layout-hit-styles x=12 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=styles]]
 
 [Groups]{#sec-layout-cap-groups x=-6 y=-1.2999999999999998 anchor=bottom font-size=24 color=BLUE_E href=#slide=groups}
-[[include: #groups x=-6 y=-4.6 width=9.4 skip-return=true preview=true]]
+[[include: #groups x=-6 y=-4.6 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-layout-hit-groups x=-6 y=-4.6 width=9.4 height=5.2875 opacity=0 href=#slide=groups]]
 
 [Front matter and the command line]{#sec-layout-cap-config x=6 y=-1.2999999999999998 anchor=bottom font-size=24 color=BLUE_E href=#slide=config}
@@ -454,15 +454,15 @@ What happens on each click: fragments that appear and disappear, decorations see
 [Back to the overview]{#sec-motion-up x=17.35 y=8.2 anchor=right-baseline font-size=24 color=BLUE_E href=#slide=tour}
 
 [Fragments and click steps]{#sec-motion-cap-fragments x=-12 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=fragments}
-[[include: #fragments x=-12 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #fragments x=-12 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-motion-hit-fragments x=-12 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=fragments]]
 
 [Decorations visible only in focus]{#sec-motion-cap-focus x=0 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=focus}
-[[include: #focus x=0 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #focus x=0 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-motion-hit-focus x=0 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=focus]]
 
 [Animations from markup]{#sec-motion-cap-animations x=12 y=6.199999999999999 anchor=bottom font-size=24 color=BLUE_E href=#slide=animations}
-[[include: #animations x=12 y=2.9 width=9.4 skip-return=true preview=true]]
+[[include: #animations x=12 y=2.9 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-motion-hit-animations x=12 y=2.9 width=9.4 height=5.2875 opacity=0 href=#slide=animations]]
 
 [Video, live pages and going back]{#sec-motion-cap-media x=0 y=-1.2999999999999998 anchor=bottom font-size=24 color=BLUE_E href=#slide=media}
@@ -480,11 +480,11 @@ Larger decks: the order in which children are visited, splitting the markup into
 [Back to the overview]{#sec-structure-up x=17.35 y=8.2 anchor=right-baseline font-size=24 color=BLUE_E href=#slide=tour}
 
 [Children, visit order and placeholders]{#sec-structure-cap-children x=-12 y=2.6999999999999997 anchor=bottom font-size=24 color=BLUE_E href=#slide=children}
-[[include: #children x=-12 y=-0.6 width=9.4 skip-return=true preview=true]]
+[[include: #children x=-12 y=-0.6 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-structure-hit-children x=-12 y=-0.6 width=9.4 height=5.2875 opacity=0 href=#slide=children]]
 
 [Importing markup from files]{#sec-structure-cap-imports x=0 y=2.6999999999999997 anchor=bottom font-size=24 color=BLUE_E href=#slide=imports}
-[[include: #imports x=0 y=-0.6 width=9.4 skip-return=true preview=true]]
+[[include: #imports x=0 y=-0.6 width=9.4 skip-return preview=true]]
 [[rectangle: #sec-structure-hit-imports x=0 y=-0.6 width=9.4 height=5.2875 opacity=0 href=#slide=imports]]
 
 [Code-authored slides]{#sec-structure-cap-code-slides x=12 y=2.6999999999999997 anchor=bottom font-size=24 color=BLUE_E href=#slide=code-slides}
@@ -1147,7 +1147,7 @@ Focus-only elements are static (no `step`, `hide` or `play`), are drawn behind t
 
 ```markdown {#children-source x=-9.35 y=3.9 width=9.1}
 [[include: #visited-second x=4.7 y=-1.3 width=6 step=2 skip-return]]
-[[include: #visited-first x=-4.7 y=-1.3 width=6 step=1 transition=cut return-to-parent]]
+[[include: #visited-first x=-4.7 y=-1.3 width=6 step=1 transition=cut force-return]]
 
 [Revealed at step 1, before the first child]{#between x=-9.35 y=0.7 step=1}
 
@@ -1156,7 +1156,7 @@ Focus-only elements are static (no `step`, `hide` or `play`), are drawn behind t
 
 [[include: #visited-second x=4.7 y=-1.3 width=6 step=2 skip-return]]
 
-[[include: #visited-first x=-4.7 y=-1.3 width=6 step=1 transition=cut return-to-parent]]
+[[include: #visited-first x=-4.7 y=-1.3 width=6 step=1 transition=cut force-return]]
 
 [Revealed at step 1, before the first child]{#between x=-9.35 y=0.7 step=1}
 
@@ -1164,13 +1164,13 @@ Focus-only elements are static (no `step`, `hide` or `play`), are drawn behind t
 
 An include with `step` interleaves the child visit with the parent's fragments; without `step` it is visited in source order after the numbered steps. An undefined slide, here `#missing`, is a red placeholder, skipped in playback. {#children-key x=-9.35 y=-3.5 width=18.7 font-size=22}
 
-From one child the camera goes straight to the next, and zooms back to the parent before a step of its own and after the last child. The include decides otherwise: `return-to-parent` zooms back anyway (after the first child here), `skip-return` never (the tour goes on from inside the second). `transition=cut` cuts into the child, like a PDF page. {#children-more x=-9.35 y=-4.85 width=18.7 font-size=18 color=GRAY}
+From one child the camera goes straight to the next, and zooms back to the parent before a step of its own and after the last child. The include decides otherwise: `force-return` zooms back anyway (after the first child here), `skip-return` never (the tour goes on from inside the second). `transition=cut` cuts into the child, like a PDF page. {#children-more x=-9.35 y=-4.85 width=18.7 font-size=18 color=GRAY}
 :::
 
 ::: slide {#visited-first}
 ## Visited first (step 1)
 
-Its include says `return-to-parent`, so the camera zooms back to the parent now, though the second child follows at once. These flags are the include's: a slide cannot say how it is left. {x=-7.35 width=14.7 font-size=22}
+Its include says `force-return`, so the camera zooms back to the parent now, though the second child follows at once. These flags are the include's, written bare: a slide cannot say how it is left, and with `=false` they change nothing. {x=-7.35 width=14.7 font-size=22}
 
 `subslide` is an alias of `include`. Every slide has exactly one parent; to show the same content twice, define it twice with different IDs. {x=-7.35 width=14.7 font-size=18 color=GRAY buff=0.5}
 :::

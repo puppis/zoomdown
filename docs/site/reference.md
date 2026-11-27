@@ -16,7 +16,7 @@ This page is the short reference, one line per construct. [The markup language, 
 | Syntax | Purpose |
 | --- | --- |
 | `::: slide {#id attrs} … :::` | a slide; attrs: `title`, `width`, `height`, `flow-top`, `flow-left`, `start-here`, `only-this`, `transition`, `preview`, `debug` |
-| `[[include: #slide, placement, step, verdict, start-here, only-this, return-to-parent, skip-return, transition, preview, debug]]` | a child slide placed in this one; `subslide: #id` is the same; without a position, right after another include, it goes on its row; `verdict="…"` writes a line under the tile ([Rows and grids of tiles](slides.html#rows-and-grids-of-tiles)) |
+| `[[include: #slide, placement, step, verdict, start-here, only-this, force-return, skip-return, transition, preview, debug]]` | a child slide placed in this one; `subslide: #id` is the same; without a position, right after another include, it goes on its row; `verdict="…"` writes a line under the tile ([Rows and grids of tiles](slides.html#rows-and-grids-of-tiles)) |
 | `[[subslide: ClassName, placement, step, …]]` | a code-authored child ([Code-authored slides](code-slides.html)) |
 | `[[pdf: file.pdf #id, placement, step, preview, …]]` | a PDF placed in the slide: its pages as children, cut through one after the other ([PDFs, flat decks and forests](documents.html#a-pdf-inside-a-slide)) |
 | `[[import: path.zd]]` | splices a Markdown file in, between slides or inside one |
@@ -139,7 +139,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | `focus-only` | static elements | visible only while the slide is focused |
 | `debug` | slides, includes, subslides; `slide: debug` in the styles for all | a frame around the slide and faint dots at its coordinates, while it is being designed; never in an export |
 | `start-here`, `only-this`, `transition`, `preview` | slides, includes, subslides | opening stop, partial rendering, `zoom`, `cut` or a camera transition of the deck's own, content shown before the first visit; written bare, a flag means `=true` ([Slides and the forest](slides.html#flags)) |
-| `return-to-parent`, `skip-return` | includes, subslides | zooming back to the parent after this child, or leaving it straight for the next stop (by default a child returns only before a step of the parent and after the last child) ([Leaving a child](slides.html#leaving-a-child)) |
+| `force-return`, `skip-return` | includes, subslides | zooming back to the parent after this child, or leaving it straight for the next stop (by default a child returns only before a step of the parent and after the last child); written bare, `=false` changes nothing ([Leaving a child](slides.html#leaving-a-child)) |
 
 ## Names
 

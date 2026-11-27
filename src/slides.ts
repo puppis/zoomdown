@@ -52,15 +52,16 @@ export interface SlideOptions {
   /** Callback used instead of subclassing `construct`. */
   program?: ProgramCallback;
   /**
-   * Whether leaving this slide zooms back to its parent before the next stop: `true` always,
-   * `false` never, and unset (the default) unless a sibling follows with nothing of the parent's
-   * in between, so that the camera goes straight from one child to the next only when the parent
-   * plays nothing between them, and comes back after the last. The same choice as `skipReturn`,
-   * from the other side; set one of the two.
+   * Zoom back to the parent after this slide, before the next stop, even when a sibling follows at
+   * once. By default the camera goes straight from one child to the next, and comes back to the
+   * parent only before a step of the parent's own and after the last child. `false` changes
+   * nothing: the default applies.
    */
-  returnToParent?: boolean | null;
-  /** Leave this slide without zooming back to its parent first (`returnToParent: false`). */
+  forceReturn?: boolean;
+  /** Leave this slide straight for the next stop, never zooming back to its parent; `false` changes nothing. */
   skipReturn?: boolean;
+  /** The return choice itself, for code that computes it: `true` (as `forceReturn`), `false` (as `skipReturn`) or null (the default). */
+  returnToParent?: boolean | null;
   /**
    * Never a stop of its own: playback runs straight into its first child and leaves its last
    * child without coming back. The root of a flat sequence of pages is hidden; the camera is
@@ -98,16 +99,18 @@ export interface SourceLocation {
 
 export const TRANSITION_MODES: readonly TransitionMode[] = ['zoom', 'cut'];
 
-/** The return choice of a slide from its options: `returnToParent` first, `skipReturn` otherwise, unset when neither says anything. */
-function returnChoice(options: { returnToParent?: boolean | null; skipReturn?: boolean }): boolean | null {
-  if (options.returnToParent !== undefined) {
-    if (options.skipReturn !== undefined && options.skipReturn === options.returnToParent) {
-      throw new Error('returnToParent and skipReturn contradict each other; set one of them');
-    }
-    return options.returnToParent;
+/**
+ * The return choice of a slide from its options: `forceReturn: true` zooms back, `skipReturn: true`
+ * goes straight on, `returnToParent` says it outright; undefined when none of them decides
+ * (`forceReturn: false` and `skipReturn: false` decide nothing).
+ */
+function returnChoice(options: { forceReturn?: boolean; skipReturn?: boolean; returnToParent?: boolean | null }): boolean | null | undefined {
+  if (options.forceReturn && options.skipReturn) throw new Error('forceReturn and skipReturn contradict each other; set one of them');
+  const flag = options.forceReturn ? true : options.skipReturn ? false : undefined;
+  if (flag !== undefined && options.returnToParent !== undefined && options.returnToParent !== flag) {
+    throw new Error(`returnToParent: ${options.returnToParent} contradicts ${flag ? 'forceReturn' : 'skipReturn'}; set one of them`);
   }
-  if (options.skipReturn !== undefined) return !options.skipReturn;
-  return null;
+  return flag ?? options.returnToParent;
 }
 
 function checkTransition(mode: TransitionMode | null | undefined): TransitionMode | null {
@@ -134,8 +137,9 @@ export interface AddChildOptions extends PlacementStyle {
   angle?: number;
   onlyThis?: boolean;
   startHere?: boolean;
-  returnToParent?: boolean | null;
+  forceReturn?: boolean;
   skipReturn?: boolean;
+  returnToParent?: boolean | null;
   transition?: TransitionMode | null;
   preview?: boolean;
   debug?: boolean | null;
@@ -149,7 +153,7 @@ export class Slide {
   name: string;
   width: number;
   height: number;
-  /** See `SlideOptions.returnToParent`; null leaves the choice to the position among the siblings. */
+  /** Whether leaving this slide zooms back to its parent: `true` always, `false` never, null as the default rule says (see `SlideOptions.forceReturn`). */
   returnToParent: boolean | null;
   /** Never a stop of its own; see `SlideOptions.hidden`. */
   hidden: boolean;
@@ -193,7 +197,7 @@ export class Slide {
       [width, height] = options.size;
     }
     [this.width, this.height] = resolveSize(width, height, (this.constructor as typeof Slide).defaultSize);
-    this.returnToParent = returnChoice(options);
+    this.returnToParent = returnChoice(options) ?? null;
     this.hidden = Boolean(options.hidden);
     this.onlyThis = Boolean(options.onlyThis);
     this.startHere = Boolean(options.startHere);
@@ -205,13 +209,24 @@ export class Slide {
     this._programCallback = options.program ?? null;
   }
 
-  /** Whether leaving this slide skips the zoom back to its parent; setting it decides `returnToParent`. */
+  /** Whether leaving this slide always zooms back to its parent; clearing it brings back the default. */
+  get forceReturn(): boolean {
+    return this.returnToParent === true;
+  }
+
+  set forceReturn(value: boolean) {
+    if (value) this.returnToParent = true;
+    else if (this.returnToParent === true) this.returnToParent = null;
+  }
+
+  /** Whether leaving this slide skips the zoom back to its parent; clearing it brings back the default. */
   get skipReturn(): boolean {
     return this.returnToParent === false;
   }
 
   set skipReturn(value: boolean) {
-    this.returnToParent = !value;
+    if (value) this.returnToParent = false;
+    else if (this.returnToParent === false) this.returnToParent = null;
   }
 
   /**
@@ -250,7 +265,8 @@ export class Slide {
     }
     if (options.onlyThis != null) child.onlyThis = Boolean(options.onlyThis);
     if (options.startHere != null) child.startHere = Boolean(options.startHere);
-    if (options.returnToParent !== undefined || options.skipReturn !== undefined) child.returnToParent = returnChoice(options);
+    const returns = returnChoice(options);
+    if (returns !== undefined) child.returnToParent = returns;
     if (options.transition !== undefined) child.transition = checkTransition(options.transition);
     if (options.preview !== undefined) child.preview = Boolean(options.preview);
     if (options.debug !== undefined) child.debug = options.debug;
