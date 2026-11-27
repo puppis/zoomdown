@@ -124,14 +124,6 @@ verdicts stand outside the count, the element after an include counting from its
 [[include: #double-spending buff=0.6 verdict="a shared ledger is not enough"]]
 ```
 
-### Captions sized by their tile
-
-With `captionSize` under `layout:`, a caption of a tile (a `step=-1` text, see
-[Before the visit](fragments.html#before-the-visit-step-1)) without a `font_size` of its own or of
-a class is that many points of the parent, whatever the tile's width: in a 16-wide child shown 2.6
-wide, `captionSize: 26` makes it 26 × 16 / 2.6 = 160 points of the child. The style of its role
-(`heading`, `h1`) gives way to it.
-
 ## Visit order
 
 Children without `step` are visited in source order after all numbered steps of the parent.

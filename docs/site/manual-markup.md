@@ -151,10 +151,8 @@ of each row under the first of the row before (under its verdict when it has one
 apart and as large as the container's `width` or `height` unless they give a size; the includes
 take no position of their own, and without `cols` the tiles make one row; classes on the container
 fill in what it takes (`{cols=5 .medsep}`). The container's `step`
-and `hide` step it as a whole, line by line, as a timeline's or a graph's do. With
-`layout.captionSize`, a `step=-1` text of the child without a `font_size` of its own or of a class
-is that many points of the parent: its size is `captionSize` times the child's width over the
-tile's. See [Rows and grids of tiles](slides.html#rows-and-grids-of-tiles).
+and `hide` step it as a whole, line by line, as a timeline's or a graph's do. See
+[Rows and grids of tiles](slides.html#rows-and-grids-of-tiles).
 
 A child may be included once in the whole deck. A `[[subslide: Name]]` with a class name takes
 the same attributes; the class comes from the module `classes` names in the front matter or
@@ -1217,7 +1215,6 @@ matter in the same way.
 | `defaultSlideSize` | `[16, 9]` | the canvas of slides without `width` or `height` |
 | `textAnchor` | `left-baseline` | the default anchor of text, formulas and listings placed by a point (`x`, `y`, `at=` a point, `[[animate]]`): any anchor; `top-left` places them by their top-left corner, as the flow and `flow_top` measure |
 | `steps` | `explicit` | `sequential`: an element without `step` takes the step of the element before it, and `step=+` and `hide=+` count from it; see [Sequential steps](#sequential-steps) |
-| `captionSize` | unset | the size of the captions of tiles (`step=-1` text without a `font_size` of its own or of a class), in points of the parent, whatever the tile's width |
 
 ### presenter
 

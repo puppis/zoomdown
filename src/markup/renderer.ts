@@ -99,12 +99,6 @@ export interface LayoutConfigOptions {
    * after the element's own.
    */
   steps?: StepMode;
-  /**
-   * The size of the captions of tiles (`step=-1` text without a `font_size` of its own or of a
-   * class), in points of the parent the tile stands in, whatever the tile's width. Unset by
-   * default: captions take the size of their kind.
-   */
-  captionSize?: number;
 }
 
 /** Defaults for deterministic text flow within fixed slide coordinates. */
@@ -127,7 +121,6 @@ export class LayoutConfig {
   readonly defaultSlideSize: readonly [number, number];
   readonly textAnchor: 'left-baseline' | 'top-left' | 'center';
   readonly steps: StepMode;
-  readonly captionSize: number | null;
 
   constructor(options: LayoutConfigOptions = {}) {
     this.fontSize = options.fontSize ?? 28;
@@ -150,8 +143,10 @@ export class LayoutConfig {
     this.textAnchor = options.textAnchor ?? 'left-baseline';
     this.steps = options.steps ?? 'explicit';
     if (this.steps !== 'explicit' && this.steps !== 'sequential') throw new Error('steps must be explicit or sequential');
-    this.captionSize = options.captionSize ?? null;
-    if (this.captionSize !== null && !(Number.isFinite(this.captionSize) && this.captionSize > 0)) throw new Error('captionSize must be finite and positive');
+    // A step never changes the size of a text: the setting that sized captions by their tile is gone.
+    if ((options as { captionSize?: unknown }).captionSize !== undefined) {
+      throw new Error('captionSize is no longer a layout setting: a caption of a tile (step=-1) has the size of the same text at any other step. Remove it; a font_size or a class sizes a caption');
+    }
     resolveSize(null, null, this.defaultSlideSize);
     if (!TEXT_ANCHORS.has(this.textAnchor)) throw new Error(`textAnchor must be an anchor (left-baseline, top-left, center, …), not ${JSON.stringify(this.textAnchor)}`);
     for (const key of ['fontSize', 'headingSize', 'codeSize', 'animationTime'] as const) {
@@ -1149,10 +1144,10 @@ export class MarkupRenderer {
     return group;
   }
 
-  /** Create one local mobject; connections follow anchor layout. `fontSize` wins over the element's own size (a caption's, from its tile). */
-  async make(element: ElementSpec, maxWidth: number, options: { fontSize?: number; columns?: SharedColumns } = {}): Promise<Mobject> {
+  /** Create one local mobject; connections follow anchor layout. */
+  async make(element: ElementSpec, maxWidth: number, options: { columns?: SharedColumns } = {}): Promise<Mobject> {
     const attrs = element.attributes;
-    const size = options.fontSize ?? this._size(element);
+    const size = this._size(element);
     const width = numberValue(attrs, 'width', element.line, maxWidth) as number;
     const color = attrs.color ? parseColor(attrs.color) : this.layout.color;
     let obj: Mobject;
@@ -1498,11 +1493,11 @@ export class MarkupRenderer {
    * them, and the rows shrunk alike when the widest does not fit. `rows` are given with the width
    * each may take and its size when the layout decides it.
    */
-  async columns(rows: ReadonlyArray<{ element: ElementSpec; maxWidth: number; fontSize?: number }>, gap: number | null): Promise<SharedColumns> {
+  async columns(rows: ReadonlyArray<{ element: ElementSpec; maxWidth: number }>, gap: number | null): Promise<SharedColumns> {
     const measured: Array<{ measure: ColumnMeasure; room: number }> = [];
-    for (const { element, maxWidth, fontSize } of rows) {
+    for (const { element, maxWidth } of rows) {
       const attrs = element.attributes;
-      const size = fontSize ?? this._size(element);
+      const size = this._size(element);
       const color = attrs.color ? parseColor(attrs.color) : this.layout.color;
       let room = numberValue(attrs, 'width', element.line, maxWidth) as number;
       if (element.list?.marker) {

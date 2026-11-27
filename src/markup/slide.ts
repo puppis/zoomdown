@@ -157,8 +157,6 @@ export class MarkupSlide extends Slide {
   readonly flowTop: number;
   /** The distance from the slide's left edge to the left edge of its flow (`flow_left`, the layout margin by default). */
   readonly flowLeft: number;
-  /** The width of the tile that shows this slide in its parent, in the parent's units, or null for a slide no parent includes. */
-  tileWidth: number | null = null;
 
   constructor(spec: SlideSpec, options: { renderer: MarkupRenderer; locate?: (line: number) => SourceLocation }) {
     const heading = spec.items.find((item): item is ElementSpec => item instanceof ElementSpec && item.level > 0);
@@ -294,7 +292,7 @@ export class MarkupSlide extends Slide {
       let columns = shared.get(align);
       if (!columns) {
         const rows = items.filter((other): other is ElementSpec => other instanceof ElementSpec && other.align === align);
-        columns = await located(align.line, () => this.renderer.columns(rows.map((row) => ({ element: row, maxWidth: Math.max(scope.width - indentOf(row), 0.5), fontSize: this._captionSize(row) })), align.gap));
+        columns = await located(align.line, () => this.renderer.columns(rows.map((row) => ({ element: row, maxWidth: Math.max(scope.width - indentOf(row), 0.5) })), align.gap));
         shared.set(align, columns);
       }
       return { columns };
@@ -324,7 +322,7 @@ export class MarkupSlide extends Slide {
         const tile = item.verdictOf !== null && viewportOf ? this._tile(items, item.verdictOf, viewportOf) : null;
         const wrap = tile ? tile.getWidth() : Math.max(scope.width - indent, 0.5);
         const columns = await columnsOf(item);
-        obj = item instanceof GroupSpec ? await this._buildGroup(item, scope.width) : await located(item.line, () => this.renderer.make(item, wrap, { fontSize: this._captionSize(item), ...columns }));
+        obj = item instanceof GroupSpec ? await this._buildGroup(item, scope.width) : await located(item.line, () => this.renderer.make(item, wrap, columns));
         if (list?.marker) textColumns[list.depth] = (obj as ListItemMobject).markupTextColumn ?? layout.listIndent;
         this._register(item, obj, scope.local);
         elements.set(item.id, item);
@@ -451,7 +449,7 @@ export class MarkupSlide extends Slide {
       const columnWidth = previous ? previous.width : scope.width;
       if (node.flowX && item instanceof ElementSpec && item.kind === 'text' && !('width' in attrs) && Math.abs(columnWidth - scope.width) > 1e-9) {
         const columns = await columnsOf(item);
-        const made = await located(item.line, () => this.renderer.make(item, Math.max(columnWidth - indent, 0.5), { fontSize: this._captionSize(item), ...columns }));
+        const made = await located(item.line, () => this.renderer.make(item, Math.max(columnWidth - indent, 0.5), columns));
         for (const member of node.obj.getFamily()) if (member instanceof StyledLine) member.dispose();
         node.obj = made;
         this._register(item, made, scope.local);
@@ -598,17 +596,6 @@ export class MarkupSlide extends Slide {
     return index < 0 ? null : viewportOf(index, items[index] as IncludeSpec);
   }
 
-  /**
-   * The size of a caption of this slide's tile (a `step=-1` text), when `layout.captionSize` sets
-   * one and the caption has no `font_size` of its own or of a class: that many points of the
-   * parent, the tile's width standing for the slide's.
-   */
-  private _captionSize(item: ElementSpec): number | undefined {
-    const size = this.renderer.layout.captionSize;
-    if (size === null || this.tileWidth === null || item.kind !== 'text' || item.attributes.step !== '-1') return undefined;
-    if ('font_size' in item.attributes && !roleStyledKeys(item).has('font_size')) return undefined;
-    return (size * this.width) / this.tileWidth;
-  }
 
   private _register(item: ElementSpec, obj: Mobject, local: Map<string, Mobject>): void {
     if (item.attributes.href) LINKED_OBJECTS.set(obj, item.attributes.href);
@@ -912,7 +899,6 @@ export class SlideBuilder {
           angle: numberValue(attrs, 'angle', item.line, 0) ?? 0,
         });
         if (parent instanceof MarkupSlide) parent.components.set(childKey(index, item), child);
-        if (child instanceof MarkupSlide) child.tileWidth = width ?? ((height as number) * child.width) / child.height;
         if (child.viewport) SOURCE_OBJECTS.set(child.viewport as unknown as Mobject, child.placement);
       }
     }

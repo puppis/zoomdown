@@ -158,30 +158,22 @@ describe('the size of a caption', () => {
     throw new Error(id);
   };
 
-  it('follows the tile with layout.captionSize: that many points of the parent', async () => {
-    const sized = await built(deck('# Caption {#ID-cap step=-1}'), new LayoutConfig({ captionSize: 26 }));
-    // A tile half as wide holds a caption twice as large, both 26 points on the parent.
-    expect(height(sized, 'b-cap') / height(sized, 'a-cap')).toBeCloseTo(2, 6);
-    const explicit = await built(deck('# Caption {#ID-cap step=-1 font_size=104}'));
-    // The 16-wide child in a tile 4 wide: 26 × 16 / 4 = 104 points of its own.
-    expect(height(sized, 'a-cap')).toBeCloseTo(height(explicit, 'a-cap'), 9);
+  it('is the size of the same text at any other step, whatever the tile\'s width', async () => {
+    const early = await built(deck('# Caption {#ID-cap step=-1}'));
+    expect(height(early, 'b-cap') / height(early, 'a-cap')).toBeCloseTo(1, 9);
+    for (const step of ['', ' step=1', ' step=2']) {
+      const later = await built(deck(`# Caption {#ID-cap${step}}`));
+      expect(height(later, 'a-cap')).toBeCloseTo(height(early, 'a-cap'), 9);
+    }
+    const body = await built(deck('Some text {#ID-cap step=-1}'));
+    const plain = await built(deck('Some text {#ID-cap}'));
+    expect(height(body, 'b-cap')).toBeCloseTo(height(plain, 'b-cap'), 9);
   });
 
-  it('gives way to a size of the caption or of its class, not to the style of its role', async () => {
-    const layout = new LayoutConfig({ captionSize: 26 });
-    const own = await built(deck('# Caption {#ID-cap step=-1 font_size=50}'), layout);
-    expect(height(own, 'b-cap') / height(own, 'a-cap')).toBeCloseTo(1, 9);
-    const classed = await built(deck('# Caption {#ID-cap .big step=-1}', 'big: font_size=50'), layout);
-    expect(height(classed, 'b-cap') / height(classed, 'a-cap')).toBeCloseTo(1, 9);
-    const role = await built(deck('# Caption {#ID-cap step=-1}', 'h1: font_size=50'), layout);
-    expect(height(role, 'b-cap') / height(role, 'a-cap')).toBeCloseTo(2, 6);
-  });
-
-  it('is left alone without captionSize, and for text that is no caption', async () => {
-    const plain = await built(deck('# Caption {#ID-cap step=-1}'));
-    expect(height(plain, 'b-cap') / height(plain, 'a-cap')).toBeCloseTo(1, 9);
-    const body = await built(deck('# Caption {#ID-cap}'), new LayoutConfig({ captionSize: 26 }));
-    expect(height(body, 'b-cap') / height(body, 'a-cap')).toBeCloseTo(1, 9);
-    expect(() => new LayoutConfig({ captionSize: 0 })).toThrow(/captionSize must be finite and positive/);
+  it('takes its own font_size or a class, as at any other step; captionSize is refused', async () => {
+    const own = await built(deck('# Caption {#ID-cap step=-1 font_size=50}'));
+    const later = await built(deck('# Caption {#ID-cap step=1 font_size=50}'));
+    expect(height(own, 'a-cap')).toBeCloseTo(height(later, 'a-cap'), 9);
+    expect(() => new LayoutConfig({ captionSize: 26 } as never)).toThrow(/captionSize is no longer a layout setting: a caption of a tile \(step=-1\) has the size of the same text at any other step/);
   });
 });
