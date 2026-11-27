@@ -54,6 +54,12 @@ fade. The reveal is always a fade, so `enter=` is refused there. On a root slide
 flat document and on a `preview=true` child, where everything shows from the start anyway,
 `step=-1` is the same as no step.
 
+The caption belongs to the child, not to the parent: it is laid out with the child and has the size
+the same text has at any other step, so on the parent it looks as small as the tile makes the
+child. Only [`layout.captionSize`](slides.html#captions-sized-by-their-tile) sizes it by the tile
+instead, so that it reads the same on the parent whatever the tile's width, and then it is larger
+in the child than the same text at another step.
+
 ```zoomdown {height=5}
 ::: slide {#early-parent width=16 height=5}
 
