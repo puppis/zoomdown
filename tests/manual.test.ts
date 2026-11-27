@@ -12,11 +12,11 @@ const manual = readFileSync(join(__dirname, '..', 'docs', 'site', 'manual-markup
 /** Every name written in backticks anywhere in the manual. */
 const names = new Set([...manual.matchAll(/`([^`\n]+)`/g)].map((match) => match[1]));
 
-/** Flags are documented with hyphens (`only-this`), whichever way a deck writes them. */
+/** Attributes are documented with hyphens (`font-size`, `only-this`), whichever way a deck writes them. */
 const documented = (name: string): string => shownName(name);
 
-function expectAll(set: Iterable<string>, what: string): void {
-  const missing = [...set].map(documented).filter((name) => !names.has(name));
+function expectAll(set: Iterable<string>, what: string, show: (name: string) => string = documented): void {
+  const missing = [...set].map(show).filter((name) => !names.has(name));
   expect(missing, `${what} missing from the manual`).toEqual([]);
 }
 
@@ -35,19 +35,19 @@ describe('the markup manual', () => {
   });
 
   it('names every value the parser recognizes', () => {
-    expectAll(SHAPES, 'shapes');
-    expectAll(ANCHORS, 'anchors');
-    expectAll(['origin'], 'the group anchor');
-    expectAll(EFFECT_NAMES, 'effects');
-    expectAll(ENTER_STYLES, 'enter styles');
-    expectAll(EXIT_STYLES, 'exit styles');
-    expectAll(RATE_NAMES, 'rates');
-    expectAll(FILL_STYLE_NAMES, 'fill styles');
-    expectAll(TABLE_RULE_NAMES, 'table rules');
-    expectAll(CHART_TYPE_NAMES, 'chart types');
-    expectAll(LABEL_SIDES, 'label sides');
-    expectAll(ICON_KINDS, 'icon names');
-    expectAll(['zoom', 'cut', 'once', 'loop', 'left', 'center', 'right'], 'other values');
+    expectAll(SHAPES, 'shapes', (name) => name);
+    expectAll(ANCHORS, 'anchors', (name) => name);
+    expectAll(['origin'], 'the group anchor', (name) => name);
+    expectAll(EFFECT_NAMES, 'effects', (name) => name);
+    expectAll(ENTER_STYLES, 'enter styles', (name) => name);
+    expectAll(EXIT_STYLES, 'exit styles', (name) => name);
+    expectAll(RATE_NAMES, 'rates', (name) => name);
+    expectAll(FILL_STYLE_NAMES, 'fill styles', (name) => name);
+    expectAll(TABLE_RULE_NAMES, 'table rules', (name) => name);
+    expectAll(CHART_TYPE_NAMES, 'chart types', (name) => name);
+    expectAll(LABEL_SIDES, 'label sides', (name) => name);
+    expectAll(ICON_KINDS, 'icon names', (name) => name);
+    expectAll(['zoom', 'cut', 'once', 'loop', 'left', 'center', 'right'], 'other values', (name) => name);
   });
 
   it('names every directive and container', () => {

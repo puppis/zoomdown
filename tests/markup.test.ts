@@ -215,7 +215,7 @@ describe('phase 1 markup features', () => {
     expect(steps[0].changes).toEqual([{ action: 'show', target: 's', runTime: 2, lag: 0.5 }]);
     expect(steps[1].changes).toEqual([{ action: 'hide', target: 's', runTime: 1, lag: 0.5 }]);
     expect(steps[2].changes).toEqual([{ action: 'show', target: 's', runTime: 2, lag: 0.5 }]);
-    expect(() => parse('[x]{#x step=1 run_time=0}')).toThrow(/run_time must be positive/);
+    expect(() => parse('[x]{#x step=1 run_time=0}')).toThrow(/run-time must be positive/);
     expect(() => parse('[x]{#x step=1}\n[[show: #x step=2 color=red]]')).toThrow(/take step=N/);
   });
 
@@ -356,7 +356,7 @@ describe('phase 4 markup features', () => {
     expect(() => parse('[[iframe: https://example.org, #p, width=4 height=3 opacity=0.5]]')).toThrow(/Unknown attributes/);
     // No border unless stroke_width asks for one.
     expect(() => parse('[[iframe: https://example.org, #p, width=4 height=3 stroke_width=2 color=BLUE]]')).not.toThrow();
-    expect(() => parse('[[iframe: https://example.org, #p, width=4 height=3 stroke_width=-1]]')).toThrow(/stroke_width/);
+    expect(() => parse('[[iframe: https://example.org, #p, width=4 height=3 stroke_width=-1]]')).toThrow(/stroke-width/);
   });
 
   it('accepts video attributes only on video sources', () => {

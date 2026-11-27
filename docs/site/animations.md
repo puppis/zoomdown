@@ -6,17 +6,17 @@ description: Move, rotate, scale, recolor and fade elements, play named effects,
 <a class="try" href="tour.html#slide=animations">Open in the tour ↗</a>
 
 ```markdown
-[[animate: #ball, step=1, x=6.5, run_time=1.2, rate=ease_in_out]]
+[[animate: #ball, step=1, x=6.5, run-time=1.2, rate=ease_in_out]]
 [[animate: #card, step=2, angle=0.4, scale=1.3, color=ORANGE, opacity=0.6]]
 [[effect: indicate #before, step=3, color=GOLD_E]]
-[[transform: #before -> #after, step=4, run_time=1]]
-[[move_along: #ball, step=5, path=#orbit, run_time=2, rate=linear]]
-[[animate: #satellite, step=6, x=7.5, y=-3.6, angle=-0.3, run_time=1.5]]
+[[transform: #before -> #after, step=4, run-time=1]]
+[[move_along: #ball, step=5, path=#orbit, run-time=2, rate=linear]]
+[[animate: #satellite, step=6, x=7.5, y=-3.6, angle=-0.3, run-time=1.5]]
 [[include: #satellite x=5.5 y=-3.6 width=4 step=7 preview=true]]
 ```
 
 Animation directives play at a numbered step together with the fades of that step. They share
-`run_time`, `lag` and `rate`; targets must be visible at that step, and a target may be changed
+`run-time`, `lag` and `rate`; targets must be visible at that step, and a target may be changed
 only once per step.
 
 ## animate
@@ -73,8 +73,8 @@ sketch. The geometry is exact again whenever the vibration stops.
 | `tremble=N` | from step N on |
 | `tremble=N-M` | from step N until step M, like `step=N hide=M` |
 
-`tremble_amplitude` (0.04 logical units by default) sets the largest displacement and
-`tremble_rate` (12 per second) how often the points jump. Several elements may tremble at once,
+`tremble-amplitude` (0.04 logical units by default) sets the largest displacement and
+`tremble-rate` (12 per second) how often the points jump. Several elements may tremble at once,
 and `tremble` pairs naturally with `sketch=true`.
 
 A trembling stop behaves like `play=loop`: the step's fades and animations play once, the deck
@@ -83,7 +83,7 @@ over such loops instead of playing them backwards.
 
 ```markdown
 [[blob: #a #b, #focus, buff=0.4, color=RED, sketch=true, step=2, tremble=2-4]]
-[[icon: server #api x=0 y=0 tremble=true tremble_amplitude=0.06]]
+[[icon: server #api x=0 y=0 tremble=true tremble-amplitude=0.06]]
 ```
 
 ## Rates
@@ -93,7 +93,7 @@ over such loops instead of playing them backwards.
 
 ## Sequencing
 
-Changes of one step run in parallel; `lag` staggers them and `run_time` sets each duration.
+Changes of one step run in parallel; `lag` staggers them and `run-time` sets each duration.
 `[[next: step=N]]` chains steps without clicks. Group members cannot be animated individually;
 animate the [group](groups.html).
 

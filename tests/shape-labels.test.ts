@@ -57,9 +57,9 @@ describe('labels on shapes', () => {
   it('take their look from the shape\'s style, and are checked', () => {
     // A class may set how sublabels look for shapes that have none.
     expect(() => parse('[[circle: .node x=0 y=0 label="A"]]', 'node: radius=0.34 label_color=#1f3d7a sublabel_font_size=20')).not.toThrow();
-    expect(() => parse('[[circle: x=0 y=0 radius=1 label="A" label_side=inside]]')).toThrow(/label_side must be center, below, above, left or right/);
-    expect(() => parse('[[circle: x=0 y=0 radius=1 sublabel_color=#ff0000]]')).toThrow(/sublabel_color requires a sublabel/);
-    expect(() => parse('[[circle: x=0 y=0 radius=1 label="A" sublabel_buff=-1 sublabel="B"]]')).toThrow(/sublabel_buff must be nonnegative/);
+    expect(() => parse('[[circle: x=0 y=0 radius=1 label="A" label_side=inside]]')).toThrow(/label-side must be center, below, above, left or right/);
+    expect(() => parse('[[circle: x=0 y=0 radius=1 sublabel_color=#ff0000]]')).toThrow(/sublabel-color requires a sublabel/);
+    expect(() => parse('[[circle: x=0 y=0 radius=1 label="A" sublabel_buff=-1 sublabel="B"]]')).toThrow(/sublabel-buff must be nonnegative/);
     expect(() => parse('[[circle: x=0 y=0 radius=1 label="[x]{color=nocolor}"]]')).toThrow(/color/);
   });
 });

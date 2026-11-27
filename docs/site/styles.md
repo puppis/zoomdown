@@ -8,14 +8,14 @@ description: Named attribute sets applied by class tokens and automatically by r
 ```markdown
 ---
 styles:
-  footnote: { font_size: 18, color: GRAY }
+  footnote: { font-size: 18, color: GRAY }
   heading: color=BLUE_E
 ---
 ```
 
 ```markdown
 ::: styles
-callout: color=ORANGE font_size=30
+callout: color=ORANGE font-size=30
 :::
 
 [A side remark]{.footnote below:#body left-aligned:#body}
@@ -39,8 +39,8 @@ builds only on styles defined before it: in the theme or the front matter, or ea
 block; a later one is an unknown style there.
 
 Elements, includes and subslides opt into styles with `.name` tokens in their attribute list. Several
-classes may be listed; later ones win. A style may set how labels look (`label_pos`,
-`label_side`, `slanted`, `label_color`) for elements with and without a label alike: on one
+classes may be listed; later ones win. A style may set how labels look (`label-pos`,
+`label-side`, `slanted`, `label-color`) for elements with and without a label alike: on one
 without a label they have no effect, while written on such an element itself they are an
 error.
 
@@ -61,19 +61,19 @@ Styles named after a **role** apply automatically to every element of that role:
 | `lifeline`, `process`, `message`, `event` | the parts of a [timeline](shapes.html#space-time-diagrams) |
 | `node`, `edge` | the parts of a [graph](shapes.html#graphs) |
 | `slide` | every slide: `width` and `height`, `flow-top`, `flow-left`, `transition`, `preview` and [`debug`](slides.html#designing-a-slide), unless the slide writes its own |
-| `timeline`, `graph` | the blocks themselves: what every timeline or graph takes (`timeline: event_dot=false lifeline_tip=true`), under its classes and what it writes |
+| `timeline`, `graph` | the blocks themselves: what every timeline or graph takes (`timeline: event-dot=false lifeline-tip=true`), under its classes and what it writes |
 
 The parts of a block take the style of their role only when the block names no class for them:
 `::: graph {node=place edge=arc}` gives its nodes `.place` and its edges `.arc` instead, so each
 block chooses its own look and a deck's `.node` class meant for other elements reaches no graph
-by surprise. The block passes `<role>_<attribute>` to its parts as well (`node_radius=0.2`), as an
-include passes `verdict_<attribute>` to its verdict and a shape `label_color` to its label: an
+by surprise. The block passes `<role>_<attribute>` to its parts as well (`node-radius=0.2`), as an
+include passes `verdict_<attribute>` to its verdict and a shape `label-color` to its label: an
 anonymous class of the block's, over the classes it names, which fills in only what fits each part.
 
 ## Resolution
 
 An element's own attributes win, then its classes, then its roles, then the layout defaults.
-A style may set any attribute (`anchor`, `width`, `opacity`, `stroke_width`, `enter`, …), and
+A style may set any attribute (`anchor`, `width`, `opacity`, `stroke-width`, `enter`, …), and
 **fills in only what fits** the element it reaches:
 
 - **Its kind**: an attribute the element's kind does not take is left out, from a class as from a

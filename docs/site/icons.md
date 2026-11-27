@@ -7,8 +7,8 @@ description: Thirty-nine diagram symbols built from geometry (people, machines, 
 
 ```markdown
 [[icon: user #alice x=-7 y=-2.4 size=1.4 color=BLUE_E label="Alice"]]
-[[icon: server #api right-of:#alice buff=3 size=1.4 color=GREEN_E fill_opacity=0.25 label="api" label_side=above]]
-[[icon: database #db right-of:#api buff=3 size=1.4 color=GOLD_E fill_opacity=0.3 label="orders"]]
+[[icon: server #api right-of:#alice buff=3 size=1.4 color=GREEN_E fill-opacity=0.25 label="api" label-side=above]]
+[[icon: database #db right-of:#api buff=3 size=1.4 color=GOLD_E fill-opacity=0.3 label="orders"]]
 [[icon: cloud #cdn right-of:#db buff=2 size=1.4 color=TEAL_E label="cdn" sketch=true]]
 [[arrow: #alice -> #api, #req, label="HTTPS"]]
 [[arrow: #api -> #db, #sql, label="SQL", step=1]]
@@ -38,16 +38,16 @@ strokes for the details, drawn with the same outline width inside a square box.
 | --- | --- | --- |
 | `size` | 1 | height of the icon's box, in logical units (widths follow the symbol) |
 | `color` | the layout color | outline color |
-| `stroke_width` | 2 | outline width, in the units of shapes |
-| `fill_color` | `color` | color of the silhouette parts (the body, the cylinder, the page, …) |
-| `fill_opacity` | 0 | opacity of that fill; details such as text lines and bands stay strokes |
+| `stroke-width` | 2 | outline width, in the units of shapes |
+| `fill-color` | `color` | color of the silhouette parts (the body, the cylinder, the page, …) |
+| `fill-opacity` | 0 | opacity of that fill; details such as text lines and bands stay strokes |
 | `label` | | inline text under the icon, with styling and math |
-| `label_side` | `below` | `below`, `above`, `left` or `right` |
-| `font_size`, `font` | the prose size, the prose face | the size the label is 80 % of, and its font family |
-| `sketch` and its tuning | `false` | [hand-drawn](sketch.html) rendering: `roughness`, `bowing`, `fill_style`, `hachure_angle`, `hachure_gap`, `fill_weight`, `seed` |
-| `tremble`, `tremble_amplitude`, `tremble_rate` | | [vibration](animations.html#tremble) over a range of steps |
+| `label-side` | `below` | `below`, `above`, `left` or `right` |
+| `font-size`, `font` | the prose size, the prose face | the size the label is 80 % of, and its font family |
+| `sketch` and its tuning | `false` | [hand-drawn](sketch.html) rendering: `roughness`, `bowing`, `fill-style`, `hachure-angle`, `hachure-gap`, `fill-weight`, `seed` |
+| `tremble`, `tremble-amplitude`, `tremble-rate` | | [vibration](animations.html#tremble) over a range of steps |
 
-Icons also take `opacity`, `step`, `hide`, `enter`, `exit`, `run_time`, `lag`, the placement
+Icons also take `opacity`, `step`, `hide`, `enter`, `exit`, `run-time`, `lag`, the placement
 attributes of [Positioning](positioning.html) and `focus-only`. With a `label`, the icon and its
 label form one element: the arrow endpoints and the bounding box include the label, while a
 [blob](enclosures.html) flows around the symbol and the label separately.
@@ -59,7 +59,7 @@ set a common look once:
 
 ```markdown
 ::: styles
-icon: fill_opacity=0.15 stroke_width=2.5
+icon: fill-opacity=0.15 stroke-width=2.5
 icon-database: color=GOLD_E
 shape: sketch=true
 :::
@@ -75,7 +75,7 @@ shape: sketch=true
 The built-in names are not the end of it. An `artworks/` folder next to the Markdown file (and
 any folder named under `artworks` or `paths` in the front matter) holds artworks of the deck's own,
 one file per name, and `[[artwork: name …]]` (or `[[icon: name …]]` with a name that is not
-built in) places one like an icon, with `size`, `label`, `label_side` and a position:
+built in) places one like an icon, with `size`, `label`, `label-side` and a position:
 
 - **`name.svg`**: the drawing as it is, with its own colors, scaled to `size` in height;
   `currentColor` in the file takes `color=` when given, else the deck's text color.

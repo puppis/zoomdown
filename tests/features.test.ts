@@ -124,7 +124,7 @@ describe('markup for icons, enclosures and tremble', () => {
     // An id only to be referenced, as a shape: the slide names it otherwise.
     expect((parse('[[artwork: rocket x=0]]').slides[0].items[0] as ElementSpec).id).toBe('element-1');
     expect((parse('[[icon: user]]').slides[0].items[0] as ElementSpec).source).toBe('user');
-    expect(() => parse('[[icon: user #u label="a" label_side=inside]]')).toThrow(/label_side must be/);
+    expect(() => parse('[[icon: user #u label="a" label_side=inside]]')).toThrow(/label-side must be/);
     expect(() => parse('[[icon: user #u label_side=above]]')).toThrow(/requires a label/);
     expect(() => parse('[[icon: user #u width=2]]')).toThrow(/Unknown attributes: width/);
   });
@@ -145,7 +145,7 @@ describe('markup for icons, enclosures and tremble', () => {
     // A brace may span several elements too.
     expect(() => parse('[[dot: #a x=0 y=0]]\n[[dot: #b x=1 y=0]]\n[[brace: #a #b, #q]]')).not.toThrow();
     expect(() => parse('[[dot: #a x=0 y=0]]\n[[blob: #a, #q, smoothness=3]]')).toThrow(/smoothness must be between/);
-    expect(() => parse('[[dot: #a x=0 y=0]]\n[[blob: #a, #q, corner_radius=1]]')).toThrow(/Unknown attributes: corner_radius/);
+    expect(() => parse('[[dot: #a x=0 y=0]]\n[[blob: #a, #q, corner_radius=1]]')).toThrow(/Unknown attributes: corner-radius/);
   });
 
   it('validates tremble ranges and the kinds that take them', () => {
@@ -162,6 +162,6 @@ describe('markup for icons, enclosures and tremble', () => {
     expect(() => parse('[Hello]{#t x=0 y=0 tremble=true}')).toThrow(/Unknown attributes: tremble/);
     expect(() => parse('[[circle: #c x=0 y=0 radius=1 tremble_rate=3]]')).toThrow(/requires tremble=/);
     expect(() => parse('[[circle: #c x=0 y=0 radius=1 step=1 hide=3 tremble=3]]')).toThrow(/before the element is hidden/);
-    expect(() => parse('[[circle: #c x=0 y=0 radius=1 tremble_rate=0 tremble=true]]')).toThrow(/tremble_rate must be positive/);
+    expect(() => parse('[[circle: #c x=0 y=0 radius=1 tremble_rate=0 tremble=true]]')).toThrow(/tremble-rate must be positive/);
   });
 });

@@ -50,19 +50,19 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | ```` ```lang {attrs} ```` | code listing |
 | `\| a \| b \|` rows with a `\| --- \| --- \|` delimiter | table (attributes through a `::: {.element …}` container) |
 | ```` ```chart {attrs} ```` with rows of `label, v1, v2`, or `src=data.csv` | bar, line or pie chart, or a chart type of the deck's own; rows from the fence or from a CSV or JSON file |
-| `[[iframe: url, #id, width, height, poster, title, stroke_width, placement, step]]` | a live web page, borderless unless `stroke_width` is set ([Live pages](live-pages.html)) |
+| `[[iframe: url, #id, width, height, poster, title, stroke-width, placement, step]]` | a live web page, borderless unless `stroke-width` is set ([Live pages](live-pages.html)) |
 
 | Attribute | On | Meaning |
 | --- | --- | --- |
-| `font_size`, `color`, `opacity` | elements | typography and translucency; on a group, `font_size`, `font`, `color` and `line_height` pass to the members |
-| `line_height` | text, groups | the distance between baselines, in ems |
-| `font`, and `font_size` on labels | text, connection and brace labels | font family (`Zeyada`, the bundled handwriting face, or any loaded font) |
+| `font-size`, `color`, `opacity` | elements | typography and translucency; on a group, `font-size`, `font`, `color` and `line-height` pass to the members |
+| `line-height` | text, groups | the distance between baselines, in ems |
+| `font`, and `font-size` on labels | text, connection and brace labels | font family (`Zeyada`, the bundled handwriting face, or any loaded font) |
 | `lang` | listings | language name (normally from the fence info) |
 | `math` | listings | `true` typesets the listing's `$…$` as formulas and its `~…~`, `^…^` as subscripts and superscripts, `false` keeps them code; by default the language profile's `math` |
 | `play`, `muted` | animated images, videos | `once`, `loop`; sound for videos |
 | `title`, `poster` | iframes | label and preview image |
-| `rules`, `valign`, `header`, `header_font_size`, `col_font_size`, `padding`, `padding_x`, `padding_y`, `col_width`, `border_color`, `row_rule_color`, `row_rule_width`, `col_rule_color`, `col_rule_width`, `header_col_rules`, `header_col_rule_color`, `header_col_rule_width`, `header_color`, `header_opacity`, `stripe_opacity` | tables | rules (all, or rows and columns apart, and whether the vertical rules cross the header row), header row, text sizes of the header and of each column, cell padding, column widths and shading |
-| `type`, `src`, `colors`, `axis_color`, `border_color`, `grid`, `legend`, `values`, `min`, `max`, `header` | charts | chart kind (built in, or a module of the deck's `charts/` folder), data file, palette, axes, gridlines, legend, value labels and axis bounds |
+| `rules`, `valign`, `header`, `header-font-size`, `col-font-size`, `padding`, `padding-x`, `padding-y`, `col-width`, `border-color`, `row-rule-color`, `row-rule-width`, `col-rule-color`, `col-rule-width`, `header-col-rules`, `header-col-rule-color`, `header-col-rule-width`, `header-color`, `header-opacity`, `stripe-opacity` | tables | rules (all, or rows and columns apart, and whether the vertical rules cross the header row), header row, text sizes of the header and of each column, cell padding, column widths and shading |
+| `type`, `src`, `colors`, `axis-color`, `border-color`, `grid`, `legend`, `values`, `min`, `max`, `header` | charts | chart kind (built in, or a module of the deck's `charts/` folder), data file, palette, axes, gridlines, legend, value labels and axis bounds |
 | `href` | every element, group, connection and attachment | URL opened by a click on the element (a drag still draws); `#slide=id` and `#step=N` move within the deck instead of opening a page |
 
 ## Diagrams
@@ -71,29 +71,29 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 
 | Directive | Form |
 | --- | --- |
-| `rectangle`, `ellipse` | `#id width height fill_color fill_opacity …` (`rectangle` also `corner_radius`) |
+| `rectangle`, `ellipse` | `#id width height fill-color fill-opacity …` (`rectangle` also `corner-radius`) |
 | `circle`, `dot` | `#id radius …` (dot: radius optional) |
-| any shape | `label="…" label_side=center\|above\|below\|left\|right label_buff label_color font_size sublabel="…" sublabel_side sublabel_buff sublabel_color sublabel_font_size` ([Labels](shapes.html#labels)) |
+| any shape | `label="…" label-side=center\|above\|below\|left\|right label-buff label-color font-size sublabel="…" sublabel-side sublabel-buff sublabel-color sublabel-font-size` ([Labels](shapes.html#labels)) |
 | `polygon`, `polyline` | `#id points="(x,y) (x,y) …" …` |
-| `arc` | `#id x y radius angle [start_angle] …` |
-| `icon` | `[[icon: name #id size label label_color label_side fill_color fill_opacity stroke_width …]]` (names under [Names](#names)) |
+| `arc` | `#id x y radius angle [start-angle] …` |
+| `icon` | `[[icon: name #id size label label-color label-side fill-color fill-opacity stroke-width …]]` (names under [Names](#names)) |
 | `artwork` | `[[artwork: name #id size label …]]`: `name.svg` or `name.js`/`.ts` from the deck's artworks folders, with any attributes the module reads ([Icons](icons.html#artworks-of-your-own)) |
 | any other name | `[[name: #id placement …]]`: a directive of the deck's own, drawn by `directives/name.ts` with the attributes it reads ([Extending a deck](extending.html#directives)) |
-| `arrow`, `line` | `[[arrow: #a -> #b, #id, buff, buff_start, buff_end, offset, label="…", label_color, label_pos=0…1, label_buff, label_side=above\|below, label_width, slanted=true, dashed=true, halo_bridge=true\|color, halo_width, tip=triangle\|open\|none, tip_length, tip_width, bend=degrees, loop=above\|below\|left\|right, looseness, wavy=waves, amplitude, via="+(x,y) …", color, stroke_width, step, hide]]` with `#id`, `#id.anchor` or `(x,y)` endpoints |
-| `brace` | `[[brace: #target …, #id, side, buff, label, label_color, font_size, font]]` (one target or several) |
-| `box`, `blob` | `[[box: #a #b …, #id, buff, corner_radius, fill_color, fill_opacity]]`, `[[blob: #a #b …, #id, buff, smoothness, fill_color, fill_opacity]]` |
+| `arrow`, `line` | `[[arrow: #a -> #b, #id, buff, buff-start, buff-end, offset, label="…", label-color, label-pos=0…1, label-buff, label-side=above\|below, label-width, slanted=true, dashed=true, halo-bridge=true\|color, halo-width, tip=triangle\|open\|none, tip-length, tip-width, bend=degrees, loop=above\|below\|left\|right, looseness, wavy=waves, amplitude, via="+(x,y) …", color, stroke-width, step, hide]]` with `#id`, `#id.anchor` or `(x,y)` endpoints |
+| `brace` | `[[brace: #target …, #id, side, buff, label, label-color, font-size, font]]` (one target or several) |
+| `box`, `blob` | `[[box: #a #b …, #id, buff, corner-radius, fill-color, fill-opacity]]`, `[[blob: #a #b …, #id, buff, smoothness, fill-color, fill-opacity]]` |
 
 | Attribute | On | Meaning |
 | --- | --- | --- |
-| `color`, `stroke_width` | shapes, icons, connections, attachments | stroke color and width |
-| `fill_color`, `fill_opacity` | shapes, icons, boxes, blobs | fill |
-| `fill_gradient`, `gradient_direction` | shapes | a linear gradient fill, translucent colors allowed |
-| `size`, `label`, `label_side` | icons | box height; caption text and its side (`below`, `above`, `left`, `right`) |
+| `color`, `stroke-width` | shapes, icons, connections, attachments | stroke color and width |
+| `fill-color`, `fill-opacity` | shapes, icons, boxes, blobs | fill |
+| `fill-gradient`, `gradient-direction` | shapes | a linear gradient fill, translucent colors allowed |
+| `size`, `label`, `label-side` | icons | box height; caption text and its side (`below`, `above`, `left`, `right`) |
 | `buff` | attachments | distance from the targets |
 | `side` | braces | `bottom`, `top`, `left`, `right` |
-| `corner_radius` | rectangles, boxes | rounded corners |
+| `corner-radius` | rectangles, boxes | rounded corners |
 | `smoothness` | blobs | how widely the hollows are rounded, and which neighboring targets merge, 0 to 1 |
-| `sketch`, `roughness`, `bowing`, `fill_style`, `hachure_angle`, `hachure_gap`, `fill_weight`, `seed` | shapes, icons, connections, attachments | hand-drawn rendering and its tuning |
+| `sketch`, `roughness`, `bowing`, `fill-style`, `hachure-angle`, `hachure-gap`, `fill-weight`, `seed` | shapes, icons, connections, attachments | hand-drawn rendering and its tuning |
 
 ## Layout
 
@@ -123,19 +123,19 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 
 | Directive | Form |
 | --- | --- |
-| `show`, `hide` | `[[show: #id step=N run_time lag enter]]`, `[[hide: #id step=N run_time lag exit]]` |
-| `animate` | `[[animate: #id, step=N, x y at dx dy anchor angle scale opacity color, run_time lag rate]]` |
-| `effect` | `[[effect: name #id, step=N, color, scale, run_time, lag, rate]]`; a name that is not built in is `effects/name.ts` |
-| `transform` | `[[transform: #a -> #b, step=N, run_time, lag, rate]]` |
-| `move_along` | `[[move_along: #id, step=N, path=#shape, rotate, run_time, lag, rate]]` |
+| `show`, `hide` | `[[show: #id step=N run-time lag enter]]`, `[[hide: #id step=N run-time lag exit]]` |
+| `animate` | `[[animate: #id, step=N, x y at dx dy anchor angle scale opacity color, run-time lag rate]]` |
+| `effect` | `[[effect: name #id, step=N, color, scale, run-time, lag, rate]]`; a name that is not built in is `effects/name.ts` |
+| `transform` | `[[transform: #a -> #b, step=N, run-time, lag, rate]]` |
+| `move_along` | `[[move_along: #id, step=N, path=#shape, rotate, run-time, lag, rate]]` |
 | `next`, `skip_next` | `[[next: step=N]]`, `[[skip_next: step=N]]` |
 
 | Attribute | On | Meaning |
 | --- | --- | --- |
 | `step`, `hide` | elements, children (`step`) | reveal and hide clicks; visit step for children; with `layout.steps: sequential`, `+` is the click after the element before |
-| `run_time`, `lag`, `rate` | fades and animations | duration, delay, rate function |
+| `run-time`, `lag`, `rate` | fades and animations | duration, delay, rate function |
 | `enter`, `exit` | elements | `fade`, `grow`, `write`, `create`, `draw` / `fade`, `shrink`, `uncreate`, or the name of an effect of the deck's own |
-| `tremble`, `tremble_amplitude`, `tremble_rate` | shapes, icons, connections, attachments, math, groups, tables, charts | `true`, `N` or `N-M`: vibration over a range of steps, its size and frequency |
+| `tremble`, `tremble-amplitude`, `tremble-rate` | shapes, icons, connections, attachments, math, groups, tables, charts | `true`, `N` or `N-M`: vibration over a range of steps, its size and frequency |
 | `focus-only` | static elements | visible only while the slide is focused |
 | `debug` | slides, includes, subslides; `slide: debug` in the styles for all | a frame around the slide and faint dots at its coordinates, while it is being designed; never in an export |
 | `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview` | slides, includes, subslides | opening stop, partial rendering, zooming back to the parent after this child or leaving it straight for the next stop (by default only the last child returns), `zoom`, `cut` or a camera transition of the deck's own, content shown before the first visit; written bare, a flag means `=true` ([Slides and the forest](slides.html#flags)) |

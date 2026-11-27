@@ -66,13 +66,13 @@ child of its own: first child, next sibling, then down again.
 ::: slide {#talk width=20}
 # A talk as a tree
 
-[Two children, placed as viewports; the second has a child of its own.]{#intro x=-9 y=2.4 width=18 font_size=20 color=GRAY}
+[Two children, placed as viewports; the second has a child of its own.]{#intro x=-9 y=2.4 width=18 font-size=20 color=GRAY}
 
-[[rectangle: #f1 x=-5 y=-1.5 width=8 height=4.5 color=GRAY stroke_width=1]]
+[[rectangle: #f1 x=-5 y=-1.5 width=8 height=4.5 color=GRAY stroke-width=1]]
 
 [[include: #first x=-5 y=-1.5 width=8 preview=true]]
 
-[[rectangle: #f2 x=5 y=-1.5 width=8 height=4.5 color=GRAY stroke_width=1]]
+[[rectangle: #f2 x=5 y=-1.5 width=8 height=4.5 color=GRAY stroke-width=1]]
 
 [[include: #second x=5 y=-1.5 width=8 preview=true]]
 :::
@@ -80,23 +80,23 @@ child of its own: first child, next sibling, then down again.
 ::: slide {#first}
 ## First child
 
-Visited first; the camera then goes straight to the sibling. {font_size=24}
+Visited first; the camera then goes straight to the sibling. {font-size=24}
 :::
 
 ::: slide {#second}
 ## Second child
 
-[[rectangle: #f3 x=3 y=-1.5 width=7 height=3.94 color=GRAY stroke_width=1]]
+[[rectangle: #f3 x=3 y=-1.5 width=7 height=3.94 color=GRAY stroke-width=1]]
 
 [[include: #detail x=3 y=-1.5 width=7 preview=true]]
 
-This one has a child of its own. {x=-7.35 y=1.4 width=7 font_size=24}
+This one has a child of its own. {x=-7.35 y=1.4 width=7 font-size=24}
 :::
 
 ::: slide {#detail}
 ### A detail of the second child
 
-The last stop; then the camera zooms back out, twice. {font_size=22}
+The last stop; then the camera zooms back out, twice. {font-size=22}
 :::
 ```
 
@@ -115,9 +115,9 @@ recorded with a talk. Try it on the deck below.
 
 Hold **Shift** while moving the pointer over this slide: a spotlight follows it. **L** switches between the spotlight and a laser dot, and Shift with the mouse wheel (or a two-finger scroll) changes the size; the settings (⚙, or the comma key) offer the same choices.
 
-[Where does this term come from?]{#q x=-6 y=-1 font_size=26}
+[Where does this term come from?]{#q x=-6 y=-1 font-size=26}
 
-[$\displaystyle \frac{\partial L}{\partial \dot q} - \frac{\partial L}{\partial q} = 0$]{#eq x=1 y=-1 font_size=30}
+[$\displaystyle \frac{\partial L}{\partial \dot q} - \frac{\partial L}{\partial q} = 0$]{#eq x=1 y=-1 font-size=30}
 :::
 ```
 
@@ -137,7 +137,7 @@ infinite canvas of its own that keeps what you wrote and comes back when you nee
 
 Press **D** and draw on this slide; the keys **1** to **4** (or the dots in the footer) pick the color, and ⌘Z or Ctrl+Z takes a stroke back. Press **W** for the whiteboard, an infinite canvas that scrolls with the arrows and keeps your notes.
 
-[Annotate this: $x^2 + y^2 = r^2$]{#note x=-6 y=-1.5 font_size=30}
+[Annotate this: $x^2 + y^2 = r^2$]{#note x=-6 y=-1.5 font-size=30}
 :::
 ```
 
@@ -179,29 +179,29 @@ below has three slides: a formula, a diagram, and five steps of motion.
 ::: slide {#formula width=20}
 ## A formula and its parts
 
-[$\displaystyle \int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}$]{#gauss x=-4 y=1.2 anchor=center font_size=40}
+[$\displaystyle \int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}$]{#gauss x=-4 y=1.2 anchor=center font-size=40}
 
-[[box: #gauss, #gbox, buff=0.3, corner_radius=0.15, color=TEAL]]
+[[box: #gauss, #gbox, buff=0.3, corner-radius=0.15, color=TEAL]]
 
-[Gaussian integral]{#label x=-4 y=-1.8 anchor=center font_size=24 color=TEAL}
+[Gaussian integral]{#label x=-4 y=-1.8 anchor=center font-size=24 color=TEAL}
 
 [[arrow: #label -> #gauss, #why]]
 
-[Inline math shares the baseline of its line: $e^{i\pi} + 1 = 0$, and a display formula stands alone.]{#inline x=-9 y=-3.6 width=18 font_size=20 color=GRAY}
+[Inline math shares the baseline of its line: $e^{i\pi} + 1 = 0$, and a display formula stands alone.]{#inline x=-9 y=-3.6 width=18 font-size=20 color=GRAY}
 :::
 
 ::: slide {#diagram width=20}
 ## Arrows, blobs and hand-drawn shapes
 
-[Source]{#src x=-6 y=1.5 anchor=center font_size=28}
+[Source]{#src x=-6 y=1.5 anchor=center font-size=28}
 
-[Sink]{#dst x=4 y=1.5 anchor=center font_size=28}
+[Sink]{#dst x=4 y=1.5 anchor=center font-size=28}
 
 [[arrow: #src -> #dst, #flow, label="flow"]]
 
-[[rectangle: #hr x=-6.5 y=-2.2 width=3.4 height=1.8 color=BLUE_E fill_opacity=0.5 sketch=true]]
+[[rectangle: #hr x=-6.5 y=-2.2 width=3.4 height=1.8 color=BLUE_E fill-opacity=0.5 sketch=true]]
 
-[[circle: #hc right-of:#hr buff=1.5 radius=0.9 color=GREEN_E fill_opacity=0.6 fill_style=cross-hatch sketch=true]]
+[[circle: #hc right-of:#hr buff=1.5 radius=0.9 color=GREEN_E fill-opacity=0.6 fill-style=cross-hatch sketch=true]]
 
 [[arrow: #hr -> #hc, #ha, sketch=true]]
 
@@ -211,15 +211,15 @@ below has three slides: a formula, a diagram, and five steps of motion.
 [[dot: #s4 x=3.0 y=-2.8 radius=0.16 color=GOLD_E]]
 [[dot: #s5 x=1.2 y=-3.4 radius=0.16 color=GOLD_E]]
 
-[[line: #s1 -> #s2, #e1, color=GOLD_E, stroke_width=1]]
-[[line: #s2 -> #s3, #e2, color=GOLD_E, stroke_width=1]]
-[[line: #s3 -> #s4, #e3, color=GOLD_E, stroke_width=1]]
-[[line: #s4 -> #s5, #e4, color=GOLD_E, stroke_width=1]]
-[[line: #s5 -> #s2, #e5, color=GOLD_E, stroke_width=1]]
+[[line: #s1 -> #s2, #e1, color=GOLD_E, stroke-width=1]]
+[[line: #s2 -> #s3, #e2, color=GOLD_E, stroke-width=1]]
+[[line: #s3 -> #s4, #e3, color=GOLD_E, stroke-width=1]]
+[[line: #s4 -> #s5, #e4, color=GOLD_E, stroke-width=1]]
+[[line: #s5 -> #s2, #e5, color=GOLD_E, stroke-width=1]]
 
 [[blob: #s1 #s2 #s3 #s4 #s5, #cloud, buff=0.6, color=ORANGE]]
 
-[[icon: database #store x=6.3 y=-2.2 size=1.4 color=GOLD_E label="an icon" label_side=right]]
+[[icon: database #store x=6.3 y=-2.2 size=1.4 color=GOLD_E label="an icon" label-side=right]]
 
 [[brace: #store, #sb, side=bottom, label="a brace", color=GRAY]]
 :::
@@ -227,7 +227,7 @@ below has three slides: a formula, a diagram, and five steps of motion.
 ::: slide {#motion width=20}
 ## Motion, one step per click
 
-[A point moves]{#mover x=-8 y=1.5 font_size=28}
+[A point moves]{#mover x=-8 y=1.5 font-size=28}
 
 [[animate: #mover, dx=6, step=1]]
 
@@ -235,13 +235,13 @@ below has three slides: a formula, a diagram, and five steps of motion.
 
 [[effect: indicate #mover, step=3]]
 
-[Before]{#before x=2 y=1.5 font_size=28}
+[Before]{#before x=2 y=1.5 font-size=28}
 
-[After]{#after x=2 y=1.5 font_size=28 color=TEAL step=4}
+[After]{#after x=2 y=1.5 font-size=28 color=TEAL step=4}
 
 [[transform: #before -> #after, step=4]]
 
-[Written by hand]{#written x=-8 y=-3 font=Zeyada font_size=44 enter=write step=5}
+[Written by hand]{#written x=-8 y=-3 font=Zeyada font-size=44 enter=write step=5}
 :::
 ```
 

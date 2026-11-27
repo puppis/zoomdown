@@ -102,17 +102,17 @@ Three slides that include none of the others: the player cuts from each to the n
 ::: slide {#third width=20}
 ## The third page has a child
 
-[[rectangle: #frame x=5 y=-1.2 width=8 height=4.5 color=GRAY stroke_width=1]]
+[[rectangle: #frame x=5 y=-1.2 width=8 height=4.5 color=GRAY stroke-width=1]]
 
 [[include: #detail x=5 y=-1.2 width=8 preview=true]]
 
-The camera zooms into the child and back out to this page; then the deck ends. {x=-9.3 y=-3.6 width=10 font_size=20 color=GRAY}
+The camera zooms into the child and back out to this page; then the deck ends. {x=-9.3 y=-3.6 width=10 font-size=20 color=GRAY}
 :::
 
 ::: slide {#detail}
 ### A detail
 
-Children of a page keep their zooms; only the pages themselves cut. {font_size=22}
+Children of a page keep their zooms; only the pages themselves cut. {font-size=22}
 :::
 ```
 
@@ -133,11 +133,11 @@ tree of two children, then a second root.
 ::: slide {#lecture width=20}
 # A tree with two children
 
-[[rectangle: #frame-1 x=-5 y=-1.5 width=8 height=4.5 color=GRAY stroke_width=1]]
+[[rectangle: #frame-1 x=-5 y=-1.5 width=8 height=4.5 color=GRAY stroke-width=1]]
 
 [[include: #part-1 x=-5 y=-1.5 width=8 preview=true]]
 
-[[rectangle: #frame-2 x=5 y=-1.5 width=8 height=4.5 color=GRAY stroke_width=1]]
+[[rectangle: #frame-2 x=5 y=-1.5 width=8 height=4.5 color=GRAY stroke-width=1]]
 
 [[include: #part-2 x=5 y=-1.5 width=8 preview=true]]
 :::
@@ -145,19 +145,19 @@ tree of two children, then a second root.
 ::: slide {#part-1}
 ## First child
 
-Zoomed into, then straight on to the sibling. {font_size=24}
+Zoomed into, then straight on to the sibling. {font-size=24}
 :::
 
 ::: slide {#part-2}
 ## Second child
 
-The last child: the camera zooms back out after it. {font_size=24}
+The last child: the camera zooms back out after it. {font-size=24}
 :::
 
 ::: slide {#appendix width=20}
 # A second root
 
-Reached with a cut from the first tree, as the next page of a document. {font_size=24}
+Reached with a cut from the first tree, as the next page of a document. {font-size=24}
 :::
 ```
 

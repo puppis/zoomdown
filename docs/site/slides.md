@@ -109,9 +109,9 @@ visited at its `step`, the verdicts go at its `hide`.
 that appears at the click after the tile's visit: what the child taught, once it has been seen.
 It is a text of the parent, `#child-verdict`, styled by the deck's `verdict` style (color, size,
 `width`, and a position that replaces the place under the tile); its text may hold emphasis and
-formulas. The include passes `verdict_<attribute>` to its verdict, for one tile: `verdict_width=4.4`,
-`verdict_at=left:#LAST.right`, `verdict_class=note`; under its tile, a verdict hangs from its first
-line box, so the verdicts of a row share a baseline whatever their letters; `::: tiles {verdict_width=4.4}` passes it to
+formulas. The include passes `verdict_<attribute>` to its verdict, for one tile: `verdict-width=4.4`,
+`verdict-at=left:#LAST.right`, `verdict-class=note`; under its tile, a verdict hangs from its first
+line box, so the verdicts of a row share a baseline whatever their letters; `::: tiles {verdict-width=4.4}` passes it to
 every tile's verdict that does not set it. With sequential steps, an element written after the include comes with the include's visit, as it
 came with a verdict line written there before: turning a verdict line into `verdict=` can move the
 next element without a step of its own one click earlier; give it `step=+` to keep it after the
@@ -154,8 +154,7 @@ at once ([Flags](#flags)).
 | `preview=true` | slide, include, subslide | show the child's content before its first visit instead of fading it in on entry, as the tiles of the tour's front page do |
 | `debug=true` | slide, include, subslide | draw the slide for its design: see [Designing a slide](#designing-a-slide) |
 
-A flag written bare means `=true`: `[[include: #proof skip-return]]`, and its words may be joined
-by hyphens or underscores alike (`skip_return` is `skip-return`). By default a child returns
+A flag written bare means `=true`: `[[include: #proof skip-return]]`. By default a child returns
 to its parent only when it is the last one visited, so the camera moves from sibling to sibling
 and comes back once at the end; `return-to-parent` and `skip-return` force either choice for one
 child. They are the two sides of one choice and are never written together.

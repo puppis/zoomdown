@@ -147,8 +147,8 @@ describe('arrows and lines with halo bridges', () => {
     expect(() => parse('[[arrow: #a -> #b, #e, halo_bridge=true, halo_width=20]]')).not.toThrow();
     expect(() => parse('[[line: #a -> #b, #e, halo_bridge=WHITE]]')).not.toThrow();
     expect(() => parse('[[line: #a -> #b, #e, halo_bridge=nocolor]]')).toThrow(/Invalid color/);
-    expect(() => parse('[[line: #a -> #b, #e, halo_width=20]]')).toThrow(/halo_width requires halo_bridge/);
-    expect(() => parse('[[line: #a -> #b, #e, halo_bridge=true, halo_width=-1]]')).toThrow(/halo_width must be nonnegative/);
+    expect(() => parse('[[line: #a -> #b, #e, halo_width=20]]')).toThrow(/halo-width requires halo-bridge/);
+    expect(() => parse('[[line: #a -> #b, #e, halo_bridge=true, halo_width=-1]]')).toThrow(/halo-width must be nonnegative/);
     expect(() => parse('[[line: #a -> #b, #e, halo=true]]')).toThrow(/halo/);
     expect(new LayoutConfig().haloBridgeTolerance).toBe(0.2);
     expect(() => new LayoutConfig({ haloBridgeTolerance: -1 })).toThrow(/haloBridgeTolerance/);

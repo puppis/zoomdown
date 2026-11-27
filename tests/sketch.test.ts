@@ -87,9 +87,9 @@ describe('sketch attributes in markup', () => {
 
   it('validates the values', () => {
     expect(() => parse('[[circle: #c x=0 y=0 radius=1 sketch=maybe]]')).toThrow(/sketch must be true or false/);
-    expect(() => parse('[[circle: #c x=0 y=0 radius=1 fill_style=plaid]]')).toThrow(/fill_style must be one of/);
+    expect(() => parse('[[circle: #c x=0 y=0 radius=1 fill_style=plaid]]')).toThrow(/fill-style must be one of/);
     expect(() => parse('[[circle: #c x=0 y=0 radius=1 seed=1.5]]')).toThrow(/seed must be an integer/);
-    expect(() => parse('[[circle: #c x=0 y=0 radius=1 hachure_gap=0]]')).toThrow(/hachure_gap must be positive/);
+    expect(() => parse('[[circle: #c x=0 y=0 radius=1 hachure_gap=0]]')).toThrow(/hachure-gap must be positive/);
     expect(() => parse('[[circle: #c x=0 y=0 radius=1 roughness=-1]]')).toThrow(/roughness must be nonnegative/);
     expect(() => parse('[text]{#t x=0 sketch=true}')).toThrow(/Unknown attributes: sketch/);
   });

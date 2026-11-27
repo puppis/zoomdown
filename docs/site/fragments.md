@@ -56,12 +56,12 @@ flat document and on a `preview=true` child, where everything shows from the sta
 
 The caption belongs to the child, not to the parent: it is laid out with the child, and a step
 never changes the size of a text, so it is as large as the same text at any other step, and on the
-parent as small as the tile makes the child. A `font_size` or a class sizes it, as any text.
+parent as small as the tile makes the child. A `font-size` or a class sizes it, as any text.
 
 ```zoomdown {height=5}
 ::: slide {#early-parent width=16 height=5}
 
-One click shows the tile's caption, the next visits the child. {x=-7 y=1.8 font_size=20}
+One click shows the tile's caption, the next visits the child. {x=-7 y=1.8 font-size=20}
 
 [[include: #early-child x=0 y=-0.6 width=6 step=1]]
 
@@ -69,9 +69,9 @@ One click shows the tile's caption, the next visits the child. {x=-7 y=1.8 font_
 
 ::: slide {#early-child width=6 height=3.375}
 
-[The child's caption, shown just before the visit]{#early-cap x=0 y=1.1 anchor=center font_size=18 color=RED step=-1}
+[The child's caption, shown just before the visit]{#early-cap x=0 y=1.1 anchor=center font-size=18 color=RED step=-1}
 
-The rest appears on the visit {x=-2.6 y=0 width=5.2 font_size=16}
+The rest appears on the visit {x=-2.6 y=0 width=5.2 font-size=16}
 
 :::
 ```
@@ -155,12 +155,12 @@ A, B, the arrow and x appear at click 1 and go at click 2, whichever line is wri
 
 <a class="try" href="tour.html#slide=anchors">Open in the tour ↗</a>
 
-Each fade lasts `layout.animationTime` unless the element sets `run_time=S`; `lag=S` delays its
+Each fade lasts `layout.animationTime` unless the element sets `run-time=S`; `lag=S` delays its
 start inside the step, so one click can stagger several elements. A `show`/`hide` directive may
-carry its own `run_time`, `lag` and `enter` or `exit`.
+carry its own `run-time`, `lag` and `enter` or `exit`.
 
 ```markdown
-[Fades in over 1.5 s]{#slow x=-3.5 y=-0.4 step=1 run_time=1.5}
+[Fades in over 1.5 s]{#slow x=-3.5 y=-0.4 step=1 run-time=1.5}
 [Starts 0.5 s later]{#later below:#slow left-aligned:#slow step=1 lag=0.5}
 ```
 

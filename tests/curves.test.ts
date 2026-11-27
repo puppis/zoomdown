@@ -267,7 +267,7 @@ describe('curved arrows and lines', () => {
     await expect(connection('line', { to: '(1,0)', buff: '0.5' })).rejects.toThrow(/leave nothing of the line/);
     const parse = (body: string) => new MarkupParser().parse(`::: slide {#s}\n[[circle: #a x=-2 y=0 radius=0.3]]\n\n[[circle: #b x=2 y=0 radius=0.3]]\n\n${body}\n:::`);
     expect(() => parse('[[line: #a -> #b, buff=0.1, buff_start=0, buff_end=0.2]]')).not.toThrow();
-    expect(() => parse('[[arrow: #a -> #b, buff_end=-1]]')).toThrow(/buff_end must be nonnegative/);
+    expect(() => parse('[[arrow: #a -> #b, buff_end=-1]]')).toThrow(/buff-end must be nonnegative/);
   });
 
   it('are named on arrows and lines, one way at a time, with tips on arrows only', () => {
@@ -278,7 +278,7 @@ describe('curved arrows and lines', () => {
     ]) expect(() => parse(ok)).not.toThrow();
     expect(() => parse('[[line: #a -> #b, tip=open]]')).toThrow(/tip applies to arrows only/);
     expect(() => parse('[[arrow: #a -> #b, tip=arrowhead]]')).toThrow(/tip must be triangle, open or none/);
-    expect(() => parse('[[arrow: #a -> #b, tip_length=0]]')).toThrow(/tip_length must be positive/);
+    expect(() => parse('[[arrow: #a -> #b, tip_length=0]]')).toThrow(/tip-length must be positive/);
     expect(() => parse('[[arrow: #a -> #b, bend=20, wavy=2]]')).toThrow(/bend and wavy cannot be combined/);
     expect(() => parse('[[arrow: #a -> #b, loop=above]]')).toThrow(/same element at both ends/);
     expect(() => parse('[[arrow: #a -> #a, loop=sideways]]')).toThrow(/loop must be above/);

@@ -84,7 +84,7 @@ Upon receiving a message *m* from a neighbour: \\
     if *m* is new: \\
         store *m* and forward it to every other neighbour, which then does the same \\
     otherwise ignore it
-{x=-7 y=1.2 width=9 font_size=22}
+{x=-7 y=1.2 width=9 font-size=22}
 
 :::
 ```
@@ -109,7 +109,7 @@ from the text. A list of pseudocode keeps its indentation:
 ```zoomdown {height=4}
 ::: slide {#pseudocode width=16 height=4}
 
-::: {.group x=-7 y=1.7 anchor=top-left width=14 font_size=22}
+::: {.group x=-7 y=1.7 anchor=top-left width=14 font-size=22}
 1. **if** ($a < b$) {
 2. &emsp;&emsp;forward $M$ to $L_i$
 3. } **else** {
@@ -137,7 +137,7 @@ This is a         && test             && (be careful) \\
                   && the second column && and then the third
                   &&                   && the third again
 **Name**          && *Value*           && $x^2$
-{x=-7 y=1 font_size=22}
+{x=-7 y=1 font-size=22}
 
 :::
 ```
@@ -182,7 +182,7 @@ The flow goes on below. {step=4}
   text without `&&`, a formula, a picture, a list between two rows is laid out as anywhere, and does
   not change the columns.
 - What the block writes is its rows' unless they write it: `::: align {step=+}` reveals them one by
-  one (with [sequential steps](fragments.html#sequential-steps)), `color`, `font_size`, `font`,
+  one (with [sequential steps](fragments.html#sequential-steps)), `color`, `font-size`, `font`,
   `width`, `opacity`, `enter` and the other attributes of text go to each, `buff` to each after the
   first, and a position (`x`, `y`, `at`, `below:#id`, …) to the first, under which the others flow;
   an `x` alone is every row's. Classes fill in the same attributes.
@@ -212,7 +212,7 @@ Text takes a subscript between single tildes and a superscript between carets, a
 ```zoomdown {height=2}
 ::: slide {#scripts width=16 height=2}
 
-H~2~O and CO~2~, the 1^st^ and 2^nd^ round, T~max\ load~, **x^2^** and *y~i~* {x=-7 y=0 font_size=28}
+H~2~O and CO~2~, the 1^st^ and 2^nd^ round, T~max\ load~, **x^2^** and *y~i~* {x=-7 y=0 font-size=28}
 
 :::
 ```
@@ -252,7 +252,7 @@ Our team
 
 By default prose is set in **Latin Modern Roman** and code spans in **Latin Modern Mono**, the
 OpenType versions of the Computer Modern family LaTeX uses, both bundled with the player; formulas
-use MathJax's TeX fonts, and a `font_size` means the same em for all three, so a paragraph with
+use MathJax's TeX fonts, and a `font-size` means the same em for all three, so a paragraph with
 code and formulas inside it looks like one LaTeX paragraph without any tuning. A character those
 fonts lack, such as `$☞$`, is drawn in the prose face, where TeX would set it, a script's smaller. `layout.font` and
 `layout.codeFont` replace the faces (`"Georgia"`, `"Fira Code"`, …) while keeping the size
@@ -260,13 +260,13 @@ calibration.
 
 Body text uses `layout.fontSize` (28 by default) and headings `layout.headingSize` (42),
 shrinking slightly per level. Any element can override its size with
-`font_size=` and its color with `color=`, or through a [style](styles.html). A paragraph, heading,
+`font-size=` and its color with `color=`, or through a [style](styles.html). A paragraph, heading,
 arrow label or brace label can also pick its own face with `font=`: any font the page has, or the
 bundled handwriting face **Zeyada**, which pairs with [hand-drawn shapes](sketch.html)
-(`[A note]{font=Zeyada font_size=36}`).
+(`[A note]{font=Zeyada font-size=36}`).
 
 Lines of a paragraph are as far apart as the font reaches above and below its baseline, plus
 `layout.lineGap`. `layout.lineHeight` sets that distance in ems instead, as CSS's `line-height`,
-and `line_height=` sets it for one text: a face with a tall natural interline, such as EB
+and `line-height=` sets it for one text: a face with a tall natural interline, such as EB
 Garamond's, can so be set as tightly as a design asks (`layout: lineHeight: 1.15`). Paragraphs
 stay `layout.paragraphSpacing` interlines apart.

@@ -44,8 +44,8 @@ describe('the label of a connection', () => {
   });
 
   it('takes label_width only with a label, and positive', () => {
-    expect(() => parse('[[arrow: (0,0) -> (1,1), #a, label_width=3]]')).toThrow(/label_width requires a label/);
-    expect(() => parse('[[arrow: (0,0) -> (1,1), #a, label=x, label_width=0]]')).toThrow(/label_width must be positive/);
+    expect(() => parse('[[arrow: (0,0) -> (1,1), #a, label_width=3]]')).toThrow(/label-width requires a label/);
+    expect(() => parse('[[arrow: (0,0) -> (1,1), #a, label=x, label_width=0]]')).toThrow(/label-width must be positive/);
   });
 });
 
@@ -76,8 +76,8 @@ describe('the line height', () => {
 
   it('is positive, and set on text', () => {
     expect(() => new LayoutConfig({ lineHeight: 0 })).toThrow(/lineHeight must be finite and positive/);
-    expect(() => parse('Text {line_height=-1}')).toThrow(/line_height must be positive/);
-    expect(() => parse('[[rectangle: #r x=0 y=0 width=1 height=1 line_height=1]]')).toThrow(/Unknown attributes: line_height/);
+    expect(() => parse('Text {line_height=-1}')).toThrow(/line-height must be positive/);
+    expect(() => parse('[[rectangle: #r x=0 y=0 width=1 height=1 line_height=1]]')).toThrow(/Unknown attributes: line-height/);
   });
 });
 
@@ -119,9 +119,9 @@ describe('font sizes in a table', () => {
   it('are positive, one for all columns or one each', () => {
     const table = '| a | b |\n| --- | --- |\n| c | d |';
     expect(() => parse(`::: {.element #t header_font_size=20 col_font_size="18 auto"}\n${table}\n:::`)).not.toThrow();
-    expect(() => parse(`::: {.element #t col_font_size="18 14 14"}\n${table}\n:::`)).toThrow(/col_font_size gives 3 sizes for 2 columns/);
-    expect(() => parse(`::: {.element #t col_font_size=0}\n${table}\n:::`)).toThrow(/col_font_size must be positive sizes or auto/);
-    expect(() => parse(`::: {.element #t header_font_size=-2}\n${table}\n:::`)).toThrow(/header_font_size must be positive/);
+    expect(() => parse(`::: {.element #t col_font_size="18 14 14"}\n${table}\n:::`)).toThrow(/col-font-size gives 3 sizes for 2 columns/);
+    expect(() => parse(`::: {.element #t col_font_size=0}\n${table}\n:::`)).toThrow(/col-font-size must be positive sizes or auto/);
+    expect(() => parse(`::: {.element #t header_font_size=-2}\n${table}\n:::`)).toThrow(/header-font-size must be positive/);
   });
 });
 

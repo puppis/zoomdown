@@ -27,8 +27,10 @@ directive they are separated by spaces or commas; elsewhere by spaces. Each attr
 | `flag` | a bare flag means `flag=true`: `start-here`, `only-this`, `skip-return`, `return-to-parent`, `preview`, `debug`, `focus-only` |
 | `style="color: red"` | an alternative to `color=`; only the CSS `color` property is accepted, and not together with `color=` |
 
-An attribute given twice is an error, and so is a name a construct does not take ("Unknown
-attributes: …"). Booleans are `true` or `false`. A trailing `{…}` on a paragraph is read as
+Attribute names are written with hyphens: `font-size`, `fill-color`, `only-this`, `right-of`. The
+same name with underscores reads the same (`font_size` is `font-size`), so a deck written that way
+goes on working; messages write names with hyphens. An attribute given twice, in either spelling,
+is an error, and so is a name a construct does not take ("Unknown attributes: …"). Booleans are `true` or `false`. A trailing `{…}` on a paragraph is read as
 attributes when it holds a `#id`, a `.class`, a `key=value` or a `ref:` token; any other braces
 are literal text.
 
@@ -44,23 +46,23 @@ includes and chart or code fences you refer to need an explicit `#id`.
 
 Lengths and coordinates are in **logical units** of the slide's canvas, which is 16 × 9 units
 by default (`layout.defaultSlideSize`), the origin at its center, `x` to the right and `y` up.
-Font sizes are in points, the engine's convention: text of `font_size=28` is about 0.47 units
+Font sizes are in points, the engine's convention: text of `font-size=28` is about 0.47 units
 tall. Angles are in radians. Times are in seconds. Opacities run from 0 to 1. Steps are
 nonnegative integers. Every numeric attribute must be a finite number; `width`, `height`,
-`font_size` and `size` must be positive; `radius`, `run_time`, `hachure_gap`, `tremble_rate`,
-`tip_length`, `tip_width`, `looseness` and `wavy` must be positive; `corner_radius`,
-`stroke_width`, `lag`, `roughness`, `bowing`, `fill_weight`, `seed`, `tremble_amplitude`, a
-table's `padding`, `padding_x` and `padding_y`, and the `buff` of an arrow, a line or an attachment
+`font-size` and `size` must be positive; `radius`, `run-time`, `hachure-gap`, `tremble-rate`,
+`tip-length`, `tip-width`, `looseness` and `wavy` must be positive; `corner-radius`,
+`stroke-width`, `lag`, `roughness`, `bowing`, `fill-weight`, `seed`, `tremble-amplitude`, a
+table's `padding`, `padding-x` and `padding-y`, and the `buff` of an arrow, a line or an attachment
 must not be negative (a placement's `buff` may be, to overlap); `seed` is an integer;
-`fill_opacity`, `opacity`, `smoothness`, `header_opacity` and `stripe_opacity` lie between 0 and
-1. The angles of `bend` and `loop`, like `hachure_angle`, are in degrees.
+`fill-opacity`, `opacity`, `smoothness`, `header-opacity` and `stripe-opacity` lie between 0 and
+1. The angles of `bend` and `loop`, like `hachure-angle`, are in degrees.
 
 ### Colors
 
 A color is an engine palette name, a CSS color name, `#rgb`, `#rrggbb` (an `#rrggbbff` form is
 accepted when opaque) or `rgb(…)` with integer or percentage channels, opaque only. The palette
 names are listed under [Color names](#color-names). Everywhere a color is taken (`color`,
-`fill_color`, `border_color`, `header_color`, `axis_color`, `colors`, inline spans) the same
+`fill-color`, `border-color`, `header-color`, `axis-color`, `colors`, inline spans) the same
 forms apply.
 
 A deck names colors of its own under `colors:` in its front matter (or a theme's `colors:` line):
@@ -74,7 +76,7 @@ inline spans (`[x]{color=bad}`) and labels, and in formulas (`$\textcolor{ok}{x}
 `font=` names a family: the bundled text face Latin Modern Roman (the default), the bundled
 typewriter face Latin Modern Mono (the default for code), the bundled handwriting face Zeyada,
 a family in the deck's `fonts/` folder, or a family installed on the viewer's machine.
-`font_size=` is in points; the defaults are `layout.fontSize` (28) for body text, lists, tables
+`font-size=` is in points; the defaults are `layout.fontSize` (28) for body text, lists, tables
 and the labels of connections, `layout.headingSize` (42) for a level-one heading, shrinking by
 12 % of that size for each deeper level, and `layout.codeSize` (80 % of the body size) for
 listings. Formulas take the size of the text they sit in.
@@ -176,9 +178,8 @@ pages, by the document's bookmarks when it has them. The exports copy or embed t
 ### Flags of slides and children
 
 `start-here`, `only-this`, `skip-return`, `return-to-parent`, `preview`, `debug` and `focus-only`
-may be written bare, and their words joined by hyphens or underscores alike: `only_this` is the
-same flag as `only-this`. `skip-return` and `return-to-parent` are two sides of one choice and cannot both be
-given. At most one slide of the deck may say `start-here`, whether on the slide itself, on the
+may be written bare: `only-this` means `only-this=true`. `skip-return` and `return-to-parent` are
+two sides of one choice and cannot both be given. At most one slide of the deck may say `start-here`, whether on the slide itself, on the
 include that places it, or on a code-authored child.
 
 ### debug
@@ -210,7 +211,7 @@ slides have none of their own.
 
 ```markdown
 ::: styles
-callout: color=ORANGE font_size=30
+callout: color=ORANGE font-size=30
 heading: color=BLUE_E
 :::
 ```
@@ -291,7 +292,7 @@ braces at the end of its last line, either after the text or around it as `[text
 keeps the braces off the text when the paragraph ends in a bracket:
 
 ```markdown
-A caption under the figure. {#cap below:#figure font_size=20 color=GRAY}
+A caption under the figure. {#cap below:#figure font-size=20 color=GRAY}
 [Shown on the second click]{#later step=2}
 ## A heading placed by hand {x=-7 y=4}
 ```
@@ -309,10 +310,10 @@ Text elements take the common attributes:
 | `angle` | radians | 0 | turn the placed block counterclockwise about its anchor; see [Turning](#turning) |
 | `color` | color | `layout.color` | the text color; inline spans may override parts |
 | `font` | family | `layout.font` | the typeface (text only; code and formulas have their own) |
-| `font_size` | points | by level | the size |
-| `line_height` | ems | `layout.lineHeight`, else the font's own | the distance between the baselines of two lines; see [Line height](#line-height) |
+| `font-size` | points | by level | the size |
+| `line-height` | ems | `layout.lineHeight`, else the font's own | the distance between the baselines of two lines; see [Line height](#line-height) |
 | `opacity` | 0 to 1 | 1 | uniform opacity |
-| `step`, `hide`, `enter`, `exit`, `run_time`, `lag` | | | visibility and its timing, see [Steps and motion](#steps-and-motion) |
+| `step`, `hide`, `enter`, `exit`, `run-time`, `lag` | | | visibility and its timing, see [Steps and motion](#steps-and-motion) |
 | `focus-only` | flag | false | a decoration shown only while the slide is focused |
 | `class` | names | | style classes, the same as `.name` tokens |
 | `href` | link | | makes the block a link |
@@ -344,7 +345,7 @@ not inline formulas. Raw HTML is not interpreted; its entities are.
 
 The interline, the distance between the baselines of two lines of a paragraph, is the font's
 reach above and below the baseline plus `layout.lineGap` (0.12). `layout.lineHeight` sets it
-instead in ems of the text's size, as CSS's `line-height`, and `line_height=` sets it for one
+instead in ems of the text's size, as CSS's `line-height`, and `line-height=` sets it for one
 text, heading or list item (or a group's text). A font with a tall natural interline, such as EB
 Garamond's 1.37 em, can so match a design set at 1.1 to 1.2 em. A line then reaches above and
 below its baseline its share of the interline, half the difference each way, so paragraphs stay
@@ -393,7 +394,7 @@ required. A list item's columns count from its text, and a group's content is no
 | `gap` | units, nonnegative | an em of the largest row | the space between two columns |
 | `step`, `hide` | as for elements | | for each row that writes none (`+` counts for each) |
 | `buff` | units | the flow's | the space before each row after the first, unless it writes its own |
-| `color`, `font_size`, `font`, `line_height`, `opacity`, `width`, `href`, `enter`, `exit`, `run_time`, `lag` | as for text | | for each row that writes none |
+| `color`, `font-size`, `font`, `line-height`, `opacity`, `width`, `href`, `enter`, `exit`, `run-time`, `lag` | as for text | | for each row that writes none |
 | `x`, `y`, `at`, `dx`, `dy`, `anchor`, the relative references | as for elements | | the first row's, under which the others flow; an `x` alone is every row's |
 | `class` | names | | fills in what the block does not write, of the above |
 
@@ -453,7 +454,7 @@ Without `play=`, a video shows its poster frame and an animated image its first 
 ### Code listings
 
 ````markdown
-```python {#listing x=-7 y=3 font_size=18 width=9}
+```python {#listing x=-7 y=3 font-size=18 width=9}
 def f(x):
     return x * x
 ```
@@ -479,7 +480,7 @@ A fence named `chart` is a chart, not a listing;
 ### Tables
 
 ```markdown
-::: {.element #t x=0 y=0 rules=rows stripe_opacity=0.08 header=true}
+::: {.element #t x=0 y=0 rules=rows stripe-opacity=0.08 header=true}
 | Left | Center | Right |
 | :-- | :-: | --: |
 | a | b | c |
@@ -491,7 +492,7 @@ each column (`:--` left, `:-:` center, `--:` right). Cells hold inline markup. E
 least as tall as the letters of the table's font, a capital or an ascender above the baseline and
 a descender below, as TeX's strut makes them, so that rows of plain text in one size are equal,
 empty ones included; a formula reaching beyond the letters makes its row taller. The vertical
-padding comes on top. A column takes its widest cell, at least a line height, unless `col_width`
+padding comes on top. A column takes its widest cell, at least a line height, unless `col-width`
 fixes it. Tables take the common attributes except `height` and `font`, the
 hand-drawn attributes, and:
 
@@ -499,21 +500,21 @@ hand-drawn attributes, and:
 | --- | --- | --- | --- |
 | `header` | `true`, `false` | true | whether the first row is a header |
 | `padding` | units, one or two | 0.15 | space between a cell's text and its rules on all four sides; two values give the vertical then the horizontal space, as in CSS: `padding="0.02 0.07"` |
-| `padding_x`, `padding_y` | units | `padding` | the space beside a cell's text, and above and below it |
-| `header_font_size` | points | the column's size | the size of the header row's text |
-| `col_font_size` | points, one or one per column, `auto` | `font_size` | the size of the body cells' text, one for every column or a list with one per column, where `auto` keeps `font_size`: `col_font_size="18 14 14"` |
-| `col_width` | units, one or one per column, `auto` | the natural widths | a fixed width for every column, rules to rules, or a list with one per column where `auto` keeps a natural one; a cell wraps to its column, a line height wide at the narrowest, and a column too narrow for that and its padding widens |
+| `padding-x`, `padding-y` | units | `padding` | the space beside a cell's text, and above and below it |
+| `header-font-size` | points | the column's size | the size of the header row's text |
+| `col-font-size` | points, one or one per column, `auto` | `font-size` | the size of the body cells' text, one for every column or a list with one per column, where `auto` keeps `font-size`: `col-font-size="18 14 14"` |
+| `col-width` | units, one or one per column, `auto` | the natural widths | a fixed width for every column, rules to rules, or a list with one per column where `auto` keeps a natural one; a cell wraps to its column, a line height wide at the narrowest, and a column too narrow for that and its padding widens |
 | `rules` | `all`, `rows`, `cols`, `outer`, `none` | `all` | which rules are drawn |
 | `valign` | `baseline`, `center`, `top`, `bottom` | `baseline` | how the cells of a row line up: on their first baseline, so that text, formulas and descenders share a line, or by the middle, top or bottom of their box |
-| `border_color` | color | the text color | color of every rule |
-| `stroke_width` | engine units | 1.5 | width of every rule |
-| `row_rule_color`, `row_rule_width` | color, engine units | `border_color`, `stroke_width` | the horizontal rules, between rows and at the top and bottom; width 0 leaves them out |
-| `col_rule_color`, `col_rule_width` | color, engine units | `border_color`, `stroke_width` | the vertical rules, between columns and at the sides; width 0 leaves them out |
-| `header_col_rules` | `true`, `false` | false | whether the vertical rules, the sides of the frame included, cross the header row; they start under it otherwise |
-| `header_col_rule_color`, `header_col_rule_width` | color, engine units | `col_rule_color`, `col_rule_width` | the vertical rules in the header row, the sides included, when they cross it; width 0 leaves them out |
-| `fill_color`, `fill_opacity` | color, 0 to 1 | none | background of the whole table |
-| `header_color`, `header_opacity` | color, 0 to 1 | the rule color at 0.12 | background of the header row |
-| `stripe_opacity` | 0 to 1 | 0 | background of every second body row, in the rule color |
+| `border-color` | color | the text color | color of every rule |
+| `stroke-width` | engine units | 1.5 | width of every rule |
+| `row-rule-color`, `row-rule-width` | color, engine units | `border-color`, `stroke-width` | the horizontal rules, between rows and at the top and bottom; width 0 leaves them out |
+| `col-rule-color`, `col-rule-width` | color, engine units | `border-color`, `stroke-width` | the vertical rules, between columns and at the sides; width 0 leaves them out |
+| `header-col-rules` | `true`, `false` | false | whether the vertical rules, the sides of the frame included, cross the header row; they start under it otherwise |
+| `header-col-rule-color`, `header-col-rule-width` | color, engine units | `col-rule-color`, `col-rule-width` | the vertical rules in the header row, the sides included, when they cross it; width 0 leaves them out |
+| `fill-color`, `fill-opacity` | color, 0 to 1 | none | background of the whole table |
+| `header-color`, `header-opacity` | color, 0 to 1 | the rule color at 0.12 | background of the header row |
+| `stripe-opacity` | 0 to 1 | 0 | background of every second body row, in the rule color |
 | `width` | units | the available width | the width the table must fit in; columns shrink and wrap beyond it |
 
 ### Charts
@@ -540,10 +541,10 @@ per series. Charts take the common attributes, the hand-drawn attributes, and:
 | `width`, `height` | units | 6, 3.5 | the plot area (bars, lines) or the box a pie fits in; labels and the legend add to it |
 | `colors` | colors, space- or comma-separated | a built-in palette | series or slice colors |
 | `color` | color | the text color | axes, ticks and labels |
-| `axis_color` | color | `color` | axes and gridlines |
-| `border_color` | color | each series' own | outline of bars and slices |
-| `stroke_width` | engine units | 2 | lines and outlines |
-| `fill_opacity` | 0 to 1 | 0.85 | bar and slice fills |
+| `axis-color` | color | `color` | axes and gridlines |
+| `border-color` | color | each series' own | outline of bars and slices |
+| `stroke-width` | engine units | 2 | lines and outlines |
+| `fill-opacity` | 0 to 1 | 0.85 | bar and slice fills |
 | `grid` | `true`, `false` | true for bars and lines | horizontal gridlines at the ticks |
 | `legend` | `true`, `false` | true with several series | a legend above the plot |
 | `values` | `true`, `false` | false (pies always) | value labels on bars and points, percentages on slices |
@@ -560,13 +561,13 @@ Directives are `[[kind: …]]` on a line of their own. Those below draw; the dir
 ### Shapes
 
 ```markdown
-[[rectangle: #frame x=0 y=0 width=6 height=3 corner_radius=0.3 fill_color=BLUE_E fill_opacity=0.2]]
+[[rectangle: #frame x=0 y=0 width=6 height=3 corner-radius=0.3 fill-color=BLUE_E fill-opacity=0.2]]
 [[circle: #c x=-4 y=1 radius=1.2 color=TEAL_E]]
 [[dot: #p x=2 y=2]]
 [[ellipse: #e x=4 y=0 width=3 height=1.5]]
 [[polygon: #tri points="(0,2) (-2,-1) (2,-1)" sketch=true]]
-[[polyline: #path points="(-6,0) (-3,2) (0,0)" stroke_width=3]]
-[[arc: #a x=0 y=-2 radius=2 start_angle=3.14 angle=-3.14]]
+[[polyline: #path points="(-6,0) (-3,2) (0,0)" stroke-width=3]]
+[[arc: #a x=0 y=-2 radius=2 start-angle=3.14 angle=-3.14]]
 ```
 
 A shape needs an `#id` only to be referred to, as any element. Shapes take the common attributes except
@@ -575,57 +576,57 @@ labels below, and:
 
 | Shape | Required | Own attributes |
 | --- | --- | --- |
-| `rectangle` | `width`, `height` | `corner_radius` (0; at most half the smaller side), `fill_color`, `fill_opacity` |
-| `circle` | `radius` | `fill_color`, `fill_opacity` |
-| `dot` | | `radius` (0.08), `fill_color`, `fill_opacity` (1: a dot is filled) |
-| `ellipse` | `width`, `height` | `fill_color`, `fill_opacity` |
-| `polygon` | `points`, at least three `(x,y)` | `fill_color`, `fill_opacity`; the points are absolute coordinates |
+| `rectangle` | `width`, `height` | `corner-radius` (0; at most half the smaller side), `fill-color`, `fill-opacity` |
+| `circle` | `radius` | `fill-color`, `fill-opacity` |
+| `dot` | | `radius` (0.08), `fill-color`, `fill-opacity` (1: a dot is filled) |
+| `ellipse` | `width`, `height` | `fill-color`, `fill-opacity` |
+| `polygon` | `points`, at least three `(x,y)` | `fill-color`, `fill-opacity`; the points are absolute coordinates |
 | `polyline` | `points`, at least two `(x,y)`, consecutive ones distinct | no fill; the points are absolute coordinates |
-| `arc` | `radius`, `angle` (nonzero) | `start_angle` (0), `fill_color`, `fill_opacity`; its circle is centered on `x`, `y` (its anchor `center`, which `at=` uses too; the other anchors are on the arc's box), counter-clockwise for a positive angle; its `angle` is the sweep, not a turn |
+| `arc` | `radius`, `angle` (nonzero) | `start-angle` (0), `fill-color`, `fill-opacity`; its circle is centered on `x`, `y` (its anchor `center`, which `at=` uses too; the other anchors are on the arc's box), counter-clockwise for a positive angle; its `angle` is the sweep, not a turn |
 
-Common to all: `color` (the stroke, `layout.color` by default), `stroke_width` (2, in engine
-units: one hundredth of a logical unit), `fill_color` (the stroke color by default),
-`fill_opacity` (0 unless noted), `opacity`. `x`, `y` place the center (or the `anchor`);
+Common to all: `color` (the stroke, `layout.color` by default), `stroke-width` (2, in engine
+units: one hundredth of a logical unit), `fill-color` (the stroke color by default),
+`fill-opacity` (0 unless noted), `opacity`. `x`, `y` place the center (or the `anchor`);
 polygons, polylines and arcs stay at their own coordinates unless positioned.
 
-A shape's `label` is written in its middle (`label_side=center`) or beside it (`above`, `below`,
+A shape's `label` is written in its middle (`label-side=center`) or beside it (`above`, `below`,
 `left`, `right`), and its `sublabel` beside it (`below` by default, or any of the five sides),
-each its box `label_buff` or `sublabel_buff` (0.1) away and centered on the shape along that
-side, as `at=top:#shape.bottom` places a text. The label is `font_size` (`layout.fontSize`) and
-the sublabel `sublabel_font_size` (the label's size), both in `font`, in the shape's `color`
-unless `label_color` or `sublabel_color` say otherwise; both may hold emphasis, links and
+each its box `label-buff` or `sublabel-buff` (0.1) away and centered on the shape along that
+side, as `at=top:#shape.bottom` places a text. The label is `font-size` (`layout.fontSize`) and
+the sublabel `sublabel-font-size` (the label's size), both in `font`, in the shape's `color`
+unless `label-color` or `sublabel-color` say otherwise; both may hold emphasis, links and
 formulas. The shape alone places the whole (`x`, `y`, the anchors, `at=`), and arrows, lines and
 blobs reach the shape; the labels move, fade and turn with it. The `sublabel_…` attributes need a
 `sublabel`, unless a style sets them.
 
-Every shape but a polyline takes `fill_gradient`, a linear gradient through two colors or more,
-evenly spaced from the first to the last in `gradient_direction`: `right` (the default), `left`,
+Every shape but a polyline takes `fill-gradient`, a linear gradient through two colors or more,
+evenly spaced from the first to the last in `gradient-direction`: `right` (the default), `left`,
 `up` or `down`. Its colors may be translucent, `#RRGGBBAA`, `#RGBA` or `rgba(r,g,b,a)` without
-spaces, and `fill_opacity` (1 with a gradient) scales them all; the fill color is then unused. A
+spaces, and `fill-opacity` (1 with a gradient) scales them all; the fill color is then unused. A
 hand-drawn shape takes no gradient.
 
 ```markdown
-[[rectangle: #fade x=0 y=-2 width=8 height=2 stroke_width=0 fill_gradient="#ffffff00 #ffffff" gradient_direction=down]]
+[[rectangle: #fade x=0 y=-2 width=8 height=2 stroke-width=0 fill-gradient="#ffffff00 #ffffff" gradient-direction=down]]
 ```
 
 ### [[arrow]] and [[line]]
 
 ```markdown
 [[arrow: #alice -> #api, #req, label="HTTPS", color=GRAY]]
-[[line: (-6,0) -> (6,0), #axis, stroke_width=1]]
+[[line: (-6,0) -> (6,0), #axis, stroke-width=1]]
 ```
 
 A connection runs between two endpoints, each an element `#id`, met where the straight line
 crosses its border (the outline of a circle, a dot or an ellipse, the bounding box of anything
 else), an element at one of its anchors `#id.anchor` (the anchors of [`at=`](#at), such as
 `#a.top-right`), or a point `(x,y)`; a line ends right there, an arrow a little short of it, and
-`buff`, `buff_start` and `buff_end` set that space. The
+`buff`, `buff-start` and `buff-end` set that space. The
 endpoints come first, then `#id` and the attributes, comma-separated. Connections are laid out after the elements they join and cannot
 be the reference of a position or the target of another connection or attachment.
 
 A connection is straight unless it takes one of `bend`, `loop`, `wavy` and `via`. A curve stops
 at each element's border along its own way, and an arrow's tip points along its last stretch;
-labels, `label_pos`, `slanted`, dashes, hand-drawn strokes and `halo_bridge` follow the curve.
+labels, `label-pos`, `slanted`, dashes, hand-drawn strokes and `halo-bridge` follow the curve.
 
 ```markdown
 [[arrow: #p -> #q, bend=20, tip=open]]
@@ -639,23 +640,23 @@ labels, `label_pos`, `slanted`, dashes, hand-drawn strokes and `halo_bridge` fol
 | `id` | identifier | `element-N` | |
 | `from`, `to` | `#id`, `#id.anchor`, `(x,y)` | required, written before the attributes | the endpoints |
 | `buff` | units, nonnegative | 0.08 on an arrow, 0 on a line | the space left at both ends, between the connection and what it joins (an element's border, an anchor or a point), measured along its path; on an arrow by default at most a third of its length |
-| `buff_start`, `buff_end` | units | `buff` | the space at one end only, as TikZ's `shorten <` and `shorten >` |
+| `buff-start`, `buff-end` | units | `buff` | the space at one end only, as TikZ's `shorten <` and `shorten >` |
 | `offset` | units | 0 | shifts a straight arrow or line sideways, to the left of its way (negative: to the right), its ends still on the outlines it joins; not with `bend`, `loop` or `via` |
 | `label` | inline markup | | text at the middle of the connection |
-| `label_width` | units | the connection's length, 4 at least | the width the label wraps at |
-| `label_side` | `above`, `below` | `above` | the side of the edge the label sits on, in the label's own frame along the edge: it reads from left to right (bottom to top on a vertical edge), and `above` is the side its letters stand on, so the left of a vertical edge |
+| `label-width` | units | the connection's length, 4 at least | the width the label wraps at |
+| `label-side` | `above`, `below` | `above` | the side of the edge the label sits on, in the label's own frame along the edge: it reads from left to right (bottom to top on a vertical edge), and `above` is the side its letters stand on, so the left of a vertical edge |
 | `slanted` | `true`, `false` | `false` | turn the label along the edge; otherwise it stays upright, beside the middle of the edge and clear of the line |
-| `font`, `font_size` | | the text face, `layout.fontSize` | the label's face and size |
+| `font`, `font-size` | | the text face, `layout.fontSize` | the label's face and size |
 | `color` | color | the text color | stroke and label |
-| `label_color` | color | `color` | the label alone, in a color other than the stroke's |
-| `label_pos` | 0 to 1 | 0.5 | where along the edge the label sits, from its start (0) to its end (1), as `pos` in TikZ |
-| `label_buff` | units | 0.1 | the distance between the edge and the label's lines; labels are measured by their font, so labels with and without descenders share a baseline |
-| `stroke_width` | engine units | 2 | |
-| `dashed` | `true`, `false` | `false` | draw the line, or the arrow's shaft, in dashes that begin and end it; they grow longer with `stroke_width`, the tip stays solid, and a hand-drawn connection gets hand-drawn dashes |
-| `halo_bridge` | `true`, `false`, a color | `false` | pass over the arrows and lines written before it that it crosses, as elements draw in source order: each is broken beside it by a patch in the deck's background (`true`) or in the color named; paths that join the same element, end close together (`layout.haloBridgeTolerance`), meet in a T or cross at a narrow angle are left alone |
-| `halo_width` | engine units | `stroke_width` + 12 | the width of the halo around the line, the gap it leaves in the paths it crosses; requires `halo_bridge` |
+| `label-color` | color | `color` | the label alone, in a color other than the stroke's |
+| `label-pos` | 0 to 1 | 0.5 | where along the edge the label sits, from its start (0) to its end (1), as `pos` in TikZ |
+| `label-buff` | units | 0.1 | the distance between the edge and the label's lines; labels are measured by their font, so labels with and without descenders share a baseline |
+| `stroke-width` | engine units | 2 | |
+| `dashed` | `true`, `false` | `false` | draw the line, or the arrow's shaft, in dashes that begin and end it; they grow longer with `stroke-width`, the tip stays solid, and a hand-drawn connection gets hand-drawn dashes |
+| `halo-bridge` | `true`, `false`, a color | `false` | pass over the arrows and lines written before it that it crosses, as elements draw in source order: each is broken beside it by a patch in the deck's background (`true`) or in the color named; paths that join the same element, end close together (`layout.haloBridgeTolerance`), meet in a T or cross at a narrow angle are left alone |
+| `halo-width` | engine units | `stroke-width` + 12 | the width of the halo around the line, the gap it leaves in the paths it crosses; requires `halo-bridge` |
 | `tip` | `triangle`, `open`, `none` | `triangle` | an arrow's tip: a filled triangle over the end of the shaft; two strokes in the arrow's color and width meeting at its point, which the shaft reaches; or none. Arrows only |
-| `tip_length`, `tip_width` | units, positive | for the stroke width, at most a quarter of the arrow | the tip's length along the arrow, and how far it spreads on each side of the line (half its width); a size given is kept however short the arrow, the other following in the tip's proportions (a third for a triangle, 0.7 for an open tip). Arrows only |
+| `tip-length`, `tip-width` | units, positive | for the stroke width, at most a quarter of the arrow | the tip's length along the arrow, and how far it spreads on each side of the line (half its width); a size given is kept however short the arrow, the other following in the tip's proportions (a third for a triangle, 0.7 for an open tip). Arrows only |
 | `bend` | degrees | | an arc leaving at that angle to the line between the ends and arriving at the mirrored one, as TikZ's `bend left` (negative bends right) |
 | `loop` | `above`, `below`, `left`, `right`, degrees | | a loop from an element back to itself (`from` and `to` the same element), on the side named or toward that angle (0 right, 90 above) |
 | `looseness` | positive number | 1 | how far a bend or a loop reaches; requires `bend` or `loop` |
@@ -663,8 +664,8 @@ labels, `label_pos`, `slanted`, dashes, hand-drawn strokes and `halo_bridge` fol
 | `amplitude` | units | 0.1 | how far the wave reaches from the line, to the left of the way first (negative: to the right); requires `wavy` |
 | `via` | `(x,y)`, `+(x,y)`, `++(x,y)` … | | a smooth curve through the points: `+(x,y)` from the start (the center or anchor it leaves), so that it moves with its elements, `++(x,y)` from the point before, `(x,y)` on the slide |
 | `opacity` | 0 to 1 | 1 | |
-| `step`, `hide`, `run_time`, `lag`, `href` | | | as for elements; connections fade only |
-| `sketch` and the hand-drawn attributes, `tremble`, `tremble_amplitude`, `tremble_rate` | | | see [Appearance](#appearance) and [tremble](#tremble) |
+| `step`, `hide`, `run-time`, `lag`, `href` | | | as for elements; connections fade only |
+| `sketch` and the hand-drawn attributes, `tremble`, `tremble-amplitude`, `tremble-rate` | | | see [Appearance](#appearance) and [tremble](#tremble) |
 
 ### [[brace]]
 
@@ -679,16 +680,16 @@ box. The targets come first, then `#id` and the attributes.
 | --- | --- | --- | --- |
 | `side` | `left`, `right`, `top`, `bottom` | `bottom` | |
 | `buff` | units, nonnegative | 0.15 | distance from the element |
-| `label`, `font`, `font_size` | | | text beyond the brace, in the brace's `color` |
-| `label_color` | color | `color` | the label in a color of its own |
-| `label_buff` | units | 0.1 | the distance between the brace and the label's lines |
-| `color`, `stroke_width`, `opacity`, `step`, `hide`, `run_time`, `lag`, `href` | | | as for connections |
+| `label`, `font`, `font-size` | | | text beyond the brace, in the brace's `color` |
+| `label-color` | color | `color` | the label in a color of its own |
+| `label-buff` | units | 0.1 | the distance between the brace and the label's lines |
+| `color`, `stroke-width`, `opacity`, `step`, `hide`, `run-time`, `lag`, `href` | | | as for connections |
 | the hand-drawn attributes, `tremble` | | | |
 
 ### [[box]] and [[blob]]
 
 ```markdown
-[[box: #a #b #c, #frame, buff=0.3, corner_radius=0.2, fill_color=GOLD_E, fill_opacity=0.15]]
+[[box: #a #b #c, #frame, buff=0.3, corner-radius=0.2, fill-color=GOLD_E, fill-opacity=0.15]]
 [[blob: #store #cache, #cloud, buff=0.4, smoothness=0.6, color=RED, sketch=true]]
 ```
 
@@ -699,10 +700,10 @@ and an icon's label count separately).
 | Attribute | Values | Default | Meaning |
 | --- | --- | --- | --- |
 | `buff` | units, nonnegative | 0.15 for a box, 0.3 for a blob | the margin around the elements |
-| `corner_radius` | units | 0 | box only |
+| `corner-radius` | units | 0 | box only |
 | `smoothness` | 0 to 1 | 0.5 | blob only: the radius of the disc that rounds the outline's hollows, up to twice `buff` |
-| `fill_color`, `fill_opacity` | | the stroke color, 0 | |
-| `color`, `stroke_width`, `opacity`, `step`, `hide`, `run_time`, `lag`, `href` | | | as for connections |
+| `fill-color`, `fill-opacity` | | the stroke color, 0 | |
+| `color`, `stroke-width`, `opacity`, `step`, `hide`, `run-time`, `lag`, `href` | | | as for connections |
 | the hand-drawn attributes, `tremble` | | | |
 
 Targets must be text, image, math, code, shapes, icons or groups of the same scope (a group's
@@ -712,7 +713,7 @@ members cannot be targeted from outside the group). The listed ids are the attac
 ### [[icon]] and [[artwork]]
 
 ```markdown
-[[icon: database #db x=3 y=0 size=1.4 label="Store" label_side=right color=GOLD_E]]
+[[icon: database #db x=3 y=0 size=1.4 label="Store" label-side=right color=GOLD_E]]
 [[artwork: rocket #r x=-3 y=0 size=1.6 color=BLUE_E]]
 ```
 
@@ -730,10 +731,10 @@ hand-drawn attributes, `tremble`, and:
 | --- | --- | --- | --- |
 | `size` | units | 1 | the height |
 | `label` | inline markup | | a caption at 80 % of the font size |
-| `label_side` | `below`, `above`, `left`, `right` | `below` | where the label sits; requires a label |
-| `label_color` | color | `color` | the label in a color of its own; requires a label |
-| `label_buff` | units | 0.15 | the distance between the symbol and the label's lines; requires a label |
-| `color`, `stroke_width`, `fill_color`, `fill_opacity` | | the text color, 2, the stroke color, 0 | |
+| `label-side` | `below`, `above`, `left`, `right` | `below` | where the label sits; requires a label |
+| `label-color` | color | `color` | the label in a color of its own; requires a label |
+| `label-buff` | units | 0.15 | the distance between the symbol and the label's lines; requires a label |
+| `color`, `stroke-width`, `fill-color`, `fill-opacity` | | the text color, 2, the stroke color, 0 | |
 
 An artwork module reads any further attribute it likes, so no attribute name is rejected on
 one; a module that returns a list of mobjects gives the artwork parts, which a blob flows
@@ -766,8 +767,8 @@ path, or a `.html` file. `width` and `height` are required.
 | `width`, `height` | units | required | the frame's size |
 | `title` | text | the URL | the accessible name |
 | `poster` | path | | an image shown until the page is live, and in exports |
-| `stroke_width` | engine units | 0 | a border around the frame, in `color`; none by default |
-| `x`, `y`, `anchor`, `at`, `dx`, `dy`, `buff`, the relative references, `class`, `step`, `hide`, `color`, `href`, `run_time`, `lag` | | | as for elements |
+| `stroke-width` | engine units | 0 | a border around the frame, in `color`; none by default |
+| `x`, `y`, `anchor`, `at`, `dx`, `dy`, `buff`, the relative references, `class`, `step`, `hide`, `color`, `href`, `run-time`, `lag` | | | as for elements |
 
 ### ::: timeline and ::: graph
 
@@ -789,10 +790,10 @@ flowing from `x`, `y` (the start of the first lifeline) over `width` units for `
 time (either alone gives both), `right` by default or as `direction` says (`left`, `down`, `up`),
 the lifelines `spacing` apart (1, or a list of the gaps between each two), each name at the start
 of its lifeline (`$p$`, or the text of a line `p: name`; none with an empty `p:` or the block's
-`names=false`; `p: name {length=9}` ends that lifeline at time 9). `lifeline_tip=true` (or `open`)
+`names=false`; `p: name {length=9}` ends that lifeline at time 9). `lifeline-tip=true` (or `open`)
 ends the lifelines in a tip; `p@2 .. p@4 {dashed=true}` draws a part of a lifeline its own way, the
 lifeline in pieces (`#id.p`, `#id.p-2`, …); an event with `dot=false` (or the block's
-`event_dot=false`) is its label alone, which `sublabel_width` wraps. Its lines draw messages `p@1 -> q@3` (an arrow; `--` a
+`event-dot=false`) is its label alone, which `sublabel-width` wraps. Its lines draw messages `p@1 -> q@3` (an arrow; `--` a
 line), events `q@2` (a dot, its label the dot's sublabel), and any element, where `p@t` is the
 point of `p` at time `t`, or, where an event stands, that event (`p@t.top` one of its anchors):
 messages and arrows then end at its border. A graph's lines draw nodes `A (x,y)` (a circle, or the `rectangle`,
@@ -816,9 +817,9 @@ join anchors (`p.right -> t.left`). They take the extra style roles `lifeline`, 
 `event`, `node` and `edge`, from which each takes only what its kind takes. A block names the
 classes of a role's parts in place of its style (`node=place edge=arc`, `message=request`), and
 passes `<role>_<attribute>` to them as an anonymous class, which fills in only what fits each part,
-under what a line writes (`message_buff=0.09`,
-`process_font_size=20`, `node_radius=0.2`). An include passes `verdict_<attribute>` to its verdict
-(`verdict_width`, `verdict_at`, `verdict_class`), and `::: tiles` to all its tiles' verdicts. See
+under what a line writes (`message-buff=0.09`,
+`process-font-size=20`, `node-radius=0.2`). An include passes `verdict_<attribute>` to its verdict
+(`verdict-width`, `verdict-at`, `verdict-class`), and `::: tiles` to all its tiles' verdicts. See
 [Space-time diagrams](shapes.html#space-time-diagrams) and [Graphs](shapes.html#graphs).
 
 ### ::: {.group}
@@ -842,9 +843,9 @@ or `play` of their own. Relative references stay within a group.
 | `x`, `y` | units | flow | place the group's origin, unless `anchor` names another point |
 | `anchor` | the anchors, or `origin` | `origin` | `origin` is the local (0, 0), where the members' flow starts |
 | `width` | units | the available width | the flow width inside the group |
-| `at`, `dx`, `dy`, `buff`, the relative references, `angle`, `class`, `opacity`, `step`, `hide`, `enter`, `exit`, `run_time`, `lag`, `focus-only`, `href` | | | as for elements; a group turns about its origin |
-| `font_size`, `font`, `color`, `line_height` | | | passed to the members, nested groups included, that take them and do not set their own (a shape takes the color only), as CSS inherits them |
-| `tremble`, `tremble_amplitude`, `tremble_rate` | | | shake the group's geometry |
+| `at`, `dx`, `dy`, `buff`, the relative references, `angle`, `class`, `opacity`, `step`, `hide`, `enter`, `exit`, `run-time`, `lag`, `focus-only`, `href` | | | as for elements; a group turns about its origin |
+| `font-size`, `font`, `color`, `line-height` | | | passed to the members, nested groups included, that take them and do not set their own (a shape takes the color only), as CSS inherits them |
+| `tremble`, `tremble-amplitude`, `tremble-rate` | | | shake the group's geometry |
 
 ## Positioning
 
@@ -947,7 +948,7 @@ the room of the upright element, as it does for an offset. Anything placed again
 afterward sees it as drawn: its anchors are those of the box around it, whose middle is also
 its baseline. Arrows and lines meet its turned sides, or the turned outline of a circle, a dot or
 an ellipse, and `move_along` along a turned shape follows it turned. An arc's `angle` is its
-sweep, not a turn (`start_angle` turns an arc); iframes, connections and attachments take no
+sweep, not a turn (`start-angle` turns an arc); iframes, connections and attachments take no
 `angle`.
 
 ### Sizing
@@ -985,12 +986,12 @@ sequential steps. See [Steps that follow the source](fragments.html#steps-that-f
 ### [[show]] and [[hide]]
 
 ```markdown
-[[show: #a step=2 enter=grow run_time=0.6]]
+[[show: #a step=2 enter=grow run-time=0.6]]
 [[hide: #a step=3 exit=shrink lag=0.2]]
 ```
 
 Visibility directives repeat changes as often as needed. They take `step` (at least 1),
-`run_time`, `lag`, and `enter` on `show` or `exit` on `hide`, which win over the element's own.
+`run-time`, `lag`, and `enter` on `show` or `exit` on `hide`, which win over the element's own.
 Showing an element already visible, hiding one already hidden, or changing one twice in the
 same step is an error. Group members are shown and hidden through their group.
 
@@ -1000,7 +1001,7 @@ same step is an error. Group members are shown and hidden through their group.
 | --- | --- | --- | --- |
 | `enter` | `fade`, `grow`, `write`, `create`, `draw`, or an effect of the deck's own | `fade` | how the element appears |
 | `exit` | `fade`, `shrink`, `uncreate`, or an effect of the deck's own | `fade` | how it disappears |
-| `run_time` | seconds | `layout.animationTime`, 0.35 | the duration of the fade or effect |
+| `run-time` | seconds | `layout.animationTime`, 0.35 | the duration of the fade or effect |
 | `lag` | seconds | 0 | a delay before it, within the step |
 
 A name that is not built in is `effects/<name>.ts` of the deck.
@@ -1023,7 +1024,7 @@ takes `step` and nothing else, once per step.
 ### [[animate]]
 
 ```markdown
-[[animate: #ball, step=1, x=6.5, run_time=1.2, rate=ease_in_out]]
+[[animate: #ball, step=1, x=6.5, run-time=1.2, rate=ease_in_out]]
 [[animate: #card, step=2, angle=0.4, scale=1.3, color=ORANGE, opacity=0.6]]
 [[animate: #child, step=3, at=center:(4,-2)]]
 ```
@@ -1042,7 +1043,7 @@ property is required.
 | `scale` | positive | scale about the center |
 | `opacity` | 0 to 1 | the final opacity |
 | `color` | color | the final color |
-| `run_time`, `lag`, `rate` | | timing, see below |
+| `run-time`, `lag`, `rate` | | timing, see below |
 
 ### [[effect]]
 
@@ -1053,35 +1054,35 @@ property is required.
 Plays a named effect (the `name`, written first) on a visible element without changing its visibility: `indicate`,
 `wiggle`, `circumscribe`, `flash`, `focus`, `grow`, `shrink`, `write`, `create`, `uncreate`,
 `draw`, `wave`, or an effect of the deck's own (`effects/<name>.ts`; names may hold digits and
-hyphens). `color` and `scale` tune the effects that take them; `step`, `run_time`, `lag` and
+hyphens). `color` and `scale` tune the effects that take them; `step`, `run-time`, `lag` and
 `rate` as for the others.
 
 ### [[transform]]
 
 ```markdown
-[[transform: #before -> #after, step=4, run_time=1]]
+[[transform: #before -> #after, step=4, run-time=1]]
 ```
 
 Morphs a visible element into a hidden one, which is the visible element afterwards; later
 `show` and `hide` directives address the new element. Give the target `step=N` for the
 transform's own step: the morph reveals it instead of a fade. Neither may be `focus-only`, and
-the two must differ. Attributes: `step`, `run_time`, `lag`, `rate`.
+the two must differ. Attributes: `step`, `run-time`, `lag`, `rate`.
 
 ### [[move_along]]
 
 ```markdown
-[[move_along: #ball, step=5, path=#orbit, run_time=2, rate=linear, rotate=true]]
+[[move_along: #ball, step=5, path=#orbit, run-time=2, rate=linear, rotate=true]]
 ```
 
 Moves an element along a shape (`circle`, `arc`, `polyline`, `polygon`, `ellipse`,
 `rectangle`); `rotate=true` turns it along the path. Attributes: `step`, `path` (required,
-`#shape`), `rotate`, `run_time`, `lag`, `rate`.
+`#shape`), `rotate`, `run-time`, `lag`, `rate`.
 
-### Timing: run_time, lag, rate
+### Timing: run-time, lag, rate
 
 | Attribute | Values | Default | Meaning |
 | --- | --- | --- | --- |
-| `run_time` | seconds, positive | `layout.animationTime` (0.35) | the duration of the change |
+| `run-time` | seconds, positive | `layout.animationTime` (0.35) | the duration of the change |
 | `lag` | seconds, nonnegative | 0 | a delay before it, within the step |
 | `rate` | `smooth`, `linear`, `rush_into`, `rush_from`, `there_and_back`, `ease_in`, `ease_out`, `ease_in_out` | `smooth` | the easing, for `animate`, `effect`, `transform` and `move_along` |
 
@@ -1090,8 +1091,8 @@ Moves an element along a shape (`circle`, `arc`, `polyline`, `polygon`, `ellipse
 | Attribute | Values | Default | Meaning |
 | --- | --- | --- | --- |
 | `tremble` | `true`, `false`, `N`, `N-M` | | vibrate the element's geometry: from its appearance on, from step `N` on, or from `N` until `M` (which must follow `N` and come before `hide`) |
-| `tremble_amplitude` | units | | the size of the vibration; requires `tremble` |
-| `tremble_rate` | per second, positive | | its frequency; requires `tremble` |
+| `tremble-amplitude` | units | | the size of the vibration; requires `tremble` |
+| `tremble-rate` | per second, positive | | its frequency; requires `tremble` |
 
 Only vector geometry trembles: shapes, connections, attachments, icons and artworks, formulas,
 groups, tables and charts.
@@ -1109,10 +1110,10 @@ otherwise.
 | `sketch` | `true`, `false` | false | |
 | `roughness` | nonnegative | 1 | the wobble: 0 is nearly exact, 2 and above careless |
 | `bowing` | nonnegative | 1 | how much straight lines bend |
-| `fill_style` | `hachure`, `solid`, `zigzag`, `cross-hatch`, `dots`, `dashed`, `zigzag-line` | `hachure` (`solid` for dots, tables and charts) | the fill pattern when `fill_opacity` is above 0 |
-| `hachure_angle` | degrees | | the angle of the hatching |
-| `hachure_gap` | positive | | the distance between hatch lines |
-| `fill_weight` | nonnegative | | the thickness of hatch lines |
+| `fill-style` | `hachure`, `solid`, `zigzag`, `cross-hatch`, `dots`, `dashed`, `zigzag-line` | `hachure` (`solid` for dots, tables and charts) | the fill pattern when `fill-opacity` is above 0 |
+| `hachure-angle` | degrees | | the angle of the hatching |
+| `hachure-gap` | positive | | the distance between hatch lines |
+| `fill-weight` | nonnegative | | the thickness of hatch lines |
 | `seed` | integer | from the element | the random seed |
 
 ### Style roles and classes
@@ -1160,7 +1161,7 @@ layout:
 macros:
   pair: ['\langle #1, #2 \rangle', 2]
 styles:
-  footnote: font_size=18 color=GRAY
+  footnote: font-size=18 color=GRAY
 ---
 ```
 
@@ -1210,8 +1211,8 @@ matter in the same way.
 | `lineHeight` | unset | the distance between the baselines of two lines of prose in ems, replacing the font's reach plus `lineGap`; see [Line height](#line-height) |
 | `paragraphSpacing` | 1.5 | the distance between the baselines of two paragraphs in the flow, in interlines; a text and another block keep the space two paragraphs have between their lines |
 | `listIndent` | 0.6 | indentation per list level, and the minimum width of the marker column |
-| `haloBridgeTolerance` | 0.2 | two arrows or lines whose ends lie closer than this never bridge one another with `halo_bridge` |
-| `animationTime` | 0.35 | the default `run_time` of fades and effects |
+| `haloBridgeTolerance` | 0.2 | two arrows or lines whose ends lie closer than this never bridge one another with `halo-bridge` |
+| `animationTime` | 0.35 | the default `run-time` of fades and effects |
 | `defaultSlideSize` | `[16, 9]` | the canvas of slides without `width` or `height` |
 | `textAnchor` | `left-baseline` | the default anchor of text, formulas and listings placed by a point (`x`, `y`, `at=` a point, `[[animate]]`): any anchor; `top-left` places them by their top-left corner, as the flow and `flow-top` measure |
 | `steps` | `explicit` | `sequential`: an element without `step` takes the step of the element before it, and `step=+` and `hide=+` count from it; see [Sequential steps](#sequential-steps) |

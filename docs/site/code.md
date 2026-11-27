@@ -28,7 +28,7 @@ procedure gcd(a, b)
 A fenced block (`` ``` `` or `~~~`) is a verbatim listing. Its info string names the language,
 optionally followed by the usual `{…}` attributes: `#id`, `x`/`y` (left edge and first
 baseline, like prose), `width` (the block shrinks uniformly if a line is wider), `height`,
-`font_size` (default `layout.codeSize`, 80 % of the text size), `color`, `anchor`, `step`/`hide`,
+`font-size` (default `layout.codeSize`, 80 % of the text size), `color`, `anchor`, `step`/`hide`,
 `focus-only`, `.class` and the relative constraints, and `math` (see [Formulas in
 pseudocode](#formulas-in-pseudocode)). Lines never wrap and tabs become four spaces.
 A `::: {.element …}` container around the fence works as for other blocks.
@@ -86,7 +86,7 @@ also reads `~…~` and `^…^` as a subscript and a superscript of its code, as
 ````zoomdown {height=4}
 ::: slide {#pseudo-math width=16 height=4}
 
-```text {x=-7 y=1.2 font_size=22 math=true}
+```text {x=-7 y=1.2 font-size=22 math=true}
 upon receiving $\langle \mathit{wave}, m \rangle$ from $q$ do
   if $\mathit{parent}_p = \bot$ then          // first wave: $O(|E|)$ messages
     $\mathit{parent}_p \gets q$

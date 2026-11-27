@@ -121,12 +121,12 @@ export async function buildTable(rows: InlineSpan[][][], options: TableOptions, 
   if (!TABLE_VALIGNS.includes(valign)) throw new Error(`Unknown table valign ${JSON.stringify(valign)}`);
   if (!(paddingX >= 0 && paddingY >= 0)) throw new Error('Table padding must be nonnegative');
   const given = options.columnWidths ?? [];
-  if (given.length > 1 && given.length !== columns) throw new Error(`col_width gives ${given.length} widths for ${columns} columns`);
+  if (given.length > 1 && given.length !== columns) throw new Error(`col-width gives ${given.length} widths for ${columns} columns`);
   const fixed = Array.from({ length: columns }, (_, j) => (given.length === 1 ? given[0] : given[j]) ?? null);
   if (fixed.some((w) => w !== null && !(w > 0))) throw new Error('Column widths must be positive');
   // Each cell's text size: the header's, else its column's, else the table's.
   const sizes = options.columnFontSizes ?? [];
-  if (sizes.length > 1 && sizes.length !== columns) throw new Error(`col_font_size gives ${sizes.length} sizes for ${columns} columns`);
+  if (sizes.length > 1 && sizes.length !== columns) throw new Error(`col-font-size gives ${sizes.length} sizes for ${columns} columns`);
   const columnSize = (j: number) => (sizes.length === 1 ? sizes[0] : sizes[j]) ?? options.fontSize;
   const sizeAt = (i: number, j: number) => (header && i === 0 && options.headerFontSize !== undefined ? options.headerFontSize : columnSize(j));
   if (rows.some((row, i) => row.some((_, j) => !(sizeAt(i, j) > 0))) || Array.from({ length: columns }, (_, j) => columnSize(j)).some((size) => !(size > 0))) {

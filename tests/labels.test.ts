@@ -59,8 +59,8 @@ describe('the label of an arrow or a line', () => {
     const parse = (body: string) => new MarkupParser().parse(`::: slide {#s}\n[[rectangle: #a x=-3 y=0 width=1 height=1]]\n\n[[rectangle: #b x=3 y=2 width=1 height=1]]\n\n${body}\n:::`);
     expect(() => parse('[[arrow: #a -> #b, #e, label="x", label_pos=0.3]]')).not.toThrow();
     expect(() => parse('[[arrow: #a -> #b, #e, label="x", label_pos=1.5]]')).toThrow(/from 0 \(the start\) to 1/);
-    expect(() => parse('[[arrow: #a -> #b, #e, label="x", label_pos=near]]')).toThrow(/label_pos must be a number/);
-    expect(() => parse('[[arrow: #a -> #b, #e, label_pos=0.3]]')).toThrow(/label_pos requires a label/);
+    expect(() => parse('[[arrow: #a -> #b, #e, label="x", label_pos=near]]')).toThrow(/label-pos must be a number/);
+    expect(() => parse('[[arrow: #a -> #b, #e, label_pos=0.3]]')).toThrow(/label-pos requires a label/);
   });
 
   it('may come from a style that unlabeled elements share, but not be written on one', () => {
@@ -68,7 +68,7 @@ describe('the label of an arrow or a line', () => {
     const styled = (body: string) => new MarkupParser().parse(`::: styles\nedge: label_pos=0.3 label_side=below slanted=true label_color=BLUE\n:::\n\n::: slide {#s}\n${shapes}${body}\n:::`);
     expect(() => styled('[[arrow: #a -> #b, #e, .edge]]')).not.toThrow();
     expect(() => styled('[[arrow: #a -> #b, #e, .edge, label="x"]]')).not.toThrow();
-    expect(() => styled('[[arrow: #a -> #b, #e, .edge, label_pos=0.5]]')).toThrow(/label_pos requires a label/);
+    expect(() => styled('[[arrow: #a -> #b, #e, .edge, label_pos=0.5]]')).toThrow(/label-pos requires a label/);
   });
 
   it('takes a color of its own with label_color, on arrows, lines, braces and icons', () => {
@@ -76,7 +76,7 @@ describe('the label of an arrow or a line', () => {
     expect(() => parse('[[arrow: #a -> #b, #e, label="x", color=GRAY, label_color=BLUE]]')).not.toThrow();
     expect(() => parse('[[brace: #a, #br, label="x", label_color=#FF0000]]')).not.toThrow();
     expect(() => parse('[[icon: user #u x=0 y=0 label="x" label_color=ORANGE]]')).not.toThrow();
-    expect(() => parse('[[line: #a -> #b, #e, label_color=BLUE]]')).toThrow(/label_color requires a label/);
+    expect(() => parse('[[line: #a -> #b, #e, label_color=BLUE]]')).toThrow(/label-color requires a label/);
     expect(() => parse('[[arrow: #a -> #b, #e, label="x", label_color=notacolor]]')).toThrow(/Invalid color/);
   });
 });

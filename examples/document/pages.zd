@@ -13,7 +13,7 @@ Press the right arrow. {color=GRAY}
 
 [And reveal them one at a time]{#b below:#a left-aligned:#a step=2}
 
-A page may also include children of its own, as the next one does: inside a page the deck zooms as usual. {y=-3 font_size=20 color=GRAY}
+A page may also include children of its own, as the next one does: inside a page the deck zooms as usual. {y=-3 font-size=20 color=GRAY}
 :::
 
 ::: slide {#third width=20}
@@ -21,11 +21,11 @@ A page may also include children of its own, as the next one does: inside a page
 
 [[include: #detail x=5 y=-1.2 width=8]]
 
-The camera zooms into the child and, since it is the last one, back out to this root; then the deck ends here. {x=-9.3 y=-3.6 width=10 font_size=20 color=GRAY}
+The camera zooms into the child and, since it is the last one, back out to this root; then the deck ends here. {x=-9.3 y=-3.6 width=10 font-size=20 color=GRAY}
 :::
 
 ::: slide {#detail}
 ### A detail
 
-Children of a page keep their zooms; only the pages themselves cut. {font_size=22}
+Children of a page keep their zooms; only the pages themselves cut. {font-size=22}
 :::

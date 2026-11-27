@@ -248,8 +248,8 @@ describe('markup for tables and charts', () => {
   it('accepts header column rules, their color and width, and draws them', async () => {
     const table = '| a | b |\n| :- | :- |\n| 1 | 2 |';
     expect(() => parse(`::: {.element #t header_col_rules=true header_col_rule_color=RED header_col_rule_width=3}\n${table}\n:::`)).not.toThrow();
-    expect(() => parse(`::: {.element #t header_col_rules=yes}\n${table}\n:::`)).toThrow(/header_col_rules must be true or false/);
-    expect(() => parse(`::: {.element #t header_col_rule_width=-1}\n${table}\n:::`)).toThrow(/header_col_rule_width must be nonnegative/);
+    expect(() => parse(`::: {.element #t header_col_rules=yes}\n${table}\n:::`)).toThrow(/header-col-rules must be true or false/);
+    expect(() => parse(`::: {.element #t header_col_rule_width=-1}\n${table}\n:::`)).toThrow(/header-col-rule-width must be nonnegative/);
     expect(() => parse(`::: {.element #t header_col_rule_color=nope}\n${table}\n:::`)).toThrow(/Invalid color/);
     installFakeCanvas();
     const s = await slide('', [
@@ -271,7 +271,7 @@ describe('markup for tables and charts', () => {
   it('accepts row and column rule colors and widths on tables', () => {
     const table = '| a | b |\n| :- | :- |\n| 1 | 2 |';
     expect(() => parse(`::: {.element #t row_rule_color=BLUE row_rule_width=3 col_rule_color=RED col_rule_width=0}\n${table}\n:::`)).not.toThrow();
-    expect(() => parse(`::: {.element #t row_rule_width=-1}\n${table}\n:::`)).toThrow(/row_rule_width must be nonnegative/);
+    expect(() => parse(`::: {.element #t row_rule_width=-1}\n${table}\n:::`)).toThrow(/row-rule-width must be nonnegative/);
     expect(() => parse(`::: {.element #t col_rule_color=nope}\n${table}\n:::`)).toThrow(/Invalid color/);
     expect(() => parse(`::: {.element #t valign=top}\n${table}\n:::`)).not.toThrow();
     expect(() => parse(`::: {.element #t valign=middle}\n${table}\n:::`)).toThrow(/valign must be baseline, center, top or bottom/);
@@ -282,9 +282,9 @@ describe('markup for tables and charts', () => {
     expect(() => parse(`::: {.element #t padding="0.02 0.07" padding_x=0.1 col_width="0.4 auto"}\n${table}\n:::`)).not.toThrow();
     expect(() => parse(`::: {.element #t padding="0.1 0.2 0.3"}\n${table}\n:::`)).toThrow(/padding must be one or two nonnegative numbers/);
     expect(() => parse(`::: {.element #t padding=-1}\n${table}\n:::`)).toThrow(/padding must be one or two/);
-    expect(() => parse(`::: {.element #t padding_y=-1}\n${table}\n:::`)).toThrow(/padding_y must be nonnegative/);
-    expect(() => parse(`::: {.element #t col_width=0}\n${table}\n:::`)).toThrow(/col_width must be positive/);
-    expect(() => parse(`::: {.element #t col_width="1 2 3"}\n${table}\n:::`)).toThrow(/col_width gives 3 widths for 2 columns/);
+    expect(() => parse(`::: {.element #t padding_y=-1}\n${table}\n:::`)).toThrow(/padding-y must be nonnegative/);
+    expect(() => parse(`::: {.element #t col_width=0}\n${table}\n:::`)).toThrow(/col-width must be positive/);
+    expect(() => parse(`::: {.element #t col_width="1 2 3"}\n${table}\n:::`)).toThrow(/col-width gives 3 widths for 2 columns/);
     expect(tablePadding({ padding: '0.02 0.07' })).toEqual({ paddingY: 0.02, paddingX: 0.07 });
     expect(tablePadding({ padding: '0.1', padding_y: '0' })).toEqual({ paddingY: 0, paddingX: 0.1 });
     expect(tablePadding({})).toEqual({});

@@ -27,7 +27,7 @@ macros:
   R: '\mathbb{R}'
   pair: ['\langle #1, #2 \rangle', 2]
 styles:
-  footnote: font_size=18 color=GRAY
+  footnote: font-size=18 color=GRAY
 ---
 
 ::: slide {#tour width=44}
@@ -125,7 +125,7 @@ and the options' folders come before the front matter's.
 | `lineHeight` | unset | the distance between the baselines of two lines of prose in ems, replacing the font's reach plus `lineGap` |
 | `paragraphSpacing` | 1.5 | the distance between the baselines of two paragraphs, in interlines |
 | `listIndent` | 0.6 | marker column of list items and indentation per nesting level |
-| `haloBridgeTolerance` | 0.2 | arrows and lines whose ends lie closer than this never bridge one another (`halo_bridge`) |
+| `haloBridgeTolerance` | 0.2 | arrows and lines whose ends lie closer than this never bridge one another (`halo-bridge`) |
 | `animationTime` | 0.35 | duration of fades |
 | `defaultSlideSize` | `[16, 9]` | canvas of slides without `width`/`height` |
 | `textAnchor` | `left-baseline` | default anchor of text, formulas and listings placed by a point: any anchor; `top-left` places them by their top-left corner, as the flow and `flow-top` measure |

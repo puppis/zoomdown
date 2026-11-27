@@ -12,7 +12,7 @@ $$
 \sum_{k=0}^{n} \binom{n}{k} = 2^n
 $$
 
-::: {.element #pythagoras x=0.6 y=-0.4 font_size=34 step=2}
+::: {.element #pythagoras x=0.6 y=-0.4 font-size=34 step=2}
 $$ \textcolor{Orange}{a}^2 + {\color{Cerulean} b^2} = c^2 $$
 :::
 
@@ -48,9 +48,9 @@ Macros from the front matter: $\N \subset \R$, $\pair{x}{y} \in \R^2$.
 
 - `\textcolor{…}{…}` and `{\color{…} …}` accept dvipsnames (`Orange`, `Cerulean`, `OliveGreen`,
   …) and CSS colors.
-- A formula's `font_size` is calibrated to the prose size: `$x$` in a 28-point paragraph has the
+- A formula's `font-size` is calibrated to the prose size: `$x$` in a 28-point paragraph has the
   same em as the surrounding words, as in a LaTeX document.
-- `width=` limits a formula's width (it is scaled down to fit), `height=` scales it, `font_size=`
+- `width=` limits a formula's width (it is scaled down to fit), `height=` scales it, `font-size=`
   sets the base size, `anchor=top-left` positions a tall aligned formula by its top edge instead of
   its baseline.
 

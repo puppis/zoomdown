@@ -6,7 +6,7 @@ description: Pipe tables with styled cells, rules and shading, and bar, line and
 <a class="try" href="tour.html#slide=tables">Open in the tour ↗</a>
 
 ````markdown
-::: {.element #sales x=5 y=1.3 rules=rows stripe_opacity=0.08}
+::: {.element #sales x=5 y=1.3 rules=rows stripe-opacity=0.08}
 | Region | 2023 | 2024 |
 | :--- | ---: | ---: |
 | North | 3.2 | **5.0** |
@@ -35,16 +35,16 @@ as TeX's strut makes them, plus the vertical padding: rows of plain text in one 
 whether they hold "…", "ace", "A" or nothing, and a cell may still be wide and flat. A formula
 reaching beyond the letters makes its row taller.
 
-`header_font_size` sets the size of the header row's text, and `col_font_size` the size of the
-body cells' text per column, as `col_width` sets widths: `header_font_size=20 col_font_size="18 14 14"`.
+`header-font-size` sets the size of the header row's text, and `col-font-size` the size of the
+body cells' text per column, as `col-width` sets widths: `header-font-size=20 col-font-size="18 14 14"`.
 
-`col_width` fixes the width of the columns, rules to rules: one value for all of them, or a list
+`col-width` fixes the width of the columns, rules to rules: one value for all of them, or a list
 with one per column, where `auto` keeps a column's natural width. Empty columns then keep their
 width, and a cell wraps to its column, a line height wide at the narrowest; a column too narrow
 for that and its padding widens. With small, flat cells:
 
 ```markdown
-::: {.element #routes header=false font_size=17 padding="0.02 0.07" col_width=0.37}
+::: {.element #routes header=false font-size=17 padding="0.02 0.07" col-width=0.37}
 | A | | |
 | :-: | :-: | :-: |
 :::
@@ -54,37 +54,37 @@ for that and its padding widens. With small, flat cells:
 | --- | --- | --- |
 | `rules` | `all` | which lines to draw: `all`, `rows`, `cols`, `outer` or `none` |
 | `valign` | `baseline` | how the cells of a row line up: on their first baseline, or by the `center`, `top` or `bottom` of their box |
-| `border_color` | the text color | color of every rule and the default shading color |
-| `stroke_width` | 1.5 | width of every rule |
-| `row_rule_color`, `row_rule_width` | `border_color`, `stroke_width` | the horizontal rules: between rows, and the top and bottom of the frame |
-| `col_rule_color`, `col_rule_width` | `border_color`, `stroke_width` | the vertical rules: between columns, and the sides of the frame |
-| `header_col_rules` | `false` | whether the vertical rules, the sides of the frame included, cross the header row |
-| `header_col_rule_color`, `header_col_rule_width` | `col_rule_color`, `col_rule_width` | the vertical rules in the header row, the sides included |
+| `border-color` | the text color | color of every rule and the default shading color |
+| `stroke-width` | 1.5 | width of every rule |
+| `row-rule-color`, `row-rule-width` | `border-color`, `stroke-width` | the horizontal rules: between rows, and the top and bottom of the frame |
+| `col-rule-color`, `col-rule-width` | `border-color`, `stroke-width` | the vertical rules: between columns, and the sides of the frame |
+| `header-col-rules` | `false` | whether the vertical rules, the sides of the frame included, cross the header row |
+| `header-col-rule-color`, `header-col-rule-width` | `col-rule-color`, `col-rule-width` | the vertical rules in the header row, the sides included |
 | `header` | `true` | whether the first row is a header (shaded; `false` treats it as a body row) |
-| `header_color`, `header_opacity` | the rule color, 0.12 | background of the header row |
-| `stripe_opacity` | 0 | background of every second body row, in the rule color |
-| `fill_color`, `fill_opacity` | the rule color, 0 | background of the whole table |
+| `header-color`, `header-opacity` | the rule color, 0.12 | background of the header row |
+| `stripe-opacity` | 0 | background of every second body row, in the rule color |
+| `fill-color`, `fill-opacity` | the rule color, 0 | background of the whole table |
 | `padding` | 0.15 | space between a cell's text and its rules on all four sides; two values give the vertical then the horizontal space, as in CSS |
-| `padding_x`, `padding_y` | `padding` | the space beside a cell's text, and above and below it |
-| `col_width` | natural widths | the width of every column, or a list with one per column (`auto` for a natural one) |
-| `header_font_size` | the column's | the size of the header row's text |
-| `col_font_size` | `font_size` | the size of the body cells' text, one for every column or one each (`auto` keeps `font_size`) |
-| `font_size`, `font`, `color`, `opacity` | the layout's | typography and translucency |
+| `padding-x`, `padding-y` | `padding` | the space beside a cell's text, and above and below it |
+| `col-width` | natural widths | the width of every column, or a list with one per column (`auto` for a natural one) |
+| `header-font-size` | the column's | the size of the header row's text |
+| `col-font-size` | `font-size` | the size of the body cells' text, one for every column or one each (`auto` keeps `font-size`) |
+| `font-size`, `font`, `color`, `opacity` | the layout's | typography and translucency |
 | `sketch` and its tuning | `false` | [hand-drawn](sketch.html) rules and backgrounds |
 
-The shared `border_color` and `stroke_width` style every rule; the `row_rule_` and `col_rule_`
+The shared `border-color` and `stroke-width` style every rule; the `row-rule_` and `col-rule_`
 attributes override them for one direction, so rows and columns may differ in color and weight:
-`row_rule_color=BLUE row_rule_width=3 col_rule_color=GRAY`. A width of 0 leaves out the rules of
+`row-rule-color=BLUE row-rule-width=3 col-rule-color=GRAY`. A width of 0 leaves out the rules of
 that direction, the sides of the frame included. Where they cross, the row rules lie over the
 column rules.
 
 The vertical rules start under the header row, the sides of the frame as the rules between
-columns. `header_col_rules=true` carries them through the header, and `header_col_rule_color` and
-`header_col_rule_width` give them a style of their own there:
-`header_col_rules=true header_col_rule_color=WHITE header_col_rule_width=1`. Without a header
+columns. `header-col-rules=true` carries them through the header, and `header-col-rule-color` and
+`header-col-rule-width` give them a style of their own there:
+`header-col-rules=true header-col-rule-color=WHITE header-col-rule-width=1`. Without a header
 (`header=false`) they run whole.
 
-Tables take the style role `table`, so `table: rules=rows header_opacity=0.2` in a styles block
+Tables take the style role `table`, so `table: rules=rows header-opacity=0.2` in a styles block
 sets a deck-wide look, and `tremble=` makes their rules vibrate like any vector geometry.
 
 ## Charts
@@ -114,15 +114,15 @@ comments.
 | `src` | the fence's rows | a CSV, TSV or JSON file with the rows, next to the Markdown or in the `paths` folders; the fence is then left empty ([Extending a deck](extending.html#chart-types)) |
 | `width`, `height` | 6, 3.5 | size of the plot area, or of the box a pie fits in; axis labels and the legend add to it |
 | `colors` | a built-in palette | series (or slice) colors, space- or comma-separated |
-| `fill_opacity` | 0.85 | opacity of bars and slices |
-| `border_color` | each bar's own color | outline of bars and slices (`WHITE` separates slices cleanly) |
-| `stroke_width` | 2 | width of axes, series lines and outlines |
-| `axis_color` | the text color | axes, ticks and gridlines |
+| `fill-opacity` | 0.85 | opacity of bars and slices |
+| `border-color` | each bar's own color | outline of bars and slices (`WHITE` separates slices cleanly) |
+| `stroke-width` | 2 | width of axes, series lines and outlines |
+| `axis-color` | the text color | axes, ticks and gridlines |
 | `grid` | `true` | horizontal gridlines at the ticks |
 | `legend` | `true` with several series | legend above the plot |
 | `values` | `false` | value labels on bars and points (pies always show percentages) |
 | `min`, `max` | from the data | fixed bounds of the value axis |
-| `font_size`, `font`, `color`, `opacity` | the layout's | typography (labels use 75% of the size) and translucency |
+| `font-size`, `font`, `color`, `opacity` | the layout's | typography (labels use 75% of the size) and translucency |
 | `sketch` and its tuning | `false` | [hand-drawn](sketch.html) bars, lines, slices and axes |
 
 Charts are centered on `x`, `y`, take `anchor=`, the relative constraints, `step`, `hide`,

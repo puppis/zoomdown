@@ -16,13 +16,13 @@ ones without letting the sources or the syntax grow clumsy. Status legend: **don
 | 6 | Advanced anchor-based positioning | **done** | `anchor=` on every element and viewport; `at=[anchor:]#id[.anchor]` and `at=(x,y)` expressions; `below/above/left-of/right-of`, the diagonals `above-right-of` and so on, + `buff`, `*-aligned`, `baseline-aligned`; `dx`/`dy`. | Nothing planned; per-line baselines of paragraphs only if a need appears. |
 | 7 | Compound objects with derived anchors | **done** | `::: {.group #id}` containers: members in local coordinates, union-box anchors plus `origin`, positioned, faded and attached to as one element; nestable. | Members cannot have their own fragments (planned relaxation if needed). |
 | 8 | Sizes, colors, opacity, default styles per role | **done** | Per-element attributes; named styles in `deck.json` and `::: styles` blocks, applied by `.class` tokens and by roles (`heading`, `body`, `code`, `shape`, …); `LayoutConfig` defaults. | — |
-| 9 | Grouping of animations: parallel, sequence, automatic | **done** | Same step number = parallel (fades, animations, effects alike); `run_time`, `lag` and `rate` per change; `[[next: step=N]]` = auto-advance; `skip_return=true` enters the next sibling without zooming out. | An explicit sequence keyword inside one click could replace hand-computed `lag` values later. |
+| 9 | Grouping of animations: parallel, sequence, automatic | **done** | Same step number = parallel (fades, animations, effects alike); `run-time`, `lag` and `rate` per change; `[[next: step=N]]` = auto-advance; `skip-return=true` enters the next sibling without zooming out. | An explicit sequence keyword inside one click could replace hand-computed `lag` values later. |
 | 10 | Edit the document and see the effect immediately | **done** | `zoomdown serve` and the dev page reload on save (Markdown, deck.json, assets) and restore the current stop; errors show the source line. | Reload re-records the whole deck (a few seconds on large decks); incremental re-recording deferred. |
 | 11 | Reverse playback on the left key | **done** | The left key plays the current stop backwards (fades, property animations, effects, camera moves); videos, loops and updater-driven waits are passed over; `reversePlayback: false` restores jumps. | — |
-| 13 | Hand-drawn shapes | **done** | `sketch=true` on shapes, connections and attachments, with `fill_style`, `roughness`, `bowing`, `hachure_*`, `fill_weight`, `seed`; Rough.js geometry converted to engine paths (`src/sketch.ts`); deck-wide through style roles; `sketch` helper for code slides (added 2026-11-11). | — |
+| 13 | Hand-drawn shapes | **done** | `sketch=true` on shapes, connections and attachments, with `fill-style`, `roughness`, `bowing`, `hachure_*`, `fill-weight`, `seed`; Rough.js geometry converted to engine paths (`src/sketch.ts`); deck-wide through style roles; `sketch` helper for code slides (added 2026-11-11). | — |
 | 14 | Diagram icons, enclosures, tremble | **done** | `[[icon: name …]]` (thirty-nine symbols built from paths in `src/icons.ts`, with fill, outline, label, sketching, style roles `icon`/`icon-<name>`); `box` around several elements and `[[blob: …]]` (distance-field contour in `src/blob.ts`, `buff`, `smoothness`); `tremble=true|N|N-M` vibration of vector geometry recorded as looping clips (`Tremble` in `animations.ts`) (added 2026-11-11). | — |
 | 15 | Importing markup files | **done** | `[[import: path.zd]]` splices files before parsing (`src/markup/imports.ts`), with per-line origins for error messages, nested imports and cycle detection; exports embed the files. The code-authored child keyword became `[[subslide: ClassName]]` and the `deck.json` key `classes` (added 2026-11-11). | — |
-| 16 | Tables and charts | **done** | Pipe tables (`TableSpec`, `src/markup/table.ts`: natural, fixed (`col_width`) or shrunken columns, rows as tall as the font's letters (a strut) or a taller formula, padding per direction, rules, header/stripe/table shading) and `chart` fences (`src/charts.ts`: bar, line, pie with axes, grid, legend, value labels, CSV parsing with header detection), both sketchable (added 2026-11-11). | Stacked bars, scatter plots and axis titles if a need appears. |
+| 16 | Tables and charts | **done** | Pipe tables (`TableSpec`, `src/markup/table.ts`: natural, fixed (`col-width`) or shrunken columns, rows as tall as the font's letters (a strut) or a taller formula, padding per direction, rules, header/stripe/table shading) and `chart` fences (`src/charts.ts`: bar, line, pie with axes, grid, legend, value labels, CSV parsing with header detection), both sketchable (added 2026-11-11). | Stacked bars, scatter plots and axis titles if a need appears. |
 | 12 | Design mode: drag objects in the browser | **missing** | Elements know their source line (`ElementSpec.line`) and the player exposes `navigation()`; nothing interactive. | Hit-testing, dragging in logical coordinates, writing attributes back into the file. |
 
 Everything that is **done** or **partial** is exercised by `examples/tour/` and described in
@@ -53,13 +53,13 @@ Low risk, mostly additive validation and rendering. Implemented; see the tour ch
 "More shapes, braces, boxes and opacity" and "Anchors, offsets and timing".
 
 1. **More shapes**: `[[dot: #p x=1 y=2]]` (radius 0.08 by default), `[[ellipse: … width height]]`,
-   `[[polygon: … points="(…)"]]` (closed, fillable), `[[arc: … radius start_angle angle]]`,
+   `[[polygon: … points="(…)"]]` (closed, fillable), `[[arc: … radius start-angle angle]]`,
    `[[brace: #a side=left label="…"]]`, `[[box: #a buff=0.1]]` (surrounding rectangle). All reuse the
-   shape attribute set (`color`, `stroke_width`, `fill_color`, `fill_opacity`, positioning, `step`).
+   shape attribute set (`color`, `stroke-width`, `fill-color`, `fill-opacity`, positioning, `step`).
 2. **`opacity`** on every element (text, math, images, listings, shapes), kept through fades.
-3. **`skip_return=true`** on a slide or include: the next sibling is entered straight from this
+3. **`skip-return=true`** on a slide or include: the next sibling is entered straight from this
    subtree, the documented way to "move to the next subslide without zooming out".
-4. **Timing attributes** on fragments: `run_time=0.6` and `lag=0.3` (delay inside the step), so
+4. **Timing attributes** on fragments: `run-time=0.6` and `lag=0.3` (delay inside the step), so
    several elements of one click can appear staggered without extra steps.
 5. **`dx` / `dy` offsets** usable with any relative constraint (`below:#h dy=-0.2`).
 6. **`anchor=` for images, shapes, listings and viewports**, with the full anchor vocabulary of
@@ -86,10 +86,10 @@ and in a `::: styles` block that wins for the same name.
    apply after. Existing `below:`/`above:`/`*-aligned`/`baseline-aligned` become sugar compiled to
    the same resolver (`placeRelative` is replaced by one `resolvePlacement`). Dependencies and
    cycles are checked as today.
-2. **Styles.** `deck.json` (and `markupDeck`) accept `"styles": { "footnote": { "font_size": 18,
+2. **Styles.** `deck.json` (and `markupDeck`) accept `"styles": { "footnote": { "font-size": 18,
    "color": "GRAY" }, "title": {…} }`; elements opt in with classes, `{.footnote}`; the resolution
    order is element attributes → classes (in order) → built-in role (`heading`, `body`, `code`,
-   `label`) → `layout`. Styles can also set `anchor`, `width`, `opacity`, `stroke_width`.
+   `label`) → `layout`. Styles can also set `anchor`, `width`, `opacity`, `stroke-width`.
 3. **Groups.** `::: {.group #g x=… y=… anchor=…}` encloses several blocks and directives. The
    group is one element for positioning, visibility (`step`, `hide`), opacity and later
    animations; its anchors come from the union of its members. Members are laid out in the
@@ -108,14 +108,14 @@ All compile to engine animations inside `construct`, recorded like fades.
 1. **Property animations** at a step:
 
    ```
-   [[animate: #box step=3 x=4 y=-1 angle=0.5 scale=1.4 opacity=0.3 color=RED run_time=1 rate=smooth]]
+   [[animate: #box step=3 x=4 y=-1 angle=0.5 scale=1.4 opacity=0.3 color=RED run-time=1 rate=smooth]]
    ```
 
    Positions use the same anchor expressions (`at=#target.left`). Several `animate` directives at
    one step run in parallel; `lag` staggers them; `[[next]]` chains steps.
 2. **Effects**: `[[effect: indicate #id step=2]]`, with `wiggle`, `circumscribe`, `flash`, `write`,
    `create`, `grow`, `shrink`, `uncreate`, `focus`. Unknown names are validated against a fixed list
-   with their parameters (`color`, `run_time`, `scale`).
+   with their parameters (`color`, `run-time`, `scale`).
 3. **Morphing**: `[[transform: #a -> #b step=4]]` (replacement transform; `#b` must be hidden until
    then) and `[[move_along: #dot path=#curve step=5]]`.
 4. **Animated viewports**: `animate` applies to includes and imports too (`x`, `y`, `width`,

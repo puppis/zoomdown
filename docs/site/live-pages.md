@@ -13,7 +13,7 @@ description: Embedded web pages shown while their slide is focused, with a poste
 An `[[iframe: url, #id, …]]` embeds a web page. On the canvas it is a **placeholder**: the
 `poster=` image fitted to the page's box, or a lightly tinted box labeled with the `title` (or the
 URL). The placeholder takes the usual placement attributes plus `width` and `height`,
-`step`/`hide`, `color` and `.class`. A page has no border unless `stroke_width=` asks for one, in
+`step`/`hide`, `color` and `.class`. A page has no border unless `stroke-width=` asks for one, in
 `color`, around the placeholder and the live page alike.
 
 The **live page** appears over the placeholder only once the camera has come to rest on the

@@ -78,11 +78,11 @@ describe('a gradient fill', () => {
     expect(gradientColor('rgba(255,0,0,0.25)')).toEqual({ color: '#FF0000', alpha: 0.25 });
     expect(gradientColor('BLUE').alpha).toBe(1);
     expect(() => rect('fill_gradient="WHITE #ffffff80 #000000" gradient_direction=up')).not.toThrow();
-    expect(() => rect('fill_gradient=WHITE')).toThrow(/fill_gradient needs two colors or more/);
-    expect(() => rect('fill_gradient="WHITE nocolor"')).toThrow(/Invalid color "nocolor" in fill_gradient/);
-    expect(() => rect('fill_gradient="WHITE BLACK" gradient_direction=sideways')).toThrow(/gradient_direction must be up, down, left or right/);
-    expect(() => rect('gradient_direction=up')).toThrow(/gradient_direction requires fill_gradient/);
-    expect(() => rect('fill_gradient="WHITE BLACK" sketch=true')).toThrow(/A hand-drawn shape cannot have fill_gradient/);
-    expect(() => parse('[[polyline: #p points="(0,0) (1,1)" fill_gradient="WHITE BLACK"]]')).toThrow(/Unknown attributes: fill_gradient/);
+    expect(() => rect('fill_gradient=WHITE')).toThrow(/fill-gradient needs two colors or more/);
+    expect(() => rect('fill_gradient="WHITE nocolor"')).toThrow(/Invalid color "nocolor" in fill-gradient/);
+    expect(() => rect('fill_gradient="WHITE BLACK" gradient_direction=sideways')).toThrow(/gradient-direction must be up, down, left or right/);
+    expect(() => rect('gradient_direction=up')).toThrow(/gradient-direction requires fill-gradient/);
+    expect(() => rect('fill_gradient="WHITE BLACK" sketch=true')).toThrow(/A hand-drawn shape cannot have fill-gradient/);
+    expect(() => parse('[[polyline: #p points="(0,0) (1,1)" fill_gradient="WHITE BLACK"]]')).toThrow(/Unknown attributes: fill-gradient/);
   });
 });

@@ -125,9 +125,9 @@ Round with pivot *r* … {step=1}
 
 [Below it, left-aligned]{#p below:#h left-aligned:#h buff=0.3}
 
-[A side note]{#note right-of:#p buff=0.5 font_size=18 color=GRAY}
+[A side note]{#note right-of:#p buff=0.5 font-size=18 color=GRAY}
 
-[Big]{#big x=0.6 y=-1.4 font_size=48}
+[Big]{#big x=0.6 y=-1.4 font-size=48}
 [shares the baseline]{x=2.3 baseline-aligned:#big}
 ```
 
@@ -272,7 +272,7 @@ inside parentheses does not split attributes.
   origin. The flow keeps the room of the upright element. Elements placed against it see it as
   drawn, by the box around it, whose middle is then also its baseline; arrows and lines meet its
   turned sides, or the turned outline of a circle, an ellipse or a dot. An arc's `angle` is its
-  sweep instead: `start_angle` turns it. Iframes cannot be turned.
+  sweep instead: `start-angle` turns it. Iframes cannot be turned.
 
 ```markdown
 [Time]{#axis-label x=-7 y=-3 angle=1.5708}       ← reads upward from (-7, -3)
@@ -280,7 +280,7 @@ inside parentheses does not split attributes.
 [[rectangle: #tab at=top-left:(1,2) width=2 height=1 angle=0.5]]   ← about its top-left corner
 ```
 - `width` controls paragraph wrapping, image width and the maximum width of formulas and listings;
-  `height` scales the result; `font_size` overrides the layout size.
+  `height` scales the result; `font-size` overrides the layout size.
 - `opacity` (0 to 1) makes any element translucent; fades preserve it.
 
 ## Children

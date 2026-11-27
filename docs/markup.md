@@ -25,7 +25,9 @@ every construct of this page live, each next to the listing that produced it; op
 ```
 
 - IDs start with a letter or underscore and continue with letters, digits, `_`, `.` or `-`; they
-  are unique in the document. Definition order and heading levels never determine nesting.
+  are unique in the document.
+- Attribute names are written with hyphens (`font-size`, `fill-color`, `only-this`, `right-of`); the
+  same name with underscores reads the same (`font_size`), and messages write names with hyphens. Definition order and heading levels never determine nesting.
 - A deck is a forest: the slides that nothing includes are its roots, visited first to last with
   cuts between them, and every other slide belongs to the tree of one root. Most decks are a
   single tree; a deck whose slides include none of the others is a flat document, as a PDF opened
@@ -58,8 +60,7 @@ every construct of this page live, each next to the listing that produced it; op
   after the last one. `return-to-parent` on a slide, include or subslide zooms back after that child
   even when a sibling follows at once; `skip-return` leaves it straight for the next stop even when
   the parent plays first or it is the last one. The two are one choice seen from both sides
-  (`skip-return=false` is `return-to-parent`); a flag written bare means `=true`, and its words may
-  be joined by underscores as well (`skip_return`).
+  (`skip-return=false` is `return-to-parent`); a flag written bare means `=true`.
 - `preview=true` on a slide, include or subslide shows its content before its first visit instead of
   fading it in on entry.
 - `debug` on a slide, include or subslide draws a frame around it and faint dots at its whole
@@ -180,7 +181,7 @@ its first word. A character MathJax's fonts lack, such as `$☞$`, is drawn in t
 The interline, the distance between the baselines of two lines of a paragraph, is the font's reach
 above and below the baseline plus `layout.lineGap` (0.12). `layout.lineHeight` replaces it with a
 distance in ems of the text's size, as CSS's `line-height` (`1.15` sets lines closer than most
-fonts' own interline), and `line_height=` sets it for one text, a heading or a list item. Paragraph
+fonts' own interline), and `line-height=` sets it for one text, a heading or a list item. Paragraph
 spacing is counted in that interline, and a line's reach is its share of it, so text placed by
 lines stays evenly spaced. Listings keep their own spacing.
 
@@ -198,7 +199,7 @@ $$
 \sum_{k=0}^{n} \binom{n}{k} = 2^n
 $$
 
-::: {.element #formula x=0 y=-2 width=12 font_size=34 step=2}
+::: {.element #formula x=0 y=-2 width=12 font-size=34 step=2}
 $$ \textcolor{Orange}{a}^2 + {\color{Cerulean} b^2} = c^2 $$
 :::
 ```
@@ -253,41 +254,41 @@ exported screenshots.
 ## Shapes, connections and attachments
 
 ```markdown
-[[rectangle: #box x=-3 y=0 width=4 height=2 corner_radius=0.2 fill_color=BLUE fill_opacity=0.1 step=1]]
+[[rectangle: #box x=-3 y=0 width=4 height=2 corner-radius=0.2 fill-color=BLUE fill-opacity=0.1 step=1]]
 [[circle: #state right-of:#box buff=1 radius=0.5 step=1]]
 [[dot: #p x=1 y=2 color=YELLOW]]
 [[ellipse: #e x=4 y=0 width=3 height=1.5]]
-[[polygon: #tri points="(0,0) (2,0) (1,1.5)" fill_color=ORANGE fill_opacity=0.3]]
-[[arc: #a x=0 y=-2 radius=1.2 start_angle=0 angle=2.4]]
-[[polyline: #plot points="(-4,-2) (-1,-1) (2,1)" color=RED stroke_width=2 step=2]]
+[[polygon: #tri points="(0,0) (2,0) (1,1.5)" fill-color=ORANGE fill-opacity=0.3]]
+[[arc: #a x=0 y=-2 radius=1.2 start-angle=0 angle=2.4]]
+[[polyline: #plot points="(-4,-2) (-1,-1) (2,1)" color=RED stroke-width=2 step=2]]
 [[arrow: #box -> #state, #edge, label="$a$", color=YELLOW, step=3]]
-[[line: (-3,-2) -> (3,-2), #baseline, color=GRAY, stroke_width=2]]
+[[line: (-3,-2) -> (3,-2), #baseline, color=GRAY, stroke-width=2]]
 [[brace: #e, #eb, side=bottom, label="an ellipse"]]
-[[box: #tri, #tb, buff=0.2, corner_radius=0.1, color=GREEN]]
+[[box: #tri, #tb, buff=0.2, corner-radius=0.1, color=GREEN]]
 ```
 
-Shapes take an `#id` when something refers to them. Rectangles take `width`, `height` and optional `corner_radius`; ellipses
+Shapes take an `#id` when something refers to them. Rectangles take `width`, `height` and optional `corner-radius`; ellipses
 `width` and `height`; circles `radius`; dots an optional `radius` (0.08, filled by default);
 polygons at least three `points` (closed, fillable); arcs `radius`, `angle` and optional
-`start_angle` (radians; `x`, `y` are the center of its circle, which its anchor `center` and `at=`
+`start-angle` (radians; `x`, `y` are the center of its circle, which its anchor `center` and `at=`
 name too, while its other anchors are on the arc's box); polylines at least two distinct `points`. All accept
-`color` (the layout color by default), `stroke_width` (default 2), `fill_color` and `fill_opacity`
+`color` (the layout color by default), `stroke-width` (default 2), `fill-color` and `fill-opacity`
 (0 by default; polylines have no fill), `opacity`, the positioning attributes below, `step`,
 `hide` and `focus-only`. Point-defined shapes without positioning keep their coordinates. Shapes
 serve as anchors and connection endpoints. A shape's `label` goes in its middle (or beside it,
-`label_side=above|below|left|right`) and its `sublabel` beside it (`sublabel_side`, below by
-default), `label_buff`/`sublabel_buff` (0.1) away, at `font_size` and `sublabel_font_size`, in
-the shape's color unless `label_color`/`sublabel_color` say otherwise; the shape alone places the
+`label-side=above|below|left|right`) and its `sublabel` beside it (`sublabel-side`, below by
+default), `label-buff`/`sublabel-buff` (0.1) away, at `font-size` and `sublabel-font-size`, in
+the shape's color unless `label-color`/`sublabel-color` say otherwise; the shape alone places the
 whole and is what connections reach.
 
 `::: timeline {processes="p q" length=10}` draws a space-time diagram: a lifeline per process from
 `x`, `y` over `width` units, time flowing right or as `direction=left|down|up` says, `spacing`
 apart (one gap or a list), names at their start (`$p$`, or a line
 `p: name`, none with `p:` or the block's `names=false`, `{length=9}` ending that lifeline);
-`lifeline_tip=true` ends the lifelines in a tip (sized from the whole lifeline, a line's width),
+`lifeline-tip=true` ends the lifelines in a tip (sized from the whole lifeline, a line's width),
 a timeline or a graph takes classes and the deck's `timeline` or `graph` style, `p@2 .. p@4 {dashed=true}` draws a part of one its
 own way; lines `p@1 -> q@3 "m"` draw messages (`--` a line), `q@2 "label"` events (dots; `dot=false`
-or the block's `event_dot=false` for the label alone, `sublabel_width` to wrap it), and
+or the block's `event-dot=false` for the label alone, `sublabel-width` to wrap it), and
 any other element may write `p@t` for the point of `p` at time `t`; where an event stands there,
 `p@t` names the event (`p@t.top` one of its anchors), so messages and arrows stop at its border. `::: graph {x y scale}` draws
 nodes `A (x,y) [rectangle|ellipse|dot] ["label"]` (or nameless, `(x,y)`) and edges `A -> B "3"`
@@ -300,7 +301,7 @@ same nodes, one each way, bend apart when they are on screen together and neithe
 with an optional `"label"`, bare style names and `{attributes}`; the parts are elements of the
 slide, styled by the roles `lifeline`, `process`, `message`, `event`, `node` and `edge`, unless
 the block names their classes (`node=place edge=arc`, `message=request`); `<role>_<attribute>` on
-the block (`message_buff=0.09`, `process_font_size=20`, `node_radius=0.2`) passes to its parts as
+the block (`message-buff=0.09`, `process-font-size=20`, `node-radius=0.2`) passes to its parts as
 an anonymous class (each part takes what fits its kind) under what a line writes, as `verdict_<attribute>` on an include (or on `::: tiles`) passes to its
 verdicts and `label_`/`sublabel_` on a shape to its labels. A block
 (timeline, graph or tiles) is stepped as a whole, line by line, whatever each line is: with
@@ -308,49 +309,49 @@ sequential steps its `step` is where its first line starts (unless that line has
 the lines after it follow; with numbered steps it goes to every line without its own; its `hide`
 goes to every line without its own.
 
-`fill_gradient` fills a shape with a linear gradient through two colors or more, spaced evenly
-from the first to the last in `gradient_direction` (`right` by default, `left`, `up` or `down`).
+`fill-gradient` fills a shape with a linear gradient through two colors or more, spaced evenly
+from the first to the last in `gradient-direction` (`right` by default, `left`, `up` or `down`).
 Its colors may be translucent (`#RRGGBBAA`, `#RGBA`, `rgba(r,g,b,a)` written without spaces), so
-that a picture fades under a white gradient as in Figma; `fill_opacity` (1 here) scales them all.
+that a picture fades under a white gradient as in Figma; `fill-opacity` (1 here) scales them all.
 A hand-drawn shape takes no gradient.
 
 ```markdown
-[[rectangle: #fade x=0 y=-2 width=8 height=2 stroke_width=0 fill_gradient="#ffffff00 #ffffff" gradient_direction=down]]
+[[rectangle: #fade x=0 y=-2 width=8 height=2 stroke-width=0 fill-gradient="#ffffff00 #ffffff" gradient-direction=down]]
 ```
 
 A `brace` is **attached** to one element, named first: `[[brace: #target, #id, …]]`; it takes
 `side` (`bottom` by default, or `left`, `right`, `top`), `buff`, an optional inline `label` with
-`font_size` and `font`, `color` and `stroke_width`. A `box` (a surrounding rectangle) and a `blob`
+`font-size` and `font`, `color` and `stroke-width`. A `box` (a surrounding rectangle) and a `blob`
 (a smooth enclosing curve) surround one or several elements, listed before the first comma:
-`[[box: #a #b, #id, …]]`. Boxes take `buff`, `corner_radius`, `color`, `stroke_width`,
-`fill_color` and `fill_opacity`; blobs `buff` (the distance kept from every member, 0.3),
+`[[box: #a #b, #id, …]]`. Boxes take `buff`, `corner-radius`, `color`, `stroke-width`,
+`fill-color` and `fill-opacity`; blobs `buff` (the distance kept from every member, 0.3),
 `smoothness` (0 to 1, the radius of the disc that rounds the hollows, up to twice `buff`;
-members join when it cannot pass between them, distant members get separate loops), `color`, `stroke_width`, `fill_color` and `fill_opacity`. A blob flows around the members
+members join when it cannot pass between them, distant members get separate loops), `color`, `stroke-width`, `fill-color` and `fill-opacity`. A blob flows around the members
 of a group, and around an icon and its label, separately. All attachments accept `step`, `hide`,
 `opacity` and timing. Like connections they are created after layout, so they cannot anchor other
 elements or serve as endpoints.
 
 Arrows and lines go from one endpoint to another: an element ID (attached at the facing bounding
 edge) or a literal `(x,y)` point. They take an optional `#id`, `label` (inline text and math,
-placed above the connection, wrapping at `label_width`, by default as long as the connection and
-4 units at least), `color`, `stroke_width`, `step` and `hide`. `buff` (0.08 on an
-arrow, 0 on a line) is the space left at both ends, `buff_start` and `buff_end` at one, measured
+placed above the connection, wrapping at `label-width`, by default as long as the connection and
+4 units at least), `color`, `stroke-width`, `step` and `hide`. `buff` (0.08 on an
+arrow, 0 on a line) is the space left at both ends, `buff-start` and `buff-end` at one, measured
 along the path whatever the end joins. An arrow's `tip` is
 `triangle` (filled, the default), `open` (two strokes meeting at the point, which the shaft
-reaches) or `none`; `tip_length` and `tip_width` (half its width) set its size, uncapped. A
+reaches) or `none`; `tip-length` and `tip-width` (half its width) set its size, uncapped. A
 connection curves with one of `bend` (degrees, as TikZ's `bend left`; `looseness`), `loop`
 (`above`, `below`, `left`, `right` or degrees, from an element back to itself; `looseness`),
 `wavy` (a number of waves; `amplitude`, 0.1) and `via` (points `+(x,y)` from the start,
 `++(x,y)` from the point before, `(x,y)` on the slide); a curve stops at each element's border
-along its own way, its tip follows its last stretch, and labels, dashes and `halo_bridge` follow
+along its own way, its tip follows its last stretch, and labels, dashes and `halo-bridge` follow
 it. Connections are created after all other elements, cannot anchor other elements, and are not
 hidden implicitly when an endpoint disappears.
 
 ### Icons
 
 ```markdown
-[[icon: user #alice x=-6 y=0 size=1.4 color=BLUE_E fill_color=BLUE_E fill_opacity=0.2 label="Alice"]]
-[[icon: server #api right-of:#alice buff=2 size=1.4 label="api" label_side=above]]
+[[icon: user #alice x=-6 y=0 size=1.4 color=BLUE_E fill-color=BLUE_E fill-opacity=0.2 label="Alice"]]
+[[icon: server #api right-of:#alice buff=2 size=1.4 label="api" label-side=above]]
 [[icon: database #db right-of:#api buff=2 size=1.4 color=GOLD_E sketch=true]]
 [[arrow: #alice -> #api, #req, label="HTTPS"]]
 ```
@@ -370,9 +371,9 @@ language, `layout.codeTheme`, `theme` (styles, layout, presenter settings, backg
 (`document`, `folder`, `message`, `calendar`, `chart`), marks and places (`check`, `cross`,
 `question`, `exclamation`, `info`, `warning`, `star`, `flag`, `pin`, `home`) and actions
 (`download`, `upload`, `search`, `arrival`, `departure`, `recycle`, `trash`, `key`, `lock`,
-`shield`, `bolt`, `gear`, `gears`, `puzzle`, `clock`). `size` (1) is the height of its box; `color`, `stroke_width`, `fill_color` and
-`fill_opacity` (0) style it, the fill applying to the silhouette parts only; `label` adds inline
-text on `label_side` (`below`, `above`, `left`, `right`) with `font_size` and `font`. Icons take
+`shield`, `bolt`, `gear`, `gears`, `puzzle`, `clock`). `size` (1) is the height of its box; `color`, `stroke-width`, `fill-color` and
+`fill-opacity` (0) style it, the fill applying to the silhouette parts only; `label` adds inline
+text on `label-side` (`below`, `above`, `left`, `right`) with `font-size` and `font`. Icons take
 the positioning attributes, `step`, `hide`, `opacity`, `enter`/`exit`, `sketch=true` and
 `tremble=`, serve as anchors, endpoints and attachment targets, and receive the style roles
 `shape`, `icon` and `icon-<name>`.
@@ -380,20 +381,20 @@ the positioning attributes, `step`, `hide`, `opacity`, `enter`/`exit`, `sketch=t
 ### Hand-drawn shapes
 
 ```markdown
-[[rectangle: #hr x=-6 y=0 width=3.4 height=1.8 corner_radius=0.3 fill_color=BLUE fill_opacity=0.5 sketch=true]]
-[[circle: #hc right-of:#hr buff=1 radius=0.9 fill_color=GREEN fill_opacity=0.6 fill_style=cross-hatch sketch=true]]
-[[polygon: #hp points="(0,-2) (1.5,0) (3,-2)" fill_color=ORANGE fill_opacity=1 fill_style=solid roughness=2 sketch=true]]
+[[rectangle: #hr x=-6 y=0 width=3.4 height=1.8 corner-radius=0.3 fill-color=BLUE fill-opacity=0.5 sketch=true]]
+[[circle: #hc right-of:#hr buff=1 radius=0.9 fill-color=GREEN fill-opacity=0.6 fill-style=cross-hatch sketch=true]]
+[[polygon: #hp points="(0,-2) (1.5,0) (3,-2)" fill-color=ORANGE fill-opacity=1 fill-style=solid roughness=2 sketch=true]]
 [[arrow: #hr -> #hc, #ha, sketch=true]]
 [[brace: #hc, #hb, side=bottom, label="by hand", sketch=true]]
 ```
 
 Every shape, icon, connection and attachment takes `sketch=true` and is then drawn as if by hand
-(through Rough.js): a wobbly outline traced twice and a fill made of hatching lines. `fill_style`
+(through Rough.js): a wobbly outline traced twice and a fill made of hatching lines. `fill-style`
 chooses `hachure` (default; dots default to `solid`), `solid`, `zigzag`, `cross-hatch`, `dots`,
-`dashed` or `zigzag-line`; `roughness` (1), `bowing` (1), `hachure_angle` (degrees, -41),
-`hachure_gap` (logical units), `fill_weight` (like `stroke_width`) and `seed` (an integer; by
+`dashed` or `zigzag-line`; `roughness` (1), `bowing` (1), `hachure-angle` (degrees, -41),
+`hachure-gap` (logical units), `fill-weight` (like `stroke-width`) and `seed` (an integer; by
 default derived from the element's ID and line, so the drawing is stable across reloads) tune it.
-`fill_opacity` becomes the opacity of the hatching and survives fades; a filled arc is drawn as a
+`fill-opacity` becomes the opacity of the hatching and survives fades; a filled arc is drawn as a
 pie slice; braces become a single stroke on their side; icons are sketched part by part; a
 hand-drawn `move_along` path moves the follower along the exact geometry. A `shape: sketch=true` style (also `connection`, `attachment`)
 sketches a whole deck, and `sketch=false` opts an element out. Paragraphs, headings and labels
@@ -402,7 +403,7 @@ take `font=Zeyada` for the bundled handwriting face (or any loaded font family).
 ## Tables and charts
 
 ```markdown
-::: {.element #sales x=0 y=1 rules=rows border_color=BLUE_E header_opacity=0.25 stripe_opacity=0.08}
+::: {.element #sales x=0 y=1 rules=rows border-color=BLUE_E header-opacity=0.25 stripe-opacity=0.08}
 | Region | 2023 | 2024 |
 | :--- | ---: | ---: |
 | North | 3.2 | **5.0** |
@@ -418,28 +419,28 @@ South, 2.1, 3.1
 
 A pipe table (header, delimiter row with `:---`/`:---:`/`---:` alignments, body rows) becomes a
 grid of cells holding inline markup; a `::: {.element …}` container positions it and takes
-`rules` (`all`, `rows`, `cols`, `outer`, `none`), `border_color`, `stroke_width`, `row_rule_color`/`row_rule_width`,
-`col_rule_color`/`col_rule_width`, `header_col_rules` (`true` carries the vertical rules, the sides of the frame
-included, through the header row, where they start under it otherwise) with `header_col_rule_color`/`header_col_rule_width`, `header`
-(`false` makes the first row ordinary), `header_color`/`header_opacity` (0.12), `stripe_opacity`,
-`fill_color`/`fill_opacity`, `padding` (0.15; two values, vertical first, as in CSS),
-`padding_x`/`padding_y`, `col_width` (one width for every column, or one per column, `auto` for a
-natural one), `font_size`, `header_font_size` (the header row's), `col_font_size` (the body
-cells' size per column, one for every column or one each, `auto` keeping `font_size`, as
-`col_font_size="18 14 14"`), `font`, `color`, `opacity`, `width` (columns shrink and wrap beyond it)
+`rules` (`all`, `rows`, `cols`, `outer`, `none`), `border-color`, `stroke-width`, `row-rule-color`/`row-rule-width`,
+`col-rule-color`/`col-rule-width`, `header-col-rules` (`true` carries the vertical rules, the sides of the frame
+included, through the header row, where they start under it otherwise) with `header-col-rule-color`/`header-col-rule-width`, `header`
+(`false` makes the first row ordinary), `header-color`/`header-opacity` (0.12), `stripe-opacity`,
+`fill-color`/`fill-opacity`, `padding` (0.15; two values, vertical first, as in CSS),
+`padding-x`/`padding-y`, `col-width` (one width for every column, or one per column, `auto` for a
+natural one), `font-size`, `header-font-size` (the header row's), `col-font-size` (the body
+cells' size per column, one for every column or one each, `auto` keeping `font-size`, as
+`col-font-size="18 14 14"`), `font`, `color`, `opacity`, `width` (columns shrink and wrap beyond it)
 and `sketch=true`. Every row is at least as tall as the font's letters, ascenders and descenders
 included (a TeX strut), plus the vertical padding; a taller formula makes its row taller. A fence with language `chart` holds rows
 separated by commas, semicolons or tabs (the first row names the series unless it is plain
 numbers; `header=` overrides) and takes `type` (`bar`, `line`, `pie`), `width`/`height` of the
-plot (6 × 3.5), `colors`, `fill_opacity` (0.85), `border_color`, `stroke_width`, `axis_color`,
-`grid`, `legend`, `values`, `min`/`max`, `font_size`, `font`, `color`, `opacity` and `sketch=true`.
+plot (6 × 3.5), `colors`, `fill-opacity` (0.85), `border-color`, `stroke-width`, `axis-color`,
+`grid`, `legend`, `values`, `min`/`max`, `font-size`, `font`, `color`, `opacity` and `sketch=true`.
 Both are centered on `x`, `y` (or placed by `anchor=` and the relative constraints), fade with
 `step`/`hide`, and carry the style roles `table` and `chart`.
 
 ## Code listings
 
 ````markdown
-```python {#listing x=-7 y=3 width=9 font_size=20 step=2}
+```python {#listing x=-7 y=3 width=9 font-size=20 step=2}
 def visit(slide):
     yield slide
     for child in slide.children:
@@ -450,7 +451,7 @@ def visit(slide):
 A fenced block (`` ``` `` or `~~~`, or an indented block) is a verbatim listing. The info string
 names the language, optionally followed by the usual `{…}` attributes: `#id`, `x`/`y` (left edge
 and first baseline, like prose), `width` (the block shrinks uniformly if a line is wider),
-`height`, `font_size` (default `layout.codeSize`, 80 % of the text size), `color`, `anchor`,
+`height`, `font-size` (default `layout.codeSize`, 80 % of the text size), `color`, `anchor`,
 `step`/`hide`, `focus-only` and relative placement. Lines never wrap, tabs become four spaces, and
 a `::: {.element …}` container around the fence works as for other blocks.
 
@@ -471,7 +472,7 @@ light text on a dark background and dark text on a light background both stay re
 ## Positioning and layout
 
 ```markdown
-[**Positioned label**]{#label x=2 y=-1.5 width=5 font_size=32 color=RED}
+[**Positioned label**]{#label x=2 y=-1.5 width=5 font-size=32 color=RED}
 
 A complete paragraph can also carry attributes. {#paragraph x=0 y=2 width=12}
 
@@ -505,7 +506,7 @@ position of any positioned element. `angle` then turns it by that many radians, 
 about its anchor (the one `anchor=` or `at=` names, else the default above): the flow keeps the
 room of the upright element, later references see the box around it as drawn, and arrows and
 lines meet its turned sides. An arc's `angle` is its sweep, not a turn; iframes take no `angle`. `width` controls wrapping, image width and the maximum formula
-or listing width; `height` scales the result; `font_size` overrides the layout size; `opacity` (0
+or listing width; `height` scales the result; `font-size` overrides the layout size; `opacity` (0
 to 1) makes any element translucent.
 
 ### Anchor expressions
@@ -531,8 +532,8 @@ the flow, and follows the same reference rules (same slide, same group, no arrow
 
 [A side note]{#note right-of:#explanation top-aligned:#explanation buff=0.5 width=3}
 
-[Large label]{#label x=-6 y=2 font_size=48}
-[Small explanation]{x=1 baseline-aligned:#label font_size=24}
+[Large label]{#label x=-6 y=2 font-size=48}
+[Small explanation]{x=1 baseline-aligned:#label font-size=24}
 
 [[include: #diagram below:#heading left-aligned:#heading width=6 step=1]]
 ```
@@ -567,14 +568,14 @@ without its marker (any other element itself), before an optional anchor:
 ```markdown
 ---
 styles:
-  footnote: { font_size: 18, color: GRAY }
+  footnote: { font-size: 18, color: GRAY }
   heading: color=#93C5FD
 ---
 ```
 
 ```markdown
 ::: styles
-callout: color=ORANGE font_size=30
+callout: color=ORANGE font-size=30
 :::
 
 [A side remark]{.footnote below:#body}
@@ -617,12 +618,12 @@ reference members of the same group. The group is then one element of the slide:
 its `origin` (the local `(0,0)`) unless `anchor=` names a bounding-box point; relative constraints,
 `at=`, `dx`/`dy`, `width` (the members' wrapping width), `opacity`, `step`, `hide` and
 `focus-only` apply to the whole; it can be an `at=` or relative reference, an arrow endpoint and a
-brace or box target. `font_size`, `font`, `color` and `line_height` on a group pass to its members
+brace or box target. `font-size`, `font`, `color` and `line-height` on a group pass to its members
 (nested groups included) that take them and do not set their own, as CSS inherits them: a list of
 items in one size needs no style on every item, and a shape takes the color only.
 
 ```markdown
-::: {.group #models below:#in-practice font_size=22.5 step=2}
+::: {.group #models below:#in-practice font-size=22.5 step=2}
 - Client-server
 - Peer-to-peer
 :::
@@ -649,8 +650,8 @@ at click N and `hide=M` fades it out later. `[[show: #id step=N]]` and `[[hide: 
 repeat changes; showing a visible element or hiding a hidden one is an error. All changes sharing a
 number play together, followed by a pause. A fade in ends at the element's own opacity, from
 `opacity=` or its style, each part of a group at its own. Each fade lasts `layout.animationTime` unless the element
-sets `run_time=S`; `lag=S` delays its start inside the step, so one click can stagger several
-elements. A `show`/`hide` directive may carry its own `run_time` and `lag`. Numbers are local to the slide
+sets `run-time=S`; `lag=S` delays its start inside the step, so one click can stagger several
+elements. A `show`/`hide` directive may carry its own `run-time` and `lag`. Numbers are local to the slide
 and need not be consecutive. Only the root is visible at the start; each descendant fades in on its
 first entry and stays visible afterwards.
 
@@ -669,18 +670,18 @@ either directive to the slide's entry.
 ## Animations
 
 ```markdown
-[[animate: #ball, step=1, x=6.5, run_time=1.2, rate=ease_in_out]]
+[[animate: #ball, step=1, x=6.5, run-time=1.2, rate=ease_in_out]]
 [[animate: #card, step=2, angle=0.4, scale=1.3, color=ORANGE, opacity=0.6]]
 [[animate: #label, step=2, at=top-left:#card.bottom-left, dy=-0.2]]
 [[effect: indicate #title, step=3, color=YELLOW, scale=1.2]]
 [[transform: #before -> #after, step=4]]
-[[move_along: #ball, step=5, path=#orbit, run_time=2, rate=linear, rotate=true]]
+[[move_along: #ball, step=5, path=#orbit, run-time=2, rate=linear, rotate=true]]
 [[animate: #diagram, step=6, x=3, angle=0.2]]
 [A formula]{#f step=7 enter=write exit=shrink}
 ```
 
 Animation directives play at a numbered step, together with the fades of that step, and share the
-timing attributes `run_time`, `lag` and `rate` (`smooth`, `linear`, `rush_into`, `rush_from`,
+timing attributes `run-time`, `lag` and `rate` (`smooth`, `linear`, `rush_into`, `rush_from`,
 `there_and_back`, `ease_in`, `ease_out`, `ease_in_out`). Targets must be visible at that step; a
 target may be changed only once per step.
 
@@ -706,7 +707,7 @@ target may be changed only once per step.
   the points of the element's vector geometry vibrate, a few times per second jumping to nearby
   positions with neighbouring points moving together. `tremble=true` trembles from the element's
   appearance on, `tremble=N` from step N, `tremble=N-M` from step N until step M;
-  `tremble_amplitude` (0.04) and `tremble_rate` (12 per second) tune it. A trembling stop loops
+  `tremble-amplitude` (0.04) and `tremble-rate` (12 per second) tune it. A trembling stop loops
   like `play=loop`: the step's fades play once, the deck advances by itself into a looping clip,
   and the next click leaves it; the left key jumps over such loops.
 
@@ -715,7 +716,7 @@ Group members cannot be animated individually; animate the group.
 ## Decorations visible only in focus
 
 ```markdown
-[[rectangle: #paper x=0 y=0 width=16 height=9 fill_color=white fill_opacity=1 stroke_width=0 focus-only=true]]
+[[rectangle: #paper x=0 y=0 width=16 height=9 fill-color=white fill-opacity=1 stroke-width=0 focus-only=true]]
 
 ## Detail {#heading x=0 y=5 focus-only=true}
 ```
@@ -752,7 +753,7 @@ Paths are relative to the file that names them; an unknown setting is an error. 
 A deck is black text on a white canvas unless `background` and `layout.color` say otherwise.
 Prose is set in the bundled Latin Modern Roman and code in Latin Modern Mono (the LaTeX text and
 typewriter faces) unless `layout.font` or `layout.codeFont` name other families, and formula sizes
-are calibrated so that a `font_size` means the same em for text, code and math. `layout` takes `fontSize`, `headingSize`, `codeSize`, `color`, `font`, `codeFont`, `margin`,
+are calibrated so that a `font-size` means the same em for text, code and math. `layout` takes `fontSize`, `headingSize`, `codeSize`, `color`, `font`, `codeFont`, `margin`,
 `gap`, `lineGap`, `lineHeight` (unset; see [Text](#text)), `paragraphSpacing`, `listIndent`, `animationTime`, `defaultSlideSize`, `textAnchor` and `steps` (`explicit`, or `sequential`: see [Fragments and click steps](#fragments-and-click-steps)). `presenter` takes
 `transitionTime`, `transition` (`zoom` or `cut`), `padding`, `pauseOnEntry`, `pauseOnReturn`, `showSlideBorders`,
 `slideBorderColor`, `slideBorderWidth`, `showSlideGrid`, `revealOnEntry` (default true: children fade in

@@ -145,7 +145,7 @@ export class LayoutConfig {
     if (this.steps !== 'explicit' && this.steps !== 'sequential') throw new Error('steps must be explicit or sequential');
     // A step never changes the size of a text: the setting that sized captions by their tile is gone.
     if ((options as { captionSize?: unknown }).captionSize !== undefined) {
-      throw new Error('captionSize is no longer a layout setting: a caption of a tile (step=-1) has the size of the same text at any other step. Remove it; a font_size or a class sizes a caption');
+      throw new Error('captionSize is no longer a layout setting: a caption of a tile (step=-1) has the size of the same text at any other step. Remove it; a font-size or a class sizes a caption');
     }
     resolveSize(null, null, this.defaultSlideSize);
     if (!TEXT_ANCHORS.has(this.textAnchor)) throw new Error(`textAnchor must be an anchor (left-baseline, top-left, center, …), not ${JSON.stringify(this.textAnchor)}`);

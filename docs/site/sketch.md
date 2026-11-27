@@ -6,9 +6,9 @@ description: sketch=true renders shapes, icons, arrows, lines, braces, boxes and
 <a class="try" href="tour.html#slide=sketch">Open in the tour ↗</a>
 
 ```markdown
-[[rectangle: #hr x=-6.5 y=-3 width=3.4 height=1.8 color=BLUE_E fill_opacity=0.5 sketch=true]]
-[[circle: #hc right-of:#hr buff=1.5 radius=0.9 color=GREEN_E fill_opacity=0.6 fill_style=cross-hatch sketch=true]]
-[[polygon: #hp points="(0.5,-3.9) (2,-2) (3.5,-3.9)" color=ORANGE fill_opacity=1 fill_style=solid roughness=2 sketch=true]]
+[[rectangle: #hr x=-6.5 y=-3 width=3.4 height=1.8 color=BLUE_E fill-opacity=0.5 sketch=true]]
+[[circle: #hc right-of:#hr buff=1.5 radius=0.9 color=GREEN_E fill-opacity=0.6 fill-style=cross-hatch sketch=true]]
+[[polygon: #hp points="(0.5,-3.9) (2,-2) (3.5,-3.9)" color=ORANGE fill-opacity=1 fill-style=solid roughness=2 sketch=true]]
 [[arrow: #hr -> #hc, #ha, sketch=true]]
 [[brace: #hp, #hb, side=bottom, label="by hand", sketch=true]]
 ```
@@ -26,21 +26,21 @@ endpoints, and export exactly like crisp ones.
 | `sketch` | `false` | `true` draws the element by hand |
 | `roughness` | 1 | amount of wobble: 0 is nearly exact, 2 and above visibly careless |
 | `bowing` | 1 | how much straight lines bend |
-| `fill_style` | `hachure` | `hachure`, `solid`, `zigzag`, `cross-hatch`, `dots`, `dashed` or `zigzag-line` (the `dot` shape defaults to `solid`) |
-| `hachure_angle` | -41 | angle of the hatching lines, in degrees |
-| `hachure_gap` | 4 × the outline width | distance between hatching lines, in logical units |
-| `fill_weight` | half the outline width | width of the hatching lines, like `stroke_width` |
+| `fill-style` | `hachure` | `hachure`, `solid`, `zigzag`, `cross-hatch`, `dots`, `dashed` or `zigzag-line` (the `dot` shape defaults to `solid`) |
+| `hachure-angle` | -41 | angle of the hatching lines, in degrees |
+| `hachure-gap` | 4 × the outline width | distance between hatching lines, in logical units |
+| `fill-weight` | half the outline width | width of the hatching lines, like `stroke-width` |
 | `seed` | from the element's ID and source line | the random offsets; the same seed always gives the same drawing |
 
-`color`, `stroke_width`, `fill_color` and `fill_opacity` keep their meaning: the fill opacity
+`color`, `stroke-width`, `fill-color` and `fill-opacity` keep their meaning: the fill opacity
 becomes the opacity of the hatching lines (or of the solid fill), and it is preserved through
-fades and element `opacity`. Without `fill_opacity` a shape is an outline only, as before. The
+fades and element `opacity`. Without `fill-opacity` a shape is an outline only, as before. The
 tuning attributes are accepted without `sketch=true` and then have no effect, which lets a style
 define the look once and elements opt in.
 
 ## What changes by hand
 
-- **Rectangles** keep their `corner_radius`; **arcs** with a fill are drawn as pie slices.
+- **Rectangles** keep their `corner-radius`; **arcs** with a fill are drawn as pie slices.
 - **Arrows** get a hand-drawn shaft and a small filled triangular tip; **lines** a single wobbly stroke.
 - **Braces** become one stroke along the brace's curve, on the requested `side`, labels included;
   **boxes** are hand-drawn rectangles around their targets and **blobs** hand-drawn curves.
@@ -56,7 +56,7 @@ define the look once and elements opt in.
 
 A handwriting face completes the look: the player bundles **Zeyada** (SIL Open Font License),
 and `font=Zeyada` on a paragraph, heading, arrow label or brace label sets it, usually with a
-larger `font_size` since handwriting faces are small on the em. A `body: font=Zeyada font_size=34`
+larger `font-size` since handwriting faces are small on the em. A `body: font=Zeyada font-size=34`
 style applies it to every paragraph.
 
 ## A whole deck by hand

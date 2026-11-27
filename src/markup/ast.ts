@@ -20,6 +20,7 @@ export class MarkupError extends Error {
   readonly line: number | null;
 
   constructor(message: string, line: number | null = null) {
+    message = hyphenatedNames(message);
     super(line !== null ? `${MarkupError.describe(line)}: ${message}` : message);
     this.name = 'MarkupError';
     this.line = line;
@@ -275,21 +276,31 @@ export class MarkupDocument {
 export const BARE_FLAGS = new Set(['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug', 'focus_only']);
 
 /**
- * Attributes written with hyphens, as the relative placements are (`only-this`, `flow-top`): the
- * flags and the slide's flow margins, known here by their names with underscores, which the source
- * may still use.
+ * An attribute as the engine knows it, from the way the source writes it: decks write every name
+ * with hyphens (`font-size`, `only-this`, `right-of`), the engine and the directive modules read them
+ * with underscores (`font_size`, `only_this`), but for the relative placements, which keep their
+ * hyphens. A name written with underscores reads the same.
  */
-export const HYPHENATED = new Set([...BARE_FLAGS, 'flow_top', 'flow_left']);
-
-/** An attribute written with hyphens (`only-this`, `flow-top`) by its name with underscores; any other name as it is. */
 export function flagName(name: string): string {
-  const plain = name.replace(/-/g, '_');
-  return HYPHENATED.has(plain) ? plain : name;
+  return POSITION_REFERENCES.has(name) ? name : name.replace(/-/g, '_');
 }
 
-/** An attribute's name as the documentation and the messages write it: with hyphens for a flag or a flow margin, any other as it is. */
+/** An attribute's name as the documentation and the messages write it: with hyphens. */
 export function shownName(name: string): string {
-  return HYPHENATED.has(name) ? name.replace(/_/g, '-') : name;
+  return name.replace(/_/g, '-');
+}
+
+/**
+ * A message with the attributes it names written as decks write them, with hyphens (`font_size`
+ * becomes `font-size`). Values and directives keep their underscores (`rush_into`, `move_along`), and
+ * so does what the message quotes ("…") or what is an id, a class, a macro or a path.
+ */
+export function hyphenatedNames(message: string): string {
+  const kept = new Set([...RATE_NAMES, 'move_along', 'skip_next']);
+  return message
+    .split(/("[^"]*")/)
+    .map((part, index) => (index % 2 ? part : part.replace(/(?<![\w#./\\{-])[a-z]+(?:_[a-z]+)+(?![\w-]|\.\w)/g, (word) => (kept.has(word) ? word : word.replace(/_/g, '-')))))
+    .join('');
 }
 
 export const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;

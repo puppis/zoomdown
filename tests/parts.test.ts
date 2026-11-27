@@ -44,7 +44,7 @@ describe('parts take prefixed attributes, blocks name their parts\' classes (rul
     expect(one[0].attributes).not.toHaveProperty('below');
     const tiles = elements('', '::: tiles {width=3 verdict_width=4}\n[[include: #a verdict="x"]]\n[[include: #b verdict="y" verdict_width=5]]\n:::', children);
     expect(tiles.map((item) => item.attributes.width)).toEqual(['4', '5']);
-    expect(() => parse('', '[[include: #a verdict_width=4]]', children.split('\n').slice(0, 3).join('\n'))).toThrow(/verdict_width requires a verdict/);
+    expect(() => parse('', '[[include: #a verdict_width=4]]', children.split('\n').slice(0, 3).join('\n'))).toThrow(/verdict-width requires a verdict/);
   });
 
   it('fill in only what fits each part, as a class does, and refuse a part the block has not', () => {
@@ -55,7 +55,7 @@ describe('parts take prefixed attributes, blocks name their parts\' classes (rul
     expect(t.attributes).toMatchObject({ width: '0.5', height: '0.5' });
     expect(t.attributes).not.toHaveProperty('radius');
     expect(() => parse('', '::: timeline {processes="p" length=2 message_radius=1}\np@0 -> p@1\n:::')).not.toThrow();
-    expect(() => parse('', '::: graph {vertex_radius=1}\nA (0,0)\n:::')).toThrow(/A graph takes .* not vertex_radius=/);
+    expect(() => parse('', '::: graph {vertex_radius=1}\nA (0,0)\n:::')).toThrow(/A graph takes .* not vertex-radius=/);
   });
 });
 

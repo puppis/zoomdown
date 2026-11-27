@@ -86,8 +86,8 @@ describe('markup for baselines, label distances and paragraphs', () => {
     expect(() => parse(`${shapes}[[arrow: #a -> #b, #e, label="x", label_buff=0.4]]`)).not.toThrow();
     expect(() => parse(`${shapes}[[brace: #a, #br, label="x", label_buff=0.2]]`)).not.toThrow();
     expect(() => parse('[[icon: user #u x=0 y=0 label="x" label_buff=0.3]]')).not.toThrow();
-    expect(() => parse(`${shapes}[[arrow: #a -> #b, #e, label="x", label_buff=-1]]`)).toThrow(/label_buff must be nonnegative/);
-    expect(() => parse(`${shapes}[[arrow: #a -> #b, #e, label_buff=0.4]]`)).toThrow(/label_buff requires a label/);
+    expect(() => parse(`${shapes}[[arrow: #a -> #b, #e, label="x", label_buff=-1]]`)).toThrow(/label-buff must be nonnegative/);
+    expect(() => parse(`${shapes}[[arrow: #a -> #b, #e, label_buff=0.4]]`)).toThrow(/label-buff requires a label/);
   });
 
   it('tells a tight list, written without blank lines, from a loose one', () => {

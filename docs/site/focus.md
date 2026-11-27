@@ -6,7 +6,7 @@ description: Elements that appear only while their slide is focused, such as an 
 <a class="try" href="tour.html#slide=focus">Open in the tour ↗</a>
 
 ```markdown
-[[rectangle: #paper x=0 y=0 width=20 height=11.25 fill_color="#1E293B" fill_opacity=1 stroke_width=0 focus-only=true]]
+[[rectangle: #paper x=0 y=0 width=20 height=11.25 fill-color="#1E293B" fill-opacity=1 stroke-width=0 focus-only=true]]
 
 ## Decorations visible only in focus
 

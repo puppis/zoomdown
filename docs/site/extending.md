@@ -45,7 +45,7 @@ searched last for every kind. Modules may import `manim-web` and `zoomdown` as
 ::: slide {#{{id}} width=20}
 ## {{title}}
 
-[{{note|A detail follows.}}]{#{{id}}-note x=-9 y=-3 font_size=22 color=GRAY}
+[{{note|A detail follows.}}]{#{{id}}-note x=-9 y=-3 font-size=22 color=GRAY}
 
 [[include: #{{id}}-detail x=4 y=-1 width=8 preview=true]]
 :::
@@ -88,7 +88,7 @@ export default async function gauge({ attributes, color, text }: DirectiveOption
 
 A directive of the deck's own is any `[[name: …]]` the dialect does not know: it is drawn by
 `directives/name.ts`, a module exporting a function (`default`, or `directive`) that receives the
-directive's attributes as written, its `name` (so one module may serve several), the deck's typography (`fontSize`, `width`, `color`, `foreground`, `layout`,
+directive's attributes, their names with underscores (`fill-color=RED` is `attributes.fill_color`), its `name` (so one module may serve several), the deck's typography (`fontSize`, `width`, `color`, `foreground`, `layout`,
 the hand-drawn options under `sketch`) and three helpers, `text` for inline markup in the deck's
 font (a string: anything else, an attribute the directive was not given say, is reported with the
 directive's line), `icon` for a built-in icon and `artwork` for one of the deck's own, and returns a
@@ -120,7 +120,7 @@ export default function pulse(target: Mobject, { scale = 1.3, color: _color, ...
 ```
 
 An effect module exports a function (`export default`, or a named `effect`) that receives the
-target and the directive's options (`color`, `scale`, and the timing: `run_time` as `duration`,
+target and the directive's options (`color`, `scale`, and the timing: `run-time` as `duration`,
 `rate` as `rateFunc`) and returns an animation of the engine: one of its own classes, a
 `PropertyAnimation` as above, or a composition of built-in effects. `[[effect: pulse #id, step=N]]`
 plays it like a built-in; the name may use letters, digits, `_` and `-`, so `effects/fly-in.ts` is
@@ -210,8 +210,8 @@ the color the deck's text color gives them.
 <!-- themes/lecture.zd -->
 ::: styles
 heading: color=BLUE_E
-body: font_size=30
-footnote: font_size=18 color=GRAY
+body: font-size=30
+footnote: font-size=18 color=GRAY
 layout: fontSize=30 headingSize=44 font="Inter"
 presenter: transitionTime=1 pauseOnReturn=false
 deck: background=#0F172A viewport=16x9
