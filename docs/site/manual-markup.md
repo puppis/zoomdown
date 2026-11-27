@@ -111,8 +111,6 @@ may hold `::: {.group}`, `::: {.element}` and `::: notes` blocks.
 | `flow-top`, `flow-left` | units | `layout.margin`, 0.65 | where the flow starts: the distance from the top edge to the top of the first flowing block, and from the left edge to the flow's left edge; nonnegative and less than the height and width |
 | `start-here` | flag | false | playback opens at this slide's entry; at most one slide (or include) may say so |
 | `only-this` | flag | false | render only the slides that say so (a partial render while editing); nothing of any other is drawn, but for a frame around each child of a slide that is, in the style of [debug](#debug) and like it never in an export; the starting slide must be among them |
-| `return-to-parent` | `true`, `false` | unset | after this slide's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset) |
-| `skip-return` | flag | unset | `return-to-parent=false`, from the other side; not together with it |
 | `transition` | `zoom`, `cut`, a name | unset | how the camera arrives at this slide; a name is a module of the deck's `transitions/` folder |
 | `preview` | flag | false | show the content before the first visit instead of fading it in on entry |
 | `debug` | flag | false | draw the slide for its design: a frame around its canvas and faint dots at its coordinates, never in an export; see [debug](#debug) |
@@ -140,7 +138,9 @@ and the relative references, plus:
 | `width`, `height` | units | width 6, or the parent's width minus the margins when smaller | the child's size in the parent; one of them keeps the child's proportions |
 | `angle` | radians | 0 | rotation of the child's viewport |
 | `step` | integer ≥ 1 | after the numbered steps, in source order | the step at which the child is visited; children without a step are visited after the last numbered one, in order |
-| `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview`, `debug` | as for slides | | the same flags, set from the parent's side |
+| `start-here`, `only-this`, `transition`, `preview`, `debug` | as for slides | | the same flags, set from the parent's side |
+| `return-to-parent` | `true`, `false` | unset | after the child's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset); includes and subslides only, never `::: slide` |
+| `skip-return` | flag | unset | `return-to-parent=false`, from the other side; not together with it |
 | `verdict` | inline text | none | a line under the tile, `#child-verdict`, centered and wrapped at the tile's width, shown at the click after the visit; styled by the `verdict` style, which may place it elsewhere (includes only) |
 
 An include written after another include, with nothing that flows between them (directives,
@@ -179,7 +179,8 @@ pages, by the document's bookmarks when it has them. The exports copy or embed t
 
 `start-here`, `only-this`, `skip-return`, `return-to-parent`, `preview`, `debug` and `focus-only`
 may be written bare: `only-this` means `only-this=true`. `skip-return` and `return-to-parent` are
-two sides of one choice and cannot both be given. At most one slide of the deck may say `start-here`, whether on the slide itself, on the
+two sides of one choice and cannot both be given; they go on the include or subslide that places a
+child, since they say how the parent is left, and `::: slide` refuses them. At most one slide of the deck may say `start-here`, whether on the slide itself, on the
 include that places it, or on a code-authored child.
 
 ### debug

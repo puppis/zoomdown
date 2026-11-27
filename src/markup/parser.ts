@@ -1406,6 +1406,9 @@ export class MarkupParser {
 
 const RESERVED_LAST = 'LAST is reserved: #LAST names the element written just before';
 
+/** The flags that say how the camera leaves a child for its parent: they go on the include or subslide that places it. */
+const RETURN_FLAGS = new Set(['skip_return', 'return_to_parent']);
+
 /** The error for an element or a slide named as one of the slide's edges. */
 const reservedEdge = (id: string) => `${id} is reserved: #${id} names the slide's ${slidePart(id)}`;
 
@@ -1480,7 +1483,11 @@ export class ASTTransformer {
       if (SLIDE_EDGES.has(slide.id)) throw new MarkupError(reservedEdge(slide.id), slide.line);
       slides.set(slide.id, slide);
       if (!slide.placeholder) ASTTransformer._slideStyle(slide.attributes, document.styles);
-      this._checkAttrs(slide.attributes, new Set(['id', 'title', 'width', 'height', 'flow_top', 'flow_left', 'only_this', 'start_here', 'skip_return', 'return_to_parent', 'transition', 'preview', 'debug', ...(slide.placeholder ? ['src'] : [])]), slide.line);
+      // How the camera leaves a child for its parent is the include's to say, where the parent places it.
+      for (const flag of RETURN_FLAGS) {
+        if (flag in slide.attributes) throw new MarkupError(`${shownName(flag)} goes on the include that places this slide, as in [[include: #${slide.id} ${shownName(flag)}]], not on the slide itself`, slide.line);
+      }
+      this._checkAttrs(slide.attributes, new Set(['id', 'title', 'width', 'height', 'flow_top', 'flow_left', 'only_this', 'start_here', 'transition', 'preview', 'debug', ...(slide.placeholder ? ['src'] : [])]), slide.line);
       ASTTransformer._checkFlags(slide.attributes, slide.line);
       ASTTransformer._checkTransition(slide.attributes, slide.line);
     }
@@ -2267,9 +2274,11 @@ export class ASTTransformer {
   private _checkAttrs(attrs: Attributes, allowed: Set<string>, line: number): void {
     const unknown = Object.keys(attrs).filter((key) => !allowed.has(key)).sort();
     if (unknown.length) {
-      // A flag is named as the documentation writes it, and one of a slide says where it goes.
+      // A flag is named as the documentation writes it, and one of a slide or an include says where it goes.
       const flag = unknown.find((key) => BARE_FLAGS.has(key) && key !== 'focus_only');
-      const hint = flag && !allowed.has(flag) ? ` (${shownName(flag)} goes on a slide, as in ::: slide {#id ${shownName(flag)}}, or on the include or subslide that places it)` : '';
+      const hint = !flag || allowed.has(flag) ? ''
+        : RETURN_FLAGS.has(flag) ? ` (${shownName(flag)} goes on the include or subslide that places a slide, as in [[include: #id ${shownName(flag)}]])`
+        : ` (${shownName(flag)} goes on a slide, as in ::: slide {#id ${shownName(flag)}}, or on the include or subslide that places it)`;
       throw new MarkupError(`Unknown attributes: ${unknown.map(shownName).join(', ')}${hint}`, line);
     }
     for (const key of [...GEOMETRY, 'font_size', 'size', 'buff', 'radius', 'corner_radius', 'stroke_width', 'fill_opacity', 'opacity', 'dx', 'dy', 'run_time', 'lag',

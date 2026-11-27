@@ -131,9 +131,9 @@ Children without `step` are visited in source order after all numbered steps of 
 first, then the child is visited. When a child ends, the camera goes straight to the next sibling
 when nothing happens in between, and zooms back to the parent when the parent has a step of its
 own before the next child, and after the last one; the parent then resumes with its previous
-state, and children keep their final appearance as previews. `skip-return` on a child keeps the
-camera on it even then, and `return-to-parent` brings it back even before a sibling that follows
-at once ([Flags](#flags)).
+state, and children keep their final appearance as previews. `skip-return` on a child's include
+keeps the camera on it even then, and `return-to-parent` brings it back even before a sibling that
+follows at once ([Leaving a child](#leaving-a-child)).
 
 ```markdown
 [Shown first]{#a step=1}
@@ -148,16 +148,31 @@ at once ([Flags](#flags)).
 | --- | --- | --- |
 | `start-here=true` | slide, include, subslide | open playback at this slide (at most one in a deck) |
 | `only-this=true` | slide, include, subslide | draw and play only the slides that say so, while editing; nothing of any other is drawn, but for a frame around each child of a slide that is. A slide with `start-here` must be among them, and an export is as partial as the preview, without the frames |
-| `return-to-parent` | slide, include, subslide | zoom back to the parent after this child even when a sibling follows at once; `return-to-parent=false` is `skip-return` |
-| `skip-return` | slide, include, subslide | leave this child straight for the next stop even when it is the last one, without zooming back to the parent; `skip-return=false` is `return-to-parent` |
+| `return-to-parent` | include, subslide | zoom back to the parent after this child even when a sibling follows at once; `return-to-parent=false` is `skip-return` |
+| `skip-return` | include, subslide | leave this child straight for the next stop even when it is the last one, without zooming back to the parent; `skip-return=false` is `return-to-parent` |
 | `transition=cut` | slide, include, subslide | arrive at this slide without a camera animation; `transition=zoom` restores the zoom under a `cut` deck; any other name is a camera transition of the deck's own ([Extending a deck](extending.html#camera-transitions)) |
 | `preview=true` | slide, include, subslide | show the child's content before its first visit instead of fading it in on entry, as the tiles of the tour's front page do |
 | `debug=true` | slide, include, subslide | draw the slide for its design: see [Designing a slide](#designing-a-slide) |
 
-A flag written bare means `=true`: `[[include: #proof skip-return]]`. By default a child returns
-to its parent only when it is the last one visited, so the camera moves from sibling to sibling
-and comes back once at the end; `return-to-parent` and `skip-return` force either choice for one
-child. They are the two sides of one choice and are never written together.
+A flag written bare means `=true`: `[[include: #proof preview]]`.
+
+### Leaving a child
+
+By default a child returns to its parent only when it has to: when the parent has a step of its own
+before the next child, and after the last child. Between two children visited one after the other
+the camera goes straight from sibling to sibling, and it comes back once at the end.
+`return-to-parent` and `skip-return` force either choice for one child. They say how the parent is
+left and come back to, so they belong to the include (or subslide) that places the child in the
+parent, never to the slide itself, which `::: slide` refuses:
+
+```markdown
+[[include: #first x=-4 y=-2 width=6 step=1 return-to-parent]]   ← back to the parent after it
+[[include: #second x=4 y=-2 width=6 step=2]]
+[[include: #proof x=0 y=-5 width=4 skip-return]]                ← the deck goes on from inside it
+```
+
+They are the two sides of one choice and are never written together: `skip-return=false` is
+`return-to-parent`.
 
 ## Designing a slide
 

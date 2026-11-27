@@ -41,8 +41,8 @@ describe('the return choice', () => {
     expect(build('return_to_parent=false').children[0].returnToParent).toBe(false);
     expect(() => build('skip_return return_to_parent')).toThrow(/not both/);
     expect(() => build('return_to_parent=maybe')).toThrow(/must be true or false/);
-    const own = new MarkupParser().parse('::: slide {#r}\n[[include: #a]]\n:::\n::: slide {#a return_to_parent}\nx\n:::');
-    expect(new SlideBuilder().build(own).children[0].returnToParent).toBe(true);
+    // On the slide itself it is refused: the include says how its child is left.
+    expect(() => new MarkupParser().parse('::: slide {#r}\n[[include: #a]]\n:::\n::: slide {#a return_to_parent}\nx\n:::')).toThrow(/goes on the include that places this slide/);
   });
 });
 

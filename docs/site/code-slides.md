@@ -65,7 +65,7 @@ next to the deck that points the two names at the checkout:
 | `build(ctx)` | runs once during preparation: create objects, add them with `ctx.add`, place children with `this.addChild` |
 | `construct(ctx)` | runs on entry: `await ctx.play(...)`, `await ctx.wait(s)`, `ctx.stop(options)`; an `async *` generator may `yield ctx.visit(child)` |
 | `addChild(child, { center, width, height, angle, strokeColor, strokeOpacity, strokeWidth, onlyThis, startHere, returnToParent, skipReturn, transition, preview, debug })` | place a child viewport in this canvas |
-| options `skipReturn`, `returnToParent`, `onlyThis`, `startHere`, `transition`, `preview`, `debug`, `size`, `build`, `program` | the same flags as the markup attributes (`debug` unset follows the parent); callbacks instead of subclassing |
+| options `onlyThis`, `startHere`, `transition`, `preview`, `debug`, `size`, `build`, `program` | the same flags as the markup attributes (`debug` unset follows the parent); callbacks instead of subclassing. `skipReturn` and `returnToParent` are the parent's to say: give them to `addChild`, as markup gives them to the include |
 
 Engine text defaults to white, so give it the deck's text color explicitly, `color: ctx.foreground`
 (black on the default white canvas), unless the slide chooses its own colors.

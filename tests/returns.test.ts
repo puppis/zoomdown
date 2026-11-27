@@ -32,7 +32,7 @@ describe('leaving a child', () => {
   });
 
   it('stays on the child the author told to skip its return', async () => {
-    const deck = markup('[[include: #a step=3]]\n[[dot: #mid x=0 y=-2 step=4]]\n[[include: #b step=6]]', 'skip_return');
+    const deck = markup('[[include: #a step=3 skip-return]]\n[[dot: #mid x=0 y=-2 step=4]]\n[[include: #b step=6]]');
     expect(await clips(deck)).toEqual(['p:entry:', 'a:entry:FocusOp', 'a:program:PlayOp', 'p:program:PlayOp', 'b:entry:FocusOp', 'p:return:FocusOp']);
   });
 

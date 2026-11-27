@@ -15,7 +15,7 @@ This page is the short reference, one line per construct. [The markup language, 
 
 | Syntax | Purpose |
 | --- | --- |
-| `::: slide {#id attrs} … :::` | a slide; attrs: `title`, `width`, `height`, `flow-top`, `flow-left`, `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview`, `debug` |
+| `::: slide {#id attrs} … :::` | a slide; attrs: `title`, `width`, `height`, `flow-top`, `flow-left`, `start-here`, `only-this`, `transition`, `preview`, `debug` |
 | `[[include: #slide, placement, step, verdict, start-here, only-this, return-to-parent, skip-return, transition, preview, debug]]` | a child slide placed in this one; `subslide: #id` is the same; without a position, right after another include, it goes on its row; `verdict="…"` writes a line under the tile ([Rows and grids of tiles](slides.html#rows-and-grids-of-tiles)) |
 | `[[subslide: ClassName, placement, step, …]]` | a code-authored child ([Code-authored slides](code-slides.html)) |
 | `[[pdf: file.pdf #id, placement, step, preview, …]]` | a PDF placed in the slide: its pages as children, cut through one after the other ([PDFs, flat decks and forests](documents.html#a-pdf-inside-a-slide)) |
@@ -138,7 +138,8 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | `tremble`, `tremble-amplitude`, `tremble-rate` | shapes, icons, connections, attachments, math, groups, tables, charts | `true`, `N` or `N-M`: vibration over a range of steps, its size and frequency |
 | `focus-only` | static elements | visible only while the slide is focused |
 | `debug` | slides, includes, subslides; `slide: debug` in the styles for all | a frame around the slide and faint dots at its coordinates, while it is being designed; never in an export |
-| `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview` | slides, includes, subslides | opening stop, partial rendering, zooming back to the parent after this child or leaving it straight for the next stop (by default only the last child returns), `zoom`, `cut` or a camera transition of the deck's own, content shown before the first visit; written bare, a flag means `=true` ([Slides and the forest](slides.html#flags)) |
+| `start-here`, `only-this`, `transition`, `preview` | slides, includes, subslides | opening stop, partial rendering, `zoom`, `cut` or a camera transition of the deck's own, content shown before the first visit; written bare, a flag means `=true` ([Slides and the forest](slides.html#flags)) |
+| `return-to-parent`, `skip-return` | includes, subslides | zooming back to the parent after this child, or leaving it straight for the next stop (by default a child returns only before a step of the parent and after the last child) ([Leaving a child](slides.html#leaving-a-child)) |
 
 ## Names
 

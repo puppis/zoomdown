@@ -169,7 +169,6 @@ export class MarkupSlide extends Slide {
       ),
       onlyThis: (spec.attributes.only_this ?? 'false') === 'true',
       startHere: (spec.attributes.start_here ?? 'false') === 'true',
-      returnToParent: returnChoice(spec.attributes),
       transition: (spec.attributes.transition as TransitionMode | undefined) ?? null,
       preview: (spec.attributes.preview ?? 'false') === 'true',
       debug: (spec.attributes.debug ?? 'false') === 'true',

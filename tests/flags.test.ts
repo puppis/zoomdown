@@ -24,16 +24,24 @@ describe('flags of several words', () => {
   });
 
   it('reach slides and includes', () => {
-    const document = new MarkupParser().parse('::: slide {#a}\n# A\n\n[[include: #b x=0 y=0 width=4 only-this, start-here]]\n:::\n\n::: slide {#b skip-return}\n# B\n:::');
+    const document = new MarkupParser().parse('::: slide {#a}\n# A\n\n[[include: #b x=0 y=0 width=4 only-this, start-here, skip-return]]\n:::\n\n::: slide {#b preview}\n# B\n:::');
     const [a, b] = document.slides;
-    expect((a.items[1] as { attributes: Record<string, string> }).attributes).toMatchObject({ only_this: 'true', start_here: 'true' });
-    expect(b.attributes.skip_return).toBe('true');
+    expect((a.items[1] as { attributes: Record<string, string> }).attributes).toMatchObject({ only_this: 'true', start_here: 'true', skip_return: 'true' });
+    expect(b.attributes.preview).toBe('true');
+  });
+
+  it('that say how a child is left go on its include, not on the slide', () => {
+    const deck = (attrs: string) => () => new MarkupParser().parse(`::: slide {#a}\n[[include: #b]]\n:::\n\n::: slide {#b ${attrs}}\n# B\n:::`);
+    expect(deck('skip-return')).toThrow(/^Line 5: skip-return goes on the include that places this slide, as in \[\[include: #b skip-return\]\], not on the slide itself$/);
+    expect(deck('return_to_parent=false')).toThrow(/return-to-parent goes on the include that places this slide, as in \[\[include: #b return-to-parent\]\]/);
+    const subslide = new MarkupParser().parse('::: slide {#a}\n[[subslide: Orbit x=0 y=0 width=4 return-to-parent]]\n:::');
+    expect((subslide.slides[0].items[0] as { attributes: Record<string, string> }).attributes.return_to_parent).toBe('true');
   });
 
   it('say where they go when they are written on an element', () => {
     const deck = (body: string) => () => new MarkupParser().parse(`::: slide {#a}\n${body}\n:::`);
     expect(deck('# Title {step=-1 only-this}')).toThrow(/^Line 2: Unknown attributes: only-this \(only-this goes on a slide, as in ::: slide \{#id only-this\}, or on the include or subslide that places it\)$/);
-    expect(deck('Some text {#t skip_return nonsense=2}')).toThrow(/Unknown attributes: nonsense, skip-return \(skip-return goes on a slide/);
+    expect(deck('Some text {#t skip_return nonsense=2}')).toThrow(/Unknown attributes: nonsense, skip-return \(skip-return goes on the include or subslide that places a slide, as in \[\[include: #id skip-return\]\]\)$/);
     expect(deck('Some text {#t nonsense=2}')).toThrow(/^Line 2: Unknown attributes: nonsense$/);
     expect(deck('[[include: #b x=0 y=0 width=3 focus-only]]')).toThrow(/Unknown attributes: focus-only$/);
   });
