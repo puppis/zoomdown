@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ANCHORS, ANIMATE_PROPS, BARE_FLAGS, CHART_ATTRS, EFFECT_NAMES, ELEMENT_ATTRS, ENTER_STYLES, EXIT_STYLES, FILL_STYLE_NAMES, GROUP_ATTRS,
-  LABEL_SIDES, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, TABLE_ATTRS, TABLE_RULE_NAMES, TREMBLE_ATTRS, CHART_TYPE_NAMES, ICON_KINDS,
+  LABEL_SIDES, POSITION_REFERENCES, RATE_NAMES, SHAPES, SKETCH_ATTRS, TABLE_ATTRS, TABLE_RULE_NAMES, TREMBLE_ATTRS, CHART_TYPE_NAMES, ICON_KINDS, shownName,
 } from '../src/markup/ast';
 import { LayoutConfig } from '../src/markup/renderer';
 import { PresenterConfig } from '../src/runtime';
@@ -13,7 +13,7 @@ const manual = readFileSync(join(__dirname, '..', 'docs', 'site', 'manual-markup
 const names = new Set([...manual.matchAll(/`([^`\n]+)`/g)].map((match) => match[1]));
 
 /** Flags are documented with hyphens (`only-this`), whichever way a deck writes them. */
-const documented = (name: string): string => (BARE_FLAGS.has(name) ? name.replace(/_/g, '-') : name);
+const documented = (name: string): string => shownName(name);
 
 function expectAll(set: Iterable<string>, what: string): void {
   const missing = [...set].map(documented).filter((name) => !names.has(name));

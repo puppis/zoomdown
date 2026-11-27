@@ -119,7 +119,7 @@ and the options' folders come before the front matter's.
 | `font` | Latin Modern Roman (bundled) | prose font family; the LaTeX text face by default, so prose and formulas share one design; a family in the deck's `fonts/` folder is loaded from there |
 | `codeFont` | Latin Modern Mono (bundled) | inline code and listings; the LaTeX typewriter face, sized to pair with the text face |
 | `codeTheme` | the deck's text color decides | token colors of listings, `code-themes/<name>.json`, see [Extending a deck](extending.html#languages-and-code-themes) |
-| `margin` | 0.65 | distance of the flow from the canvas edges; a slide's `flow_top` and `flow_left` move its start |
+| `margin` | 0.65 | distance of the flow from the canvas edges; a slide's `flow-top` and `flow-left` move its start |
 | `gap` | 0.35 | distance between flowing blocks that are not text, and default `buff` |
 | `lineGap` | 0.12 | extra space between wrapped lines |
 | `lineHeight` | unset | the distance between the baselines of two lines of prose in ems, replacing the font's reach plus `lineGap` |
@@ -128,7 +128,7 @@ and the options' folders come before the front matter's.
 | `haloBridgeTolerance` | 0.2 | arrows and lines whose ends lie closer than this never bridge one another (`halo_bridge`) |
 | `animationTime` | 0.35 | duration of fades |
 | `defaultSlideSize` | `[16, 9]` | canvas of slides without `width`/`height` |
-| `textAnchor` | `left-baseline` | default anchor of text, formulas and listings placed by a point: any anchor; `top-left` places them by their top-left corner, as the flow and `flow_top` measure |
+| `textAnchor` | `left-baseline` | default anchor of text, formulas and listings placed by a point: any anchor; `top-left` places them by their top-left corner, as the flow and `flow-top` measure |
 | `steps` | `explicit` | `sequential`: steps follow the source, an element without `step` taking the step of the element before it and `step=+` the click after, see [Steps that follow the source](fragments.html#steps-that-follow-the-source) |
 
 ## presenter

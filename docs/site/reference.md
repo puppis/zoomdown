@@ -15,7 +15,7 @@ This page is the short reference, one line per construct. [The markup language, 
 
 | Syntax | Purpose |
 | --- | --- |
-| `::: slide {#id attrs} … :::` | a slide; attrs: `title`, `width`, `height`, `flow_top`, `flow_left`, `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview`, `debug` |
+| `::: slide {#id attrs} … :::` | a slide; attrs: `title`, `width`, `height`, `flow-top`, `flow-left`, `start-here`, `only-this`, `return-to-parent`, `skip-return`, `transition`, `preview`, `debug` |
 | `[[include: #slide, placement, step, verdict, start-here, only-this, return-to-parent, skip-return, transition, preview, debug]]` | a child slide placed in this one; `subslide: #id` is the same; without a position, right after another include, it goes on its row; `verdict="…"` writes a line under the tile ([Rows and grids of tiles](slides.html#rows-and-grids-of-tiles)) |
 | `[[subslide: ClassName, placement, step, …]]` | a code-authored child ([Code-authored slides](code-slides.html)) |
 | `[[pdf: file.pdf #id, placement, step, preview, …]]` | a PDF placed in the slide: its pages as children, cut through one after the other ([PDFs, flat decks and forests](documents.html#a-pdf-inside-a-slide)) |
@@ -113,7 +113,7 @@ commas; `(x,y)` tuples stay whole; `#id` sets the ID; `.name` applies a style.
 | `left-aligned`, `right-aligned`, `top-aligned`, `bottom-aligned`, `baseline-aligned` | elements, children | align an edge or baseline with `#id` |
 | `dx`, `dy` | positioned elements | offset after placement |
 | `width`, `height` | elements, children | wrapping width or size; viewport size for children |
-| `flow_top`, `flow_left` | slides | where the flow starts, from the top and left edges (`layout.margin` by default) |
+| `flow-top`, `flow-left` | slides | where the flow starts, from the top and left edges (`layout.margin` by default) |
 | `angle` | elements, groups, children, `animate` | rotation in radians, counterclockwise: an element's about its anchor, a child's about its center, `animate`'s by that much more; an arc's `angle` is its sweep |
 | `class` or `.name` | elements, children | styles |
 

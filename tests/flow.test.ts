@@ -29,9 +29,9 @@ describe('the start of a slide\'s flow', () => {
     expect(left(element(plain, 'a'))).toBeCloseTo(-8 + 0.65, 9);
   });
 
-  it('is flow_top below the top edge and flow_left right of the left edge, the paragraphs spaced as before', async () => {
+  it('is flow-top below the top edge and flow-left right of the left edge, the paragraphs spaced as before', async () => {
     const plain = await slide('', PROSE);
-    const moved = await slide('flow_top=6.27 flow_left=0.11', PROSE);
+    const moved = await slide('flow-top=6.27 flow-left=0.11', PROSE);
     expect(top(element(moved, 'a'))).toBeCloseTo(4.5 - 6.27, 9);
     expect(left(element(moved, 'a'))).toBeCloseTo(-8 + 0.11, 9);
     // Every block moves by the same amount: the spacing of paragraphs and list items is unchanged.
@@ -43,26 +43,26 @@ describe('the start of a slide\'s flow', () => {
   });
 
   it('is measured from the edges of a slide of any size', async () => {
-    const page = await slide('width=16 height=12 flow_top=6.27 flow_left=0.11', PROSE);
+    const page = await slide('width=16 height=12 flow-top=6.27 flow-left=0.11', PROSE);
     expect(top(element(page, 'a'))).toBeCloseTo(6 - 6.27, 9);
     expect(left(element(page, 'a'))).toBeCloseTo(-8 + 0.11, 9);
-    const small = await slide('width=4 height=3 flow_top=0.5 flow_left=0.25', 'Hello {#h}');
+    const small = await slide('width=4 height=3 flow-top=0.5 flow-left=0.25', 'Hello {#h}');
     expect(top(element(small, 'h'))).toBeCloseTo(1.5 - 0.5, 9);
     expect(left(element(small, 'h'))).toBeCloseTo(-2 + 0.25, 9);
   });
 
-  it('wraps paragraphs between flow_left and the right margin', async () => {
+  it('wraps paragraphs between flow-left and the right margin', async () => {
     const wide = await slide('', LONG);
-    const narrow = await slide('flow_left=8', LONG);
+    const narrow = await slide('flow-left=8', LONG);
     const paragraph = element(narrow, 'p');
     expect(left(paragraph)).toBeCloseTo(0, 9);
     expect(paragraph.getRight()[0]).toBeLessThanOrEqual(8 - 0.65 + 1e-9);
     expect(lineCount(paragraph)).toBeGreaterThan(lineCount(element(wide, 'p')));
   });
 
-  it('goes on after a block placed with an explicit y, which keeps flow_left and the slide\'s coordinates', async () => {
-    const plain = await slide('flow_top=3 flow_left=2', 'First {#a}\n\nSecond {#b}');
-    const mixed = await slide('flow_top=3 flow_left=2', 'First {#a}\n\nPlaced {#p y=-3}\n\nSecond {#b}\n\n[[rectangle: #r x=1 y=-2 width=1 height=1]]');
+  it('goes on after a block placed with an explicit y, which keeps flow-left and the slide\'s coordinates', async () => {
+    const plain = await slide('flow-top=3 flow-left=2', 'First {#a}\n\nSecond {#b}');
+    const mixed = await slide('flow-top=3 flow-left=2', 'First {#a}\n\nPlaced {#p y=-3}\n\nSecond {#b}\n\n[[rectangle: #r x=1 y=-2 width=1 height=1]]');
     // The placed text lands on its y in the slide's coordinates, its left edge the flow's.
     const placed = element(mixed, 'p');
     expect(anchorPoint(placed, 'left-baseline')[1]).toBeCloseTo(-3, 9);
@@ -78,7 +78,7 @@ describe('the start of a slide\'s flow', () => {
   it('leaves text with only x, early captions and the flow inside groups as they were', async () => {
     const body = 'Caption {#cap step=-1}\n\nShifted {#x x=1}\n\n::: {.group #g}\nOne {#g1}\n\nTwo {#g2}\n:::';
     const plain = await slide('', body);
-    const moved = await slide('flow_top=2 flow_left=1', body);
+    const moved = await slide('flow-top=2 flow-left=1', body);
     // The caption flows first, at the flow's start.
     expect(top(element(moved, 'cap'))).toBeCloseTo(4.5 - 2, 9);
     expect(left(element(moved, 'cap'))).toBeCloseTo(-8 + 1, 9);
@@ -92,14 +92,18 @@ describe('the start of a slide\'s flow', () => {
 
   it('is nonnegative and inside the slide, with room before the right margin', async () => {
     const parse = (attributes: string) => new MarkupParser().parse(`::: slide {#s ${attributes}}\nHello\n:::`);
-    expect(() => parse('flow_top=-1')).toThrow(/flow_top must be nonnegative/);
-    expect(() => parse('flow_left=wide')).toThrow(/flow_left must be a number/);
-    expect(() => parse('flow_top=0 flow_left=0')).not.toThrow();
+    expect(() => parse('flow-top=-1')).toThrow(/flow-top must be nonnegative/);
+    expect(() => parse('flow-left=wide')).toThrow(/flow-left must be a number/);
+    expect(() => parse('flow-top=0 flow-left=0')).not.toThrow();
     const build = (attributes: string) => new SlideBuilder().build(parse(attributes));
-    expect(() => build('flow_top=9')).toThrow(/flow_top must be nonnegative and less than the slide's height, 9/);
-    expect(() => build('width=4 flow_left=4')).toThrow(/flow_left must be nonnegative and less than the slide's width, 4/);
-    expect(() => build('height=12 flow_top=11.5')).not.toThrow();
-    await expect(slide('flow_left=15.5', 'Hello')).rejects.toThrow(/flow_left must leave room before the right margin/);
+    expect(() => build('flow-top=9')).toThrow(/flow-top must be nonnegative and less than the slide's height, 9/);
+    expect(() => build('width=4 flow-left=4')).toThrow(/flow-left must be nonnegative and less than the slide's width, 4/);
+    expect(() => build('height=12 flow-top=11.5')).not.toThrow();
+    // Written with underscores, as before, they still read; the messages write them with hyphens.
+    expect(() => parse('flow_top=-1')).toThrow(/flow-top must be nonnegative/);
+    expect(() => build('width=4 flow_left=4')).toThrow(/flow-left must be nonnegative and less than the slide's width, 4/);
+    expect(() => parse('flow_top=2 flow-top=3')).toThrow(/Duplicate attribute "flow-top"/);
+    await expect(slide('flow-left=15.5', 'Hello')).rejects.toThrow(/flow-left must leave room before the right margin/);
   });
 });
 

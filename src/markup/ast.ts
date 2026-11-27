@@ -274,15 +274,22 @@ export class MarkupDocument {
 /** Boolean attributes that may be written bare: `skip-return` means `skip-return=true`; here by their names with underscores. */
 export const BARE_FLAGS = new Set(['start_here', 'only_this', 'skip_return', 'return_to_parent', 'preview', 'debug', 'focus_only']);
 
-/** A flag written with hyphens, as the relative placements are (`only-this`), by its name with underscores; any other name as it is. */
+/**
+ * Attributes written with hyphens, as the relative placements are (`only-this`, `flow-top`): the
+ * flags and the slide's flow margins, known here by their names with underscores, which the source
+ * may still use.
+ */
+export const HYPHENATED = new Set([...BARE_FLAGS, 'flow_top', 'flow_left']);
+
+/** An attribute written with hyphens (`only-this`, `flow-top`) by its name with underscores; any other name as it is. */
 export function flagName(name: string): string {
   const plain = name.replace(/-/g, '_');
-  return BARE_FLAGS.has(plain) ? plain : name;
+  return HYPHENATED.has(plain) ? plain : name;
 }
 
-/** An attribute's name as the documentation and the messages write it: a flag's words joined by hyphens, any other as it is. */
+/** An attribute's name as the documentation and the messages write it: with hyphens for a flag or a flow margin, any other as it is. */
 export function shownName(name: string): string {
-  return BARE_FLAGS.has(name) ? name.replace(/_/g, '-') : name;
+  return HYPHENATED.has(name) ? name.replace(/_/g, '-') : name;
 }
 
 export const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
@@ -903,7 +910,7 @@ export function numberValue(attrs: Attributes, key: string, line: number, fallba
   const value = attrs[key] ?? fallback;
   if (value === null || value === undefined) return null;
   const number = Number(value);
-  if (!Number.isFinite(number) || (typeof value === 'string' && !value.trim())) throw new MarkupError(`${key} must be a number`, line);
+  if (!Number.isFinite(number) || (typeof value === 'string' && !value.trim())) throw new MarkupError(`${shownName(key)} must be a number`, line);
   if (['width', 'height', 'font_size', 'size'].includes(key) && number <= 0) throw new MarkupError(`Invalid ${key}: ${value}`, line);
   return number;
 }

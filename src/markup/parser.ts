@@ -2280,11 +2280,11 @@ export class ASTTransformer {
       const number = numberValue(attrs, key, line) as number;
       // A placement's buff may be negative: it then overlaps what it is placed against.
       if (['buff_start', 'buff_end', 'corner_radius', 'stroke_width', 'lag', 'roughness', 'bowing', 'fill_weight', 'seed', 'tremble_amplitude', 'padding_x', 'padding_y', 'row_rule_width', 'col_rule_width', 'header_col_rule_width', 'label_buff', 'sublabel_buff', 'halo_width', 'flow_top', 'flow_left'].includes(key) && number < 0) {
-        throw new MarkupError(`${key} must be nonnegative`, line);
+        throw new MarkupError(`${shownName(key)} must be nonnegative`, line);
       }
-      if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size', 'sublabel_font_size', 'sublabel_width'].includes(key) && number <= 0) throw new MarkupError(`${key} must be positive`, line);
+      if (['radius', 'run_time', 'hachure_gap', 'tremble_rate', 'tip_length', 'tip_width', 'looseness', 'wavy', 'label_width', 'line_height', 'header_font_size', 'sublabel_font_size', 'sublabel_width'].includes(key) && number <= 0) throw new MarkupError(`${shownName(key)} must be positive`, line);
       if (['fill_opacity', 'opacity', 'smoothness', 'header_opacity', 'stripe_opacity'].includes(key) && (number < 0 || number > 1)) {
-        throw new MarkupError(`${key} must be between zero and one`, line);
+        throw new MarkupError(`${shownName(key)} must be between zero and one`, line);
       }
     }
     // An element's step may be -1 (shown before the slide's first visit); where that makes no sense the caller says so.

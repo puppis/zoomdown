@@ -60,7 +60,7 @@ Styles named after a **role** apply automatically to every element of that role:
 | `verdict` | the lines under tiles (`verdict=` on an include) |
 | `lifeline`, `process`, `message`, `event` | the parts of a [timeline](shapes.html#space-time-diagrams) |
 | `node`, `edge` | the parts of a [graph](shapes.html#graphs) |
-| `slide` | every slide: `width` and `height`, `flow_top`, `flow_left`, `transition`, `preview` and [`debug`](slides.html#designing-a-slide), unless the slide writes its own |
+| `slide` | every slide: `width` and `height`, `flow-top`, `flow-left`, `transition`, `preview` and [`debug`](slides.html#designing-a-slide), unless the slide writes its own |
 | `timeline`, `graph` | the blocks themselves: what every timeline or graph takes (`timeline: event_dot=false lifeline_tip=true`), under its classes and what it writes |
 
 The parts of a block take the style of their role only when the block names no class for them:

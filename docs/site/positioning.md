@@ -12,7 +12,7 @@ headings, math and listings (the left edge and the first baseline), `origin` for
 local `(0,0)`) and `center` for images, shapes, icons, tables, charts and child viewports.
 `layout.textAnchor` changes the default of prose, headings, math and listings for the whole deck:
 with `textAnchor: top-left` they stand by their top-left corner, measured as the flow and
-`flow_top` measure a block, and `anchor=top-left` need not be written on each.
+`flow-top` measure a block, and `anchor=top-left` need not be written on each.
 `anchor=` chooses another point:
 
 | Anchors | Available on |
@@ -64,8 +64,8 @@ and goes on under it, at its left edge, with no position of its own.
   so are a block placed by its right end or its middle (`anchor=right-baseline`,
   `at=center:(…)`: a corner link, a centered label), a caption of the parent's view placed out of
   the flow (`step=-1`), and an element placed against the one that follows (an overlay written
-  before what it marks). The first block of a slide or a group starts the flow at `flow_top`
-  and `flow_left`.
+  before what it marks). The first block of a slide or a group starts the flow at `flow-top`
+  and `flow-left`.
 - **Options win, axis by axis**: the default is as if `below` and `left-aligned` the block before
   were written, and what is written replaces either. `x` alone puts the block in a column of its
   own, which the flow fills from where it stands, as before, not under the block before (unless
@@ -95,18 +95,18 @@ and goes on under it, at its left edge, with no position of its own.
   it without a `width` of their own wrap at the `width` of the block placed at its top, or at the
   flow's when that block has none.
 
-`flow_top` and `flow_left` on a slide move the start of its flow: `flow_top` is the distance from
-the slide's top edge to the top of the first flowing block, `flow_left` the distance from its left
+`flow-top` and `flow-left` on a slide move the start of its flow: `flow-top` is the distance from
+the slide's top edge to the top of the first flowing block, `flow-left` the distance from its left
 edge to the flow's left edge. Both default to `layout.margin` (0.65), must be nonnegative and less
 than the slide's height and width, and are measured from the top-left corner, as Figma measures
-positions in a frame. Paragraphs wrap between `flow_left` and the right margin. Nothing else moves:
+positions in a frame. Paragraphs wrap between `flow-left` and the right margin. Nothing else moves:
 explicit coordinates, anchors, `at=` and includes keep the slide's coordinates, paragraphs and
 lists keep their spacing, text with only `x` flows at its own left edge, and groups keep their
 local flow. A slide that continues another one, a full page laid over the end of its parent, can
 so start its text right after the parent's last item, each block on its own step:
 
 ```markdown
-::: slide {#rounds flow_top=6.27 flow_left=0.11}
+::: slide {#rounds flow-top=6.27 flow-left=0.11}
 
 Round with pivot *r* … {step=1}
 

@@ -106,7 +106,7 @@ may hold `::: {.group}`, `::: {.element}` and `::: notes` blocks.
 | `id` | identifier | required | the slide's name, used by `[[include: #id]]`, by the outline links and by `#slide=id` in the address bar |
 | `title` | text | the first heading, else the id | the name shown in the outline and the breadcrumb |
 | `width`, `height` | units | `layout.defaultSlideSize`, 16 × 9 | the canvas; one of them keeps the default proportions |
-| `flow_top`, `flow_left` | units | `layout.margin`, 0.65 | where the flow starts: the distance from the top edge to the top of the first flowing block, and from the left edge to the flow's left edge; nonnegative and less than the height and width |
+| `flow-top`, `flow-left` | units | `layout.margin`, 0.65 | where the flow starts: the distance from the top edge to the top of the first flowing block, and from the left edge to the flow's left edge; nonnegative and less than the height and width |
 | `start-here` | flag | false | playback opens at this slide's entry; at most one slide (or include) may say so |
 | `only-this` | flag | false | render only the slides that say so (a partial render while editing); nothing of any other is drawn, but for a frame around each child of a slide that is, in the style of [debug](#debug) and like it never in an export; the starting slide must be among them |
 | `return-to-parent` | `true`, `false` | unset | after this slide's own program, zoom back to the parent before the next stop (`true`), go straight on (`false`), or zoom back unless a sibling follows with no step of the parent in between (unset) |
@@ -851,9 +851,9 @@ or `play` of their own. Relative references stay within a group.
 ### Flow
 
 Elements without a position flow from the top-left corner of the canvas inside
-`layout.margin` (0.65), downward, as wide as the canvas minus the margins. `flow_top` and
-`flow_left` on the slide move the start: the first flowing block's top is `flow_top` below the top
-edge, and the flow runs from `flow_left` right of the left edge to the right margin. Text is spaced as in
+`layout.margin` (0.65), downward, as wide as the canvas minus the margins. `flow-top` and
+`flow-left` on the slide move the start: the first flowing block's top is `flow-top` below the top
+edge, and the flow runs from `flow-left` right of the left edge to the right margin. Text is spaced as in
 LaTeX: the baselines of two paragraphs (blocks separated by a blank line) are
 `layout.paragraphSpacing` interlines apart (1.5; the interline is the distance between the
 baselines of two lines of one paragraph), the items of a list written without blank lines one
@@ -1125,7 +1125,7 @@ and list items), `heading` and `h1` to `h6`, `image`, `math`, `code`, `table`, `
 `ellipse`, `polygon`, `polyline`, `arc`), `icon` with `icon-<name>`, `connection` with `arrow`
 or `line`, `attachment` with `brace`, `box` or `blob`, and `include` for children. The role `slide`
 gives every slide what it does not write itself, of `width` and `height` (both, by a slide that
-writes neither), `flow_top`, `flow_left`, `transition`, `preview` and `debug`. Layers
+writes neither), `flow-top`, `flow-left`, `transition`, `preview` and `debug`. Layers
 apply in this order, each filling in what the earlier ones left unset: the construct's own
 attributes win; then its classes, the last written first; then its roles, the most specific
 first. `id` and `class` are never copied from a style. A class that no style defines is an
@@ -1204,7 +1204,7 @@ matter in the same way.
 | `font` | Latin Modern Roman | the prose family |
 | `codeFont` | Latin Modern Mono | inline code and listings |
 | `codeTheme` | follows `color` | a code theme of the deck, `code-themes/<name>.json` |
-| `margin` | 0.65 | distance of the flow from the canvas edges; a slide's `flow_top` and `flow_left` move its start |
+| `margin` | 0.65 | distance of the flow from the canvas edges; a slide's `flow-top` and `flow-left` move its start |
 | `gap` | 0.35 | distance between flowing blocks that are not text, and the default `buff` |
 | `lineGap` | 0.12 | extra space between wrapped lines |
 | `lineHeight` | unset | the distance between the baselines of two lines of prose in ems, replacing the font's reach plus `lineGap`; see [Line height](#line-height) |
@@ -1213,7 +1213,7 @@ matter in the same way.
 | `haloBridgeTolerance` | 0.2 | two arrows or lines whose ends lie closer than this never bridge one another with `halo_bridge` |
 | `animationTime` | 0.35 | the default `run_time` of fades and effects |
 | `defaultSlideSize` | `[16, 9]` | the canvas of slides without `width` or `height` |
-| `textAnchor` | `left-baseline` | the default anchor of text, formulas and listings placed by a point (`x`, `y`, `at=` a point, `[[animate]]`): any anchor; `top-left` places them by their top-left corner, as the flow and `flow_top` measure |
+| `textAnchor` | `left-baseline` | the default anchor of text, formulas and listings placed by a point (`x`, `y`, `at=` a point, `[[animate]]`): any anchor; `top-left` places them by their top-left corner, as the flow and `flow-top` measure |
 | `steps` | `explicit` | `sequential`: an element without `step` takes the step of the element before it, and `step=+` and `hide=+` count from it; see [Sequential steps](#sequential-steps) |
 
 ### presenter

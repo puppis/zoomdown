@@ -41,13 +41,13 @@ choose a different aspect ratio.
 ::: slide {#square width=10 height=10}
 ```
 
-`flow_top` and `flow_left` set where the slide's flow starts: the distance from the top edge to the
+`flow-top` and `flow-left` set where the slide's flow starts: the distance from the top edge to the
 top of the first flowing block, and from the left edge to the flow's left edge. Both default to
 `layout.margin` and leave the canvas and its coordinates as they are
 ([Positioning](positioning.html#flow)).
 
 ```markdown
-::: slide {#rounds flow_top=6.27 flow_left=0.11}   → text starts 6.27 below the top edge
+::: slide {#rounds flow-top=6.27 flow-left=0.11}   → text starts 6.27 below the top edge
 ```
 
 ## Includes
@@ -196,7 +196,7 @@ the desktop app, so take the line out before presenting from one of those.
 To read a coordinate or a length exactly, hold Control in the player: the pointer shows its
 coordinates in the slide, and a drag measures a length ([Measuring](player.html#measuring)).
 
-The `slide` style sets `width` and `height`, `flow_top`, `flow_left`, `transition` and `preview` for
+The `slide` style sets `width` and `height`, `flow-top`, `flow-left`, `transition` and `preview` for
 every slide in the same way.
 
 ## Cuts instead of zooms

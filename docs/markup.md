@@ -33,10 +33,10 @@ every construct of this page live, each next to the listing that produced it; op
   repeat a component, define it again under a fresh ID.
 - `width` / `height` on a **slide** set its canvas (default 16 × 9, or `layout.defaultSlideSize`).
   One dimension infers the other from the default proportions; two choose a different aspect.
-- `flow_top` / `flow_left` on a **slide** set where its flow starts: the distance from the top edge
+- `flow-top` / `flow-left` on a **slide** set where its flow starts: the distance from the top edge
   to the top of the first flowing block, and from the left edge to the flow's left edge (both
   `layout.margin` by default, nonnegative and less than the slide's height and width). Paragraphs
-  wrap between `flow_left` and the right margin; the slide's coordinates do not change.
+  wrap between `flow-left` and the right margin; the slide's coordinates do not change.
 - On an **include** or **subslide**, `x`, `y` place the viewport's center, `width` / `height` size it
   (one dimension keeps the child's aspect, two letterbox it), `angle` rotates it in radians.
   Without `width` and `height` the viewport is at most six units wide. `[[subslide: #id]]` is the
@@ -489,7 +489,7 @@ IDs are unique within their slide; omitted IDs become `element-N`.
 is `center`, for groups their `origin`. `anchor=` chooses another point: `center`, `top`, `bottom`,
 `left`, `right`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, or `left-baseline` /
 `right-baseline` for text-like elements (`layout.textAnchor` changes the text default). Blocks
-without coordinates flow downward from the top-left margin (or from `flow_top` and `flow_left` on
+without coordinates flow downward from the top-left margin (or from `flow-top` and `flow-left` on
 the slide), each after the block written before it wherever that one is placed: under it, at its
 left edge (text, formulas, listings, tables, charts and groups; pictures, drawings, a block placed
 by its right end or its middle, a `step=-1` caption placed out of the flow and an overlay of the
@@ -587,8 +587,8 @@ A style is a named attribute set, defined in the front matter (`styles`, as maps
 strings) or in a `::: styles` block of the Markdown file, which wins for the same name. Elements, includes and subslides opt in with `.name` tokens (several allowed, later ones
 win). Styles named after a **role** apply automatically: `heading` (also `h1` … `h6`), `body`,
 `math`, `code`, `image`, `shape` (also `rectangle`, `circle`, …), `connection` (`arrow`, `line`),
-`attachment` (`brace`, `box`), `group` and `include`; `slide` gives every slide its size, `flow_top`,
-`flow_left`, `transition`, `preview` and `debug`. Resolution order: the element's own
+`attachment` (`brace`, `box`), `group` and `include`; `slide` gives every slide its size, `flow-top`,
+`flow-left`, `transition`, `preview` and `debug`. Resolution order: the element's own
 attributes, then its classes, then its roles, then the layout defaults. Styles fill in only what
 fits: a class or a role gives an element only the attributes its kind takes (a radius to a circle,
 a width to a rectangle, an anchor its kind has), and a placement only where the element's own and

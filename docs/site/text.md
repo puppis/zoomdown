@@ -159,7 +159,7 @@ place. A `::: align` block lines up the columns of several: all the texts with `
 attributes of its own.
 
 ```zoomdown {height=5}
-::: slide {#aligned-rows width=16 height=5 flow_top=0.6}
+::: slide {#aligned-rows width=16 height=5 flow-top=0.6}
 
 ::: align
 **message complexity** && = && number of messages {step=1}
